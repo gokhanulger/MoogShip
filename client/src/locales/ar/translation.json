@@ -1,0 +1,1005 @@
+{
+  "notifications": {
+    "iossNumberRequired": "رقم IOSS مطلوب",
+    "iossNumberRequiredDescription": "رقم IOSS مطلوب للشحنات إلى دول الاتحاد الأوروبي",
+    "hmrcNumberRequired": "رقم HMRC مطلوب",
+    "hmrcNumberRequiredDescription": "رقم HMRC مطلوب للشحنات إلى {{countryName}}",
+    "insufficientFunds": "رصيد غير كافٍ",
+    "addFundsToBalance": "يرجى إضافة ${{amount}} إلى رصيدك لإنشاء هذه الشحنة."
+  },
+  "validations": {
+    "iossNumberRequired": "رقم IOSS مطلوب للشحنات إلى دول الاتحاد الأوروبي",
+    "hmrcNumberRequired": "رقم HMRC مطلوب للشحنات إلى {{countryName}}"
+  },
+  "customs": {
+    "packageContents": "محتويات الطرد",
+    "placeholder": {
+      "describeContents": "وصف محتويات الطرد الخاص بك",
+      "enterIossNumber": "أدخل رقم IOSS",
+      "enterHmrcNumber": "أدخل رقم HMRC",
+      "enterGtipCode": "أدخل رمز GTIP/HS",
+      "value": "القيمة (مثال 123.45)",
+      "selectCurrency": "اختر العملة"
+    },
+    "description": {
+      "contents": "يرجى تقديم وصف عام لما تقوم بشحنه.",
+      "iossNumber": "رقم نقطة التوقف الواحدة للاستيراد (IOSS) مطلوب للسلع التجارية الإلكترونية التي تصل قيمتها إلى 150 يورو والمشحونة إلى الاتحاد الأوروبي.",
+      "hmrcNumber": "رقم HMRC مطلوب للسلع التجارية الإلكترونية المشحونة إلى {{country}}.",
+      "gtipCode": "رمز النظام المنسق للتصنيف الجمركي",
+      "gtipCodeAuto": "تم الجمع تلقائيًا من عناصر الطرد الخاصة بك",
+      "value": "أدخل القيمة المعلنة لأغراض الجمارك",
+      "valueAuto": "تم احتسابها تلقائيًا من عناصر الطرد الخاصة بك",
+      "insurance": "حماية شحنتك من الفقدان أو التلف. سيتم احتساب تكلفة التأمين بناءً على القيمة الجمركية المعلنة."
+    },
+    "iossNumber": "رقم IOSS",
+    "hmrcNumber": "رقم HMRC",
+    "gtipCode": "رمز GTIP",
+    "customsValue": "القيمة الجمركية",
+    "currency": "العملة",
+    "addShippingInsurance": "إضافة تأمين الشحن",
+    "customsInformation": "معلومات الجمارك",
+    "importantReview": "يرجى المراجعة",
+    "packageAdded": "تمت إضافة عناصر الطرد تلقائيًا. يرجى التحقق من المعلومات أدناه."
+  },
+  "general": {
+    "errorTitle": "خطأ",
+    "errorMessage": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+    "errorPickupRequest": "فشل في طلب الالتقاط",
+    "errorFetchPickupDetails": "فشل في جلب تفاصيل الالتقاط",
+    "successMessage": "تم تقديم طلبك بنجاح."
+  },
+  "common": {
+    "dashboard": "لوحة المعلومات",
+    "shipments": "الشحنات",
+    "createShipment": "إنشاء شحنة",
+    "bulkUpload": "رفع متعدد",
+    "approvedShipments": "الشحنات المعتمدة",
+    "myShipments": "شحناتي",
+    "myBalance": "رصيدي",
+    "myPickups": "استلاماتي",
+    "buildTemplates": "إنشاء قوالب",
+    "transactions": "المعاملات",
+    "products": "المنتجات",
+    "packageTemplates": "قوالب الطرود",
+    "recipients": "المستلمون",
+    "importRecipients": "استيراد المستلمين",
+    "myTickets": "تذاكري",
+    "createTicket": "إنشاء تذكرة",
+    "priceCalculator": "حاسبة الأسعار",
+    "settings": "الإعدادات",
+    "admin": "المسؤول",
+    "add": "إضافة",
+    "actions": "إجراءات",
+    "edit": "تعديل",
+    "copy": "نسخ",
+    "duplicate": "تكرار",
+    "delete": "حذف",
+    "manageUsers": "إدارة المستخدمين",
+    "manageShipments": "إدارة الشحنات",
+    "announcements": "الإعلانات",
+    "managePickups": "إدارة الاستلامات",
+    "refreshing": "جاري التحديث...",
+    "adminTickets": "تذاكر المسؤول",
+    "logout": "تسجيل الخروج",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "view": "عرض",
+    "submit": "إرسال",
+    "close": "إغلاق",
+    "search": "بحث",
+    "filter": "تصفية",
+    "refresh": "تحديث",
+    "export": "تصدير",
+    "import": "استيراد",
+    "print": "طباعة",
+    "download": "تنزيل",
+    "upload": "رفع",
+    "loading": "جاري التحميل...",
+    "creating": "جاري الإنشاء...",
+    "updating": "جاري التحديث...",
+    "deleting": "جاري الحذف...",
+    "noData": "لا توجد بيانات",
+    "error": "خطأ",
+    "success": "نجاح",
+    "warning": "تحذير",
+    "info": "معلومات",
+    "newShipment": "شحنة جديدة",
+    "trackShipments": "تتبع الشحنات",
+    "calculatePrice": "حساب السعر",
+    "uploadShipments": "رفع شحنات",
+    "viewBalanceDetails": "عرض تفاصيل الرصيد",
+    "startInteractiveTour": "بدء جولة تفاعلية",
+    "languageSettings": "إعدادات اللغة",
+    "supportTicket": "تذكرة الدعم",
+    "gettingStarted": "البدء",
+    "marketingSite": "موقع التسويق",
+    "support": "الدعم",
+    "adminPanel": "لوحة المسؤول",
+    "viewAll": "عرض الكل",
+    "all": "الكل",
+    "backToDashboard": "العودة إلى لوحة المعلومات",
+    "continue": "متابعة",
+    "next": "التالي",
+    "back": "رجوع",
+    "create": "إنشاء"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "التسجيل",
+    "forgotPassword": "نسيت كلمة المرور",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "email": "البريد الإلكتروني",
+    "name": "الاسم",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "loginSuccess": "تم تسجيل الدخول بنجاح",
+    "loginFailed": "فشل تسجيل الدخول",
+    "logoutSuccess": "تم تسجيل الخروج بنجاح",
+    "registerSuccess": "تم التسجيل بنجاح",
+    "passwordResetSuccess": "تم إعادة تعيين كلمة المرور بنجاح",
+    "passwordResetFailed": "فشل إعادة تعيين كلمة المرور"
+  },
+  "shipping": {
+    "senderInfo": "معلومات المرسل",
+    "receiverInfo": "معلومات المستلم",
+    "packageInfo": "معلومات الطرد",
+    "customsInfo": "معلومات الجمارك",
+    "trackingNumber": "رقم التتبع",
+    "shipmentStatus": "حالة الشحنة",
+    "shipmentDate": "تاريخ الشحن",
+    "deliveryDate": "تاريخ التسليم",
+    "estimatedDelivery": "التسليم المتوقع",
+    "origin": "المصدر",
+    "destination": "الوجهة",
+    "weight": "الوزن",
+    "dimensions": "الأبعاد",
+    "length": "الطول",
+    "width": "العرض",
+    "height": "الارتفاع",
+    "shippingMethod": "طريقة الشحن",
+    "shippingCost": "تكلفة الشحن",
+    "shippingLabel": "ملصق الشحن",
+    "trackingLink": "رابط التتبع",
+    "creatingLabel": "جاري إنشاء الملصق...",
+    "acceptPriceAndCreateLabel": "قبول السعر وإنشاء الملصق",
+    "goToPackageDetails": "الذهاب إلى تفاصيل الطرد",
+    "backToPackageDetails": "العودة إلى تفاصيل الطرد",
+    "priceDetailsWillAppear": "ستظهر تفاصيل السعر هنا بعد حساب تكلفة الشحن.",
+    "createShipmentSuccess": "تم إنشاء الشحنة بنجاح",
+    "createShipmentFailed": "فشل إنشاء الشحنة",
+    "updateShipmentSuccess": "تم تحديث الشحنة بنجاح",
+    "updateShipmentFailed": "فشل تحديث الشحنة",
+    "deleteShipmentSuccess": "تم حذف الشحنة بنجاح",
+    "deleteShipmentFailed": "فشل حذف الشحنة",
+    "bulkUploadSuccess": "تم الرفع المتعدد بنجاح",
+    "bulkUploadFailed": "فشل الرفع المتعدد",
+    "pickupScheduled": "تم جدولة الاستلام",
+    "delivered": "تم التسليم",
+    "inTransit": "قيد النقل",
+    "pending": "قيد الانتظار",
+    "approved": "معتمد",
+    "rejected": "مرفوض",
+    "cancelled": "ملغى",
+    "completed": "مكتمل",
+    "onHold": "معلق",
+    "allShipments": "جميع الشحنات",
+    "pendingApprovals": "الموافقات المعلقة",
+    "managePickups": "إدارة الاستلامات"
+  },
+  "financial": {
+    "balance": "الرصيد",
+    "credits": "الائتمانات",
+    "debits": "الخصومات",
+    "transactions": "المعاملات",
+    "addFunds": "إضافة رصيد",
+    "withdrawFunds": "سحب الأموال",
+    "paymentMethod": "طريقة الدفع",
+    "paymentAmount": "مبلغ الدفع",
+    "paymentDate": "تاريخ الدفع",
+    "paymentStatus": "حالة الدفع",
+    "transactionType": "نوع المعاملة",
+    "transactionDetails": "تفاصيل المعاملة",
+    "transactionDate": "تاريخ المعاملة",
+    "transactionAmount": "مبلغ المعاملة",
+    "transactionSuccess": "تمت المعاملة بنجاح",
+    "transactionFailed": "فشلت المعاملة",
+    "fundingSuccess": "تم التمويل بنجاح",
+    "fundingFailed": "فشل التمويل",
+    "withdrawalSuccess": "تم السحب بنجاح",
+    "withdrawalFailed": "فشل السحب",
+    "minBalance": "الحد الأدنى للرصيد",
+    "creditLimit": "حد الائتمان",
+    "currentBalance": "الرصيد الحالي",
+    "availableBalance": "الرصيد المتاح",
+    "pendingBalance": "الرصيد المعلق",
+    "transactionHistory": "تاريخ المعاملات",
+    "recentTransactions": "المعاملات الأخيرة",
+    "noTransactions": "لا توجد معاملات",
+    "balanceDetails": "تفاصيل الرصيد",
+    "credit": "دائن",
+    "debit": "مدين",
+    "newestFirst": "الأحدث أولاً",
+    "oldestFirst": "الأقدم أولاً"
+  },
+  "tables": {
+    "search": "بحث...",
+    "noResults": "لم يتم العثور على نتائج مطابقة",
+    "date": "التاريخ",
+    "description": "الوصف",
+    "amount": "المبلغ",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "selectAll": "تحديد الكل",
+    "deselectAll": "إلغاء تحديد الكل",
+    "selected": "محدد",
+    "bulkActions": "إجراءات متعددة",
+    "loadingData": "جاري تحميل البيانات..."
+  },
+  "shipmentTable": {
+    "selectAll": "تحديد الكل",
+    "shipmentId": "معرف الشحنة",
+    "companyCustomer": "الشركة/العميل",
+    "destinationAddress": "عنوان الوجهة",
+    "trackingHeader": "التتبع",
+    "internalTracking": "رقم التتبع الداخلي",
+    "carrier": "شركة النقل",
+    "externalTracking": "تتبع شركة النقل الخارجية",
+    "labelErrorsNote": "سيتم عرض أخطاء الملصق باللون الأحمر",
+    "price": "السعر",
+    "originalPrice": "السعر الأصلي",
+    "createdDate": "تاريخ الإنشاء",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "packageContents": {
+      "name": "الاسم",
+      "quantity": "الكمية",
+      "price": "السعر",
+      "actions": "الإجراءات"
+    },
+    "tracking": {
+      "title": "معلومات التتبع",
+      "shipment": "الشحنة",
+      "moogshipTracking": "رقم تتبع MoogShip",
+      "carrierTracking": "رقم تتبع شركة النقل",
+      "status": "الحالة"
+    }
+  },
+  "support": {
+    "tickets": "التذاكر",
+    "newTicket": "تذكرة جديدة",
+    "ticketDetails": "تفاصيل التذكرة",
+    "ticketStatus": "حالة التذكرة",
+    "ticketPriority": "أولوية التذكرة",
+    "ticketCategory": "فئة التذكرة",
+    "ticketSubject": "موضوع التذكرة",
+    "ticketDescription": "وصف التذكرة",
+    "ticketAttachments": "مرفقات التذكرة",
+    "ticketResponses": "ردود التذكرة",
+    "responseDate": "تاريخ الرد",
+    "responseAuthor": "كاتب الرد",
+    "responseContent": "محتوى الرد",
+    "addResponse": "إضافة رد",
+    "closeTicket": "إغلاق التذكرة",
+    "reopenTicket": "إعادة فتح التذكرة",
+    "assignTicket": "تعيين التذكرة",
+    "priorityHigh": "عالية",
+    "priorityMedium": "متوسطة",
+    "priorityLow": "منخفضة",
+    "statusOpen": "مفتوحة",
+    "statusClosed": "مغلقة",
+    "statusInProgress": "قيد التنفيذ",
+    "statusResolved": "محلولة",
+    "createTicketSuccess": "تم إنشاء التذكرة بنجاح",
+    "createTicketFailed": "فشل إنشاء التذكرة",
+    "updateTicketSuccess": "تم تحديث التذكرة بنجاح",
+    "updateTicketFailed": "فشل تحديث التذكرة",
+    "responseAddedSuccess": "تمت إضافة الرد بنجاح",
+    "responseAddedFailed": "فشلت إضافة الرد",
+    "manageTickets": "إدارة التذاكر",
+    "manageAllTickets": "إدارة جميع تذاكر دعم العملاء"
+  },
+  "packageTemplates": {
+    "pageTitle": "قوالب الطرود",
+    "pageDescription": "إنشاء وإدارة قوالب الطرود لتسهيل إنشاء الشحنات",
+    "dimensions": "الأبعاد",
+    "defaultTemplateBadge": "القالب الافتراضي",
+    "actions": {
+      "newTemplate": "قالب جديد",
+      "createTemplate": "إنشاء قالب",
+      "updateTemplate": "تحديث القالب",
+      "editTemplate": "تعديل القالب",
+      "deleteTemplate": "حذف القالب",
+      "setAsDefault": "تعيين كقالب افتراضي"
+    },
+    "empty": {
+      "title": "لا توجد قوالب للطرود",
+      "description": "قم بإنشاء قالب الطرود الأول للبدء"
+    },
+    "dialogs": {
+      "create": {
+        "title": "إنشاء قالب طرد",
+        "description": "إنشاء قالب طرد جديد لاستخدامه عند إنشاء الشحنات"
+      },
+      "edit": {
+        "title": "تعديل قالب الطرد",
+        "description": "تحديث تفاصيل قالب الطرد الخاص بك"
+      },
+      "delete": {
+        "title": "حذف قالب الطرد",
+        "description": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+        "warning": "لا يمكن التراجع عن هذا الإجراء."
+      }
+    },
+    "table": {
+      "name": "الاسم",
+      "dimensions": "الأبعاد",
+      "volume": "الحجم",
+      "volumetricWeight": "الوزن الحجمي",
+      "actions": "الإجراءات"
+    },
+    "form": {
+      "name": "اسم القالب",
+      "description": "الوصف (اختياري)",
+      "length": "الطول (سم)",
+      "width": "العرض (سم)",
+      "height": "الارتفاع (سم)",
+      "isDefault": "تعيين كقالب افتراضي",
+      "isDefaultDescription": "سيتم اختيار هذا القالب افتراضيًا عند إنشاء شحنات جديدة",
+      "namePlaceholder": "مثلاً: صندوق صغير",
+      "descriptionPlaceholder": "وصف الطرد"
+    },
+    "placeholders": {
+      "templateName": "مثلاً: صندوق صغير",
+      "description": "وصف الطرد"
+    },
+    "buttons": {
+      "cancel": "إلغاء",
+      "confirm": "تأكيد",
+      "save": "حفظ"
+    },
+    "alerts": {
+      "createSuccess": "تم إنشاء قالب الطرد بنجاح",
+      "updateSuccess": "تم تحديث قالب الطرد بنجاح",
+      "deleteSuccess": "تم حذف قالب الطرد بنجاح",
+      "defaultUpdated": "تم تحديث القالب الافتراضي",
+      "error": {
+        "create": "فشل إنشاء القالب",
+        "update": "فشل تحديث القالب",
+        "delete": "فشل حذف القالب",
+        "setDefault": "فشل تعيين القالب الافتراضي"
+      }
+    }
+  },
+  "dashboard": {
+    "welcomeUser": "مرحباً، {{name}}",
+    "welcomeGuest": "مرحباً بك في Moogship",
+    "summary": "إليك ما يحدث مع شحناتك اليوم.",
+    "stats": {
+      "totalShipments": "إجمالي الشحنات",
+      "pendingApproval": "في انتظار الموافقة",
+      "inTransit": "قيد النقل",
+      "delivered": "تم التسليم"
+    },
+    "recentActivity": {
+      "title": "النشاط الأخير",
+      "description": "آخر إجراءاتك وتحديثاتك"
+    },
+    "performance": {
+      "title": "مؤشرات الأداء",
+      "description": "إحصائيات الشحن وأداء التسليم",
+      "deliverySuccessRate": "معدل نجاح التسليم",
+      "statusBreakdown": "تفصيل الحالة",
+      "topDestinations": "أهم الوجهات",
+      "noShipments": "لا توجد شحنات بعد"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "inTransit": "قيد النقل",
+      "delivered": "تم التسليم"
+    },
+    "recentShipments": {
+      "title": "الشحنات الأخيرة",
+      "description": "اطلع على طلبات الشحن الأخيرة وحالتها الحالية."
+    }
+  },
+  "shipments": {
+    "title": "شحناتي",
+    "filters": {
+      "searchPlaceholder": "بحث عن الشحنات...",
+      "statusPlaceholder": "تصفية حسب الحالة",
+      "datePlaceholder": "تصفية حسب التاريخ",
+      "allStatuses": "كل الحالات",
+      "last7Days": "آخر 7 أيام",
+      "last30Days": "آخر 30 يوم",
+      "last90Days": "آخر 90 يوم",
+      "thisYear": "هذا العام"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "approved": "معتمد",
+      "inTransit": "قيد النقل",
+      "delivered": "تم التسليم",
+      "rejected": "مرفوض"
+    },
+    "actions": {
+      "refresh": "تحديث",
+      "createNew": "إنشاء جديد"
+    }
+  },
+  "approvedShipments": {
+    "title": "شحناتي المعتمدة",
+    "description": "عرض وتتبع الشحنات المعتمدة",
+    "refresh": "تحديث",
+    "search": "البحث عن طريق رقم التتبع أو المستلم أو البلد...",
+    "tabs": {
+      "approved": "معتمدة",
+      "inTransit": "قيد النقل",
+      "delivered": "تم التسليم"
+    },
+    "tableHeaders": {
+      "approvedShipments": "الشحنات المعتمدة",
+      "shipmentsInTransit": "الشحنات قيد النقل",
+      "deliveredShipments": "الشحنات المسلمة",
+      "noShipmentsFound": "لم يتم العثور على شحنات",
+      "noApproved": "ليس لديك شحنات معتمدة بعد.",
+      "noInTransit": "ليس لديك شحنات قيد النقل.",
+      "noDelivered": "ليس لديك شحنات مسلمة."
+    },
+    "columns": {
+      "tracking": "رقم التتبع",
+      "recipient": "المستلم",
+      "destination": "الوجهة",
+      "date": "التاريخ",
+      "status": "الحالة",
+      "actions": "إجراءات"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "processing": "قيد المعالجة",
+      "approved": "معتمد",
+      "in_transit": "قيد النقل",
+      "delivered": "تم التسليم",
+      "cancelled": "ملغى",
+      "rejected": "مرفوض"
+    },
+    "buttons": {
+      "track": "تتبع",
+      "label": "ملصق",
+      "downloadLabel": "تحميل الملصق"
+    },
+    "tracking": {
+      "dialogTitle": "تتبع الشحنة",
+      "dialogDescription": "تفاصيل التتبع لـ",
+      "currentStatus": "الحالة الحالية",
+      "lastUpdated": "آخر تحديث",
+      "currentLocation": "الموقع الحالي",
+      "estimatedDelivery": "موعد التسليم المتوقع",
+      "trackingHistory": "سجل التتبع",
+      "noTrackingInfo": "لا تتوفر معلومات تتبع لهذه الشحنة بعد.",
+      "eventStatus": {
+        "picked_up": "تم الاستلام",
+        "in_transit": "قيد النقل",
+        "out_for_delivery": "قيد التوصيل",
+        "delivered": "تم التسليم",
+        "exception": "استثناء",
+        "attempted_delivery": "محاولة تسليم",
+        "package_accepted": "تم قبول الطرد"
+      },
+      "eventDescription": {
+        "picked_up": "تم استلام الطرد",
+        "in_transit": "الطرد قيد النقل",
+        "out_for_delivery": "الطرد قيد التوصيل",
+        "delivered": "تم تسليم الطرد",
+        "exception": "حدثت مشكلة في التسليم",
+        "attempted_delivery": "تمت محاولة التسليم، لكنها لم تنجح",
+        "package_accepted": "تم قبول الطرد في مركز التوزيع"
+      }
+    },
+    "hoverCards": {
+      "recipientDetails": "تفاصيل المستلم",
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "address": "العنوان",
+      "destinationDetails": "تفاصيل الوجهة",
+      "from": "من",
+      "to": "إلى",
+      "postalCode": "الرمز البريدي",
+      "serviceLevel": "مستوى الخدمة"
+    }
+  },
+  "balance": {
+    "title": "رصيدي",
+    "currentBalance": "الرصيد الحالي",
+    "availableFunds": "الأموال المتاحة",
+    "balanceManagement": "إدارة الرصيد",
+    "accountInfo": "معلومات عن حسابك",
+    "creditLimit": "حد الائتمان",
+    "availableCredit": "الائتمان المتاح",
+    "adminManaged": "تتم إدارة رصيد حسابك من قبل المسؤول.",
+    "contactAdmin": "للاستفسارات حول الرصيد أو لإضافة أموال، يرجى الاتصال بالمسؤول.",
+    "bankInformation": "المعلومات المصرفية",
+    "bankInfoDescription": "استخدم هذه المعلومات لإيداع الأموال في حسابك",
+    "accountDetails": "تفاصيل الحساب",
+    "importantInformation": "معلومات مهمة",
+    "includeUsername": "يرجى تضمين اسم المستخدم الخاص بك في وصف الدفع",
+    "contactSupport": "بعد إجراء الدفع، يرجى الاتصال بالدعم للتأكيد",
+    "creditAfterVerification": "سيتم إضافة المبلغ إلى حسابك بعد التحقق من الدفع"
+  },
+  "createShipment": {
+    "title": "إنشاء شحنة جديدة",
+    "subtitle": "أكمل تفاصيل الشحنة لإنشاء طلب جديد.",
+    "backToDashboard": "العودة إلى لوحة المعلومات",
+    "sections": {
+      "recipient": "معلومات المستلم",
+      "package": "تفاصيل الطرد", 
+      "price": "السعر والشحن"
+    },
+    "recipientInfo": {
+      "title": "معلومات المستلم",
+      "name": "اسم المستلم",
+      "phone": "رقم الهاتف",
+      "email": "البريد الإلكتروني (اختياري)",
+      "address": "العنوان",
+      "city": "المدينة",
+      "postalCode": "الرمز البريدي",
+      "contents": "وصف محتويات الطرد"
+    },
+    "senderInfo": {
+      "title": "معلومات المرسل",
+      "name": "اسم المرسل",
+      "phone": "رقم الهاتف",
+      "email": "البريد الإلكتروني (اختياري)",
+      "address": "العنوان",
+      "city": "المدينة",
+      "postalCode": "الرمز البريدي"
+    },
+    "packageDetails": {
+      "title": "تفاصيل الطرد",
+      "destinationCountry": "بلد الوجهة",
+      "serviceLevel": "مستوى الخدمة",
+      "length": "الطول (سم)",
+      "width": "العرض (سم)",
+      "height": "الارتفاع (سم)",
+      "weight": "الوزن (كجم)",
+      "pieces": "عدد القطع"
+    },
+    "priceDetails": {
+      "title": "السعر والشحن",
+      "basePrice": "السعر الأساسي",
+      "fuelCharge": "رسوم الوقود",
+      "totalPrice": "السعر الإجمالي",
+      "carrier": "شركة الشحن",
+      "estimatedDelivery": "التسليم المتوقع خلال {{days}} أيام عمل",
+      "billableWeight": "الوزن القابل للفوترة: {{weight}} كجم",
+      "acceptTerms": "أوافق على سعر الشحن وأقبل الشروط",
+      "completePackageFirst": "يرجى إكمال تفاصيل الطرد وحساب السعر أولاً."
+    },
+    "actions": {
+      "continueToPackage": "متابعة إلى تفاصيل الطرد",
+      "calculatePrice": "حساب سعر الشحن",
+      "createShipment": "إنشاء الشحنة",
+      "goToPackage": "الذهاب إلى تفاصيل الطرد"
+    },
+    "validation": {
+      "recipientName": "اسم المستلم مطلوب",
+      "phone": "رقم الهاتف مطلوب",
+      "email": "يجب أن يكون بريد إلكتروني صالح",
+      "address": "العنوان مطلوب",
+      "city": "المدينة مطلوبة",
+      "postalCode": "الرمز البريدي مطلوب",
+      "contents": "محتويات الطرد مطلوبة",
+      "contentsMaxLength": "الحد الأقصى 100 حرف",
+      "senderName": "اسم المرسل مطلوب",
+      "senderAddress": "عنوان المرسل مطلوب",
+      "senderCity": "مدينة المرسل مطلوبة",
+      "senderPostalCode": "الرمز البريدي للمرسل مطلوب",
+      "destinationCountry": "بلد الوجهة مطلوب",
+      "length": "يجب أن يكون الطول 1 سم على الأقل",
+      "width": "يجب أن يكون العرض 1 سم على الأقل",
+      "height": "يجب أن يكون الارتفاع 1 سم على الأقل",
+      "weight": "يجب أن يكون الوزن 0.1 كجم على الأقل",
+      "pieces": "يجب أن تكون هناك قطعة واحدة على الأقل",
+      "serviceLevel": "مستوى الخدمة مطلوب",
+      "completeFields": "يرجى ملء جميع الحقول المطلوبة",
+      "ensureFieldsFilled": "تأكد من ملء جميع الحقول المطلوبة في أقسام المستلم والطرد.",
+      "priceCalculationFailed": "فشل حساب السعر",
+      "tryAgain": "حدثت مشكلة أثناء حساب سعر الشحن. يرجى المحاولة مرة أخرى.",
+      "completeSections": "يرجى إكمال جميع الأقسام قبل إنشاء الشحنة"
+    }
+  },
+  "myPickups": {
+    "title": "طلبات الاستلام الخاصة بي",
+    "subtitle": "إدارة طلبات الاستلام لشحناتك",
+    "refresh": "تحديث",
+    "requestPickup": "طلب استلام",
+    "requestShipmentPickup": "طلب استلام شحنة",
+    "requestDescription": "حدد الشحنات التي تريد تضمينها في طلب الاستلام هذا. سيتم استلام جميع الشحنات المحددة في نفس التاريخ.",
+    "pickupDate": "تاريخ الاستلام",
+    "selectDate": "اختر تاريخًا",
+    "pickupNotes": "ملاحظات الاستلام (اختياري)",
+    "notesPlaceholder": "تعليمات خاصة للاستلام...",
+    "selectShipments": "تحديد الشحنات",
+    "loadingShipments": "جاري تحميل الشحنات...",
+    "noEligibleShipments": "لم يتم العثور على شحنات مؤهلة",
+    "eligibilityNote": "يمكن تحديد الشحنات المعتمدة فقط بدون طلب استلام موجود.",
+    "selectColumn": "تحديد",
+    "id": "المعرف",
+    "recipient": "المستلم",
+    "destination": "الوجهة",
+    "service": "الخدمة",
+    "shipmentsSelected": "شحنة (شحنات) محددة",
+    "pendingWarning": "تحذير: أنت تطلب استلام شحنة (شحنات) معلقة",
+    "pendingDescription": "قد تتغير تفاصيل الطرد والسعر قبل الموافقة. سيقوم الناقل باستلام الشحنات المعتمدة فقط.",
+    "cancel": "إلغاء",
+    "requestPickupButton": "طلب استلام",
+    "myPickupRequests": "طلبات الاستلام الخاصة بي",
+    "myPickupDescription": "عرض وإدارة طلبات الاستلام الخاصة بك",
+    "failedToLoad": "فشل في تحميل طلبات الاستلام",
+    "tryAgain": "حاول مرة أخرى",
+    "noPickupsYet": "لا توجد طلبات استلام حتى الآن",
+    "noPickupsDescription": "استخدم زر \"طلب استلام\" لجدولة استلام لشحناتك المعتمدة.",
+    "newPickupRequest": "طلب استلام جديد",
+    "requestedOn": "تم الطلب في",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "notScheduled": "غير مجدول",
+    "viewDetails": "عرض التفاصيل",
+    "pickupRequest": "طلب استلام",
+    "shipmentsInPickup": "شحنة (شحنات) في طلب الاستلام هذا",
+    "package": "طرد",
+    "notes": "ملاحظات",
+    "pieces": "قطع",
+    "billable": "قابل للفوترة",
+    "scheduled": "مجدول",
+    "close": "إغلاق"
+  },
+  
+  "etsyImportGuide": {
+    "toggleGuide": "تبديل دليل استيراد Etsy",
+    "title": "دليل استيراد Etsy",
+    "description": "اتبع هذه الخطوات لاستيراد طلبات Etsy الخاصة بك",
+    "step1": {
+      "title": "انتقل إلى تنزيلات Etsy",
+      "description": "قم بزيارة مدير متجر Etsy لتنزيل طلباتك",
+      "downloadUrl": "etsy.com/your/shops/me/download"
+    },
+    "step2": {
+      "title": "حدد الطلبات للتنزيل",
+      "description": "على صفحة Etsy، حدد نوع الملف الذي تريد تنزيله المسمى",
+      "ordersLabel": "الطلبات",
+      "timeSelection": "اختر الفترة الزمنية للطلبات التي تريد استيرادها",
+      "imageAlt": "واجهة تنزيل طلبات Etsy",
+      "tip": "قم بتنزيل الطلبات آخر 30-90 يومًا للحصول على أفضل النتائج"
+    },
+    "step3": {
+      "title": "تحقق من بريدك الإلكتروني",
+      "description": "سيرسل Etsy رابط تنزيل إلى بريدك الإلكتروني",
+      "fromEmail": "من البريد الإلكتروني",
+      "imageAlt": "زر تنزيل Etsy في البريد الإلكتروني",
+      "note": "قد يستغرق وصول البريد الإلكتروني بضع دقائق. تحقق من مجلد البريد العشوائي إذا لم تره"
+    },
+    "step4": {
+      "title": "استيراد إلى نظامنا",
+      "description": "قم بتحميل ملف CSV هنا. سيستخرج النظام تلقائيًا معلومات المستلم وتفاصيل الطلب."
+    },
+    "step5": {
+      "title": "تحقق من الأبعاد",
+      "description": "بعد التحميل، قم بتأكيد أو تعديل أبعاد الطرد لحساب تكلفة الشحن بشكل صحيح."
+    },
+    "important": {
+      "title": "مهم: إعدادات الطرد الافتراضية",
+      "defaultDimensions": "أبعاد طرد Etsy الافتراضية",
+      "warning": "تأكد من تعديل هذه الأبعاد لكل طلب إذا لزم الأمر للحصول على أسعار شحن دقيقة!"
+    }
+  },
+  "recipientsData": {
+    "pageTitle": "قاعدة بيانات المستلمين",
+    "pageDescription": "إدارة معلومات المستلمين المستخدمة بشكل متكرر للشحنات",
+    "actions": {
+      "addRecipient": "إضافة مستلم",
+      "editRecipient": "تعديل المستلم",
+      "deleteRecipient": "حذف المستلم",
+      "importRecipients": "استيراد المستلمين",
+      "exportRecipients": "تصدير CSV",
+      "setAsDefault": "تعيين كافتراضي"
+    },
+    "viewToggle": {
+      "grid": "عرض الشبكة",
+      "table": "عرض الجدول"
+    },
+    "defaultRecipientBadge": "افتراضي",
+    "empty": {
+      "title": "لا يوجد مستلمين",
+      "description": "أضف أول مستلم لك للبدء"
+    },
+    "dialogs": {
+      "add": {
+        "title": "إضافة مستلم جديد",
+        "description": "أدخل تفاصيل المستلم لحفظها للشحنات المستقبلية"
+      },
+      "edit": {
+        "title": "تعديل المستلم",
+        "description": "تحديث معلومات المستلم"
+      },
+      "delete": {
+        "title": "حذف المستلم",
+        "description": "هل أنت متأكد أنك تريد حذف هذا المستلم؟",
+        "warning": "لا يمكن التراجع عن هذا الإجراء."
+      }
+    },
+    "card": {
+      "phone": "هاتف",
+      "email": "بريد إلكتروني",
+      "address": "العنوان"
+    },
+    "table": {
+      "name": "الاسم",
+      "address": "العنوان",
+      "city": "المدينة",
+      "state": "الولاية/المقاطعة",
+      "postalCode": "الرمز البريدي",
+      "country": "البلد",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "contact": "جهة الاتصال",
+      "actions": "الإجراءات"
+    },
+    "form": {
+      "name": "الاسم",
+      "address": "العنوان",
+      "city": "المدينة",
+      "state": "الولاية/المقاطعة",
+      "postalCode": "الرمز البريدي",
+      "country": "البلد",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "defaultRecipient": "تعيين كمستلم افتراضي",
+      "defaultRecipientDescription": "سيتم اختيار هذا المستلم تلقائيًا للشحنات الجديدة"
+    },
+    "placeholders": {
+      "name": "الاسم الكامل للمستلم",
+      "address": "عنوان المستلم",
+      "city": "المدينة",
+      "state": "الولاية/المقاطعة",
+      "postalCode": "الرمز البريدي",
+      "country": "البلد",
+      "phone": "رقم الهاتف",
+      "email": "عنوان البريد الإلكتروني"
+    },
+    "buttons": {
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "confirm": "تأكيد",
+      "copyAddress": "نسخ العنوان",
+      "saveRecipient": "حفظ المستلم",
+      "updateRecipient": "تحديث المستلم",
+      "setAsDefault": "تعيين كافتراضي"
+    },
+    "notifications": {
+      "copied": {
+        "title": "تم النسخ إلى الحافظة",
+        "description": "تم نسخ تفاصيل المستلم إلى الحافظة"
+      }
+    },
+    "alerts": {
+      "createSuccess": "تم إنشاء المستلم بنجاح",
+      "updateSuccess": "تم تحديث المستلم بنجاح",
+      "deleteSuccess": "تم حذف المستلم بنجاح",
+      "defaultUpdated": "تم تحديث المستلم الافتراضي",
+      "exportSuccess": "تم تصدير المستلمين بنجاح",
+      "exportFailed": "فشل تصدير المستلمين",
+      "noExportData": "لا يوجد مستلمين للتصدير",
+      "error": {
+        "create": "خطأ في إنشاء المستلم",
+        "update": "خطأ في تحديث المستلم",
+        "delete": "خطأ في حذف المستلم",
+        "setDefault": "خطأ في تعيين المستلم الافتراضي"
+      }
+    }
+  },
+  "marketing": {
+    "navigation": {
+      "features": "المميزات",
+      "benefits": "الفوائد",
+      "testimonials": "آراء العملاء",
+      "pricing": "الأسعار"
+    },
+    "hero": {
+      "title": "الشحن الدولي <span>الأكثر اقتصادية</span>",
+      "subtitle": "نساعد البائعين من الولايات المتحدة وأوروبا على الحصول على أفضل أسعار الشحن، مما يوفر أموالك في كل طرد. بدون اشتراكات، فقط أقل الرسوم في الصناعة.",
+      "startShipping": "ابدأ الشحن",
+      "learnMore": "اعرف المزيد",
+      "trustedBy": "تثق بنا <span>+1000</span> شركة حول العالم"
+    },
+    "tracking": {
+      "title": "تتبع شحنتك",
+      "subtitle": "أدخل رقم التتبع أدناه للحصول على تحديثات في الوقت الفعلي حول موقع طردك وحالة التسليم."
+    },
+    "dashboard": {
+      "preview": "لوحة تحكم MoogShip",
+      "shipments": "الشحنات",
+      "savings": "التوفير",
+      "countries": "البلدان",
+      "monthlyShipments": "الشحنات الشهرية",
+      "recentShipments": "الشحنات الأخيرة"
+    },
+    "partners": {
+      "title": "موثوق من قادة الصناعة"
+    },
+    "features": {
+      "title": "ميزات قوية للشحن الدولي",
+      "subtitle": "تجمع منصتنا بين التكنولوجيا المتقدمة والخبرة اللوجستية لتحسين عمليات الشحن الدولية الخاصة بك.",
+      "feature1": {
+        "title": "إدارة الشحن العالمي",
+        "description": "تتبع وإدارة الشحنات الدولية في أكثر من 190 دولة مع تحديثات في الوقت الفعلي ورؤية كاملة طوال عملية التسليم."
+      },
+      "feature2": {
+        "title": "تكامل متعدد الناقلين",
+        "description": "قارن بين الأسعار والخدمات من أبرز مزودي خدمات الشحن العالميين للعثور على الخيار الأكثر فعالية من حيث التكلفة لطرودك الدولية."
+      },
+      "feature3": {
+        "title": "إنشاء ملصقات آلي",
+        "description": "قم بإنشاء وطباعة ملصقات شحن متوافقة بنقرة واحدة. يقوم نظامنا تلقائيًا بإنشاء جميع الوثائق المطلوبة للتخليص الجمركي."
+      },
+      "feature4": {
+        "title": "إدارة المستلمين",
+        "description": "قم بتخزين وإدارة عدد غير محدود من المستلمين مع التحقق التفصيلي من العناوين واقتراحات ذكية لإدخال البيانات بشكل أسرع."
+      },
+      "feature5": {
+        "title": "إدارة كتالوج المنتجات",
+        "description": "قم بإنشاء وإدارة كتالوج المنتجات الخاص بك مع تفاصيل شاملة بما في ذلك رموز المنتج والأبعاد والأوزان ومعلومات الجمارك لشحن أسرع."
+      },
+      "feature6": {
+        "title": "دعم متعدد اللغات",
+        "description": "استخدم المنصة بلغتك المفضلة مع دعم اللغة الإنجليزية والروسية والتركية والأوكرانية والألمانية والفرنسية والعربية والإسبانية."
+      },
+      "highlight": {
+        "tag": "ميزة مميزة",
+        "title": "لوحة تحكم شاملة",
+        "description": "احصل على نظرة شاملة لجميع عمليات الشحن الخاصة بك مع لوحة التحكم البديهية. راقب حالة الشحن، وتتبع النفقات، وحدد فرص تحسين عمليات الخدمات اللوجستية الخاصة بك.",
+        "point1": "تحديثات حالة الشحن في الوقت الفعلي",
+        "point2": "تحليل مفصل للتكاليف وتقارير التوفير",
+        "point3": "تحليلات تفاعلية مع تقارير قابلة للتصدير",
+        "cta": "جرب لوحة التحكم"
+      }
+    },
+    "benefits": {
+      "title": "لماذا تختار MoogShip؟",
+      "subtitle": "تم تصميم منصتنا لحل تحديات الشحن الدولي المعقدة وإدارة الخدمات اللوجستية.",
+      "qualityTitle": "الجودة والموثوقية",
+      "qualitySubtitle": "شبكة ناقلين معتمدة مع مراقبة الأداء تضمن خدمة متسقة عالية الجودة لكل شحنة.",
+      "qualityPoints": [
+        "99.7% من عمليات التسليم في الوقت المحدد",
+        "تحديثات التتبع في الوقت الفعلي",
+        "حل استباقي للمشكلات"
+      ],
+      "costTitle": "فعالية التكلفة",
+      "costSubtitle": "وفر في كل شحنة بفضل خصومات الحجم وخوارزميات التوجيه الذكية.",
+      "costPoints": [
+        "توفير يصل إلى 30% على تكاليف الشحن",
+        "تسعير شفاف بدون رسوم خفية",
+        "خصومات حسب الحجم"
+      ],
+      "supportTitle": "دعم لا مثيل له",
+      "supportSubtitle": "يقدم خبراء الخدمات اللوجستية لدينا توجيهات مخصصة ودعم لجميع احتياجات الشحن الخاصة بك.",
+      "supportPoints": [
+        "خدمة عملاء على مدار الساعة",
+        "مديرو حسابات مخصصون",
+        "توجيه جمركي متخصص"
+      ],
+      "benefit1": {
+        "title": "وفر في كل طرد",
+        "description": "احصل على أفضل أسعار الشحن من خلال تقنية مقارنة الأسعار والشراكات مع شركات النقل الكبرى.",
+        "item1": "خصومات متفاوض عليها مسبقًا مع شركات النقل الكبرى",
+        "item2": "لا توجد رسوم اشتراك شهرية أو حد أدنى",
+        "item3": "تسعير شفاف بدون رسوم خفية"
+      },
+      "benefit2": {
+        "title": "شحن إلى أكثر من 220 دولة",
+        "description": "وسع أعمالك عالميًا مع شبكة الناقلين الواسعة وعملية الشحن الدولي المحسنة.",
+        "item1": "وثائق جمركية آلية",
+        "item2": "امتثال مدمج للوائح الدولية",
+        "item3": "خيارات الاستلام المحلي في البلدان الرئيسية"
+      },
+      "benefit3": {
+        "title": "بسط سير عملك",
+        "description": "وفر الوقت مع منصتنا البديهية، المصممة لجعل الشحن الدولي بنفس سهولة الشحن المحلي.",
+        "item1": "إنشاء وطباعة الملصقات بنقرة واحدة",
+        "item2": "إنشاء وتتبع الشحنات بشكل جماعي",
+        "item3": "تكامل سلس مع منصات التجارة الإلكترونية الرئيسية"
+      }
+    },
+    "testimonials": {
+      "title": "ما يقوله عملاؤنا",
+      "subtitle": "تثق الشركات حول العالم في MoogShip لاحتياجات الشحن العالمية.",
+      "testimonial1": {
+        "quote": "لقد غيّر MoogShip عملية الشحن لدينا بالكامل. لقد قللنا تكاليف الشحن الدولي بنسبة 40%، وقمنا بتسليم الطرود بشكل أسرع من أي وقت مضى. منصتهم بديهية وفريق الدعم دائمًا مستعد للمساعدة.",
+        "name": "سارة جونسون",
+        "position": "مالكة متجر إلكتروني، الولايات المتحدة"
+      },
+      "testimonial2": {
+        "quote": "ميزة توثيق الجمارك الآلية وحدها تستحق التسجيل. ما كان يستغرق ساعات من قبل يحدث الآن بنقرات قليلة. نقوم بشحن البضائع يوميًا إلى أكثر من 30 دولة، وقد أزال MoogShip جميع صداع العمل الورقي لدينا.",
+        "name": "ماركوس هندريكس",
+        "position": "بائع دولي، ألمانيا"
+      },
+      "testimonial3": {
+        "quote": "بالنسبة للأعمال الصغيرة، كل قرش مهم. وفر لنا MoogShip آلاف الدولارات في تكاليف الشحن في العام الماضي. أدوات طباعة الملصقات الجماعية وإدارة الطرود مثالية لاحتياجات الشحن عالية الحجم لدينا. أوصي بشدة!",
+        "name": "إيلينا رودريغيز",
+        "position": "صاحبة أعمال صغيرة، إسبانيا"
+      }
+    },
+    "ecommerce": {
+      "title": "محسن لبائعي التجارة الإلكترونية",
+      "subtitle": "تكامل سلس مع أسواقك المفضلة لتحسين عمليات الشحن وخفض التكاليف.",
+      "amazonTitle": "بائعي أمازون",
+      "amazonSubtitle": "قم بتحسين شحنات FBA والطلبات المباشرة للعملاء مع حلولنا المتخصصة لبائعي أمازون.",
+      "amazonPoints": [
+        "خدمات تحضير FBA",
+        "وضع العلامات المتوافقة مع أمازون"
+      ],
+      "etsyTitle": "بائعي Etsy",
+      "etsySubtitle": "قم بتوصيل السلع المصنوعة يدويًا في جميع أنحاء العالم مع خيارات شحن بأسعار معقولة مصممة لرواد أعمال Etsy.",
+      "etsyPoints": [
+        "تغليف متخصص للحرف اليدوية",
+        "تكامل سهل مع متجر Etsy"
+      ],
+      "walmartTitle": "بائعي Walmart",
+      "walmartSubtitle": "تلبية متطلبات التسليم لـ Walmart مع حلولنا المتخصصة لبائعي السوق.",
+      "walmartPoints": [
+        "دعم خدمة التنفيذ لـ Walmart",
+        "أوقات تسليم تنافسية"
+      ],
+      "wayfairTitle": "بائعي Wayfair",
+      "wayfairSubtitle": "شحن الأثاث والسلع المنزلية بكفاءة مع حلول الشحن المتخصصة للمواد الكبيرة.",
+      "wayfairPoints": [
+        "خبرة في المواد الكبيرة",
+        "خيارات تسليم القفازات البيضاء"
+      ]
+    },
+    "screenshots": {
+      "title": "منصة شحن قوية",
+      "subtitle": "توفر لوحة التحكم سهلة الاستخدام كل ما تحتاجه لإدارة شحناتك العالمية بكفاءة.",
+      "dashboardTitle": "لوحة تحكم بديهية",
+      "dashboardSubtitle": "احصل على نظرة شاملة لجميع شحناتك وأرصدتك ومعلومات حسابك في مكان واحد.",
+      "shipmentTitle": "إدارة الشحنات",
+      "shipmentSubtitle": "إنشاء وتتبع وإدارة جميع شحناتك مع أدوات الشحن الشاملة لدينا.",
+      "pricingTitle": "تسعير في الوقت الفعلي",
+      "pricingSubtitle": "احصل على عروض أسعار فورية استنادًا إلى الأبعاد والوزن والوجهة لاتخاذ قرارات مستنيرة."
+    },
+    "cta": {
+      "title": "هل أنت مستعد لخفض تكاليف الشحن؟",
+      "subtitle": "انضم إلى بائعي Amazon وEtsy وWalmart وWayfair الذين يوفرون على كل شحنة مع أسعار MoogShip الحصرية.",
+      "getStarted": "ابدأ الآن",
+      "getQuote": "احصل على عرض سعر"
+    },
+    "footer": {
+      "description": "منصة الخدمات اللوجستية للشحن العالمي للشركات من جميع الأحجام.",
+      "company": "الشركة",
+      "companyLinks": ["عن الشركة", "وظائف", "صحافة", "أخبار", "اتصل بنا"],
+      "services": "الخدمات",
+      "serviceLinks": ["الشحن العالمي", "التخليص الجمركي", "الشحن البحري", "التخزين", "سلسلة التوريد"],
+      "legal": "قانوني",
+      "legalLinks": ["شروط الخدمة", "سياسة الخصوصية", "سياسة ملفات تعريف الارتباط", "GDPR", "لوائح الشحن"],
+      "contactOffices": "الاتصال والمكاتب",
+      "allRightsReserved": "جميع الحقوق محفوظة.",
+      "terms": "الشروط",
+      "privacy": "الخصوصية",
+      "cookies": "ملفات تعريف الارتباط"
+    }
+  },
+  "cms": {
+    "title": "نظام إدارة المحتوى",
+    "description": "إدارة المحتوى متعدد اللغات لموقعك",
+    "success": "نجاح",
+    "error": "خطأ",
+    "pageCreated": "تم إنشاء الصفحة بنجاح",
+    "pageUpdated": "تم تحديث الصفحة بنجاح",
+    "pageDeleted": "تم حذف الصفحة بنجاح",
+    "translationSaved": "تم حفظ الترجمة بنجاح",
+    "failedToSaveTranslation": "فشل في حفظ الترجمة",
+    "failedToFetchPages": "فشل في جلب الصفحات",
+    "failedToFetchTranslations": "فشل في جلب الترجمات"
+  }
+}

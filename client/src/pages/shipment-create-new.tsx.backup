@@ -1,0 +1,1430 @@
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import Layout from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { 
+  ArrowLeftIcon, Package, Calculator, TruckIcon, 
+  Loader2, ChevronDown, ChevronUp, Check, MapPin, Box, Truck, User, AlertTriangle
+} from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { ServiceLevel, ShipmentStatus } from "@shared/schema";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+// Removed dialog imports as we're using toast notifications for credit limit warnings
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { COUNTRIES } from "@/lib/countries";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+// We use direct fetch instead of apiRequest for better error handling control
+
+// Form schemas
+const receiverFormSchema = z.object({
+  receiverName: z.string().min(1, "Receiver name is required"),
+  receiverEmail: z.string().email().optional().or(z.literal('')),
+  receiverPhone: z.string().min(1, "Receiver phone is required"),
+  receiverAddress: z.string().min(1, "Receiver address is required"),
+  receiverCity: z.string().min(1, "Receiver city is required"),
+  receiverPostalCode: z.string().min(1, "Receiver postal code is required"),
+  packageContents: z.string().min(1, "Package contents are required").max(100, "Maximum 100 characters"),
+  
+  // Sender details
+  senderName: z.string().min(1, "Sender name is required"),
+  senderAddress: z.string().min(1, "Sender address is required"),
+  senderCity: z.string().min(1, "Sender city is required"),
+  senderPostalCode: z.string().min(1, "Sender postal code is required"),
+  senderPhone: z.string().optional(),
+  senderEmail: z.string().email().optional().or(z.literal('')),
+});
+
+const packageFormSchema = z.object({
+  receiverCountry: z.string().min(1, "Destination country is required"),
+  packageLength: z.coerce.number().min(1, "Length must be at least 1 cm"),
+  packageWidth: z.coerce.number().min(1, "Width must be at least 1 cm"),
+  packageHeight: z.coerce.number().min(1, "Height must be at least 1 cm"),
+  packageWeight: z.coerce.number().min(0.1, "Weight must be at least 0.1 kg"),
+  pieceCount: z.coerce.number().min(1, "Must have at least 1 piece"),
+  serviceLevel: z.string().min(1, "Service level is required"),
+});
+
+export default function ShipmentCreate() {
+  const [, navigate] = useLocation();
+  const [expandedSections, setExpandedSections] = useState(["recipient"]);
+  const [selectedSender, setSelectedSender] = useState("MyAddress");
+  const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
+  const [customAddress, setCustomAddress] = useState({
+    name: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    phone: "",
+    email: ""
+  });
+  const [billableWeight, setBillableWeight] = useState<number | null>(null);
+  const [priceDetails, setPriceDetails] = useState<any>(null);
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  const [acceptedPrice, setAcceptedPrice] = useState(false);
+  const { toast } = useToast();
+  
+  // Initialize forms with default values
+  const receiverForm = useForm<z.infer<typeof receiverFormSchema>>({
+    resolver: zodResolver(receiverFormSchema),
+    defaultValues: {
+      receiverName: "",
+      receiverEmail: "",
+      receiverPhone: "",
+      receiverAddress: "",
+      receiverCity: "",
+      receiverPostalCode: "",
+      packageContents: "",
+      senderName: "",
+      senderAddress: "",
+      senderCity: "",
+      senderPostalCode: "",
+      senderPhone: "",
+      senderEmail: "",
+    },
+  });
+  
+  const packageForm = useForm<z.infer<typeof packageFormSchema>>({
+    resolver: zodResolver(packageFormSchema),
+    defaultValues: {
+      receiverCountry: "",
+      packageLength: 0,
+      packageWidth: 0,
+      packageHeight: 0,
+      packageWeight: 0,
+      pieceCount: 1,
+      serviceLevel: ServiceLevel.STANDARD,
+    },
+  });
+
+  // Load user data for sender information and initialize from localStorage
+  useEffect(() => {
+    // Load user data for sender information
+    const getUserData = async () => {
+      try {
+        const response = await fetch("/api/user", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include"
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData) {
+            // Create a new sender option for user's address
+            setSelectedSender("MyAddress");
+            
+            // If user has address information, use it for sender details
+            if (userData.companyName) {
+              receiverForm.setValue("senderName", userData.companyName);
+            }
+            if (userData.address) {
+              receiverForm.setValue("senderAddress", userData.address);
+            }
+            if (userData.city) {
+              receiverForm.setValue("senderCity", userData.city);
+            }
+            if (userData.postalCode) {
+              receiverForm.setValue("senderPostalCode", userData.postalCode);
+            }
+            if (userData.phone) {
+              receiverForm.setValue("senderPhone", userData.phone);
+            }
+            if (userData.email) {
+              receiverForm.setValue("senderEmail", userData.email);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    };
+
+    getUserData();
+    
+    // Initialize from localStorage if available
+    const storedValues = localStorage.getItem('packageDetails');
+    if (storedValues) {
+      try {
+        const parsedValues = JSON.parse(storedValues);
+        
+        // Update form values if they exist
+        if (parsedValues.length) packageForm.setValue('packageLength', parseFloat(parsedValues.length));
+        if (parsedValues.width) packageForm.setValue('packageWidth', parseFloat(parsedValues.width));
+        if (parsedValues.height) packageForm.setValue('packageHeight', parseFloat(parsedValues.height));
+        if (parsedValues.weight) packageForm.setValue('packageWeight', parseFloat(parsedValues.weight));
+        if (parsedValues.country) packageForm.setValue('receiverCountry', parsedValues.country);
+        if (parsedValues.service) packageForm.setValue('serviceLevel', parsedValues.service);
+        if (parsedValues.contents) receiverForm.setValue('packageContents', parsedValues.contents);
+        
+        // Clear localStorage after using the values
+        localStorage.removeItem('packageDetails');
+        
+        // Set up the billable weight
+        if (parsedValues.length && parsedValues.width && parsedValues.height && parsedValues.weight) {
+          const volumetricWeight = calculateVolumetricWeight(
+            parseFloat(parsedValues.length), 
+            parseFloat(parsedValues.width), 
+            parseFloat(parsedValues.height)
+          );
+          
+          setBillableWeight(Math.max(volumetricWeight, parseFloat(parsedValues.weight)));
+          
+          // If we have enough info, trigger price calculation automatically
+          if (parsedValues.country) {
+            setTimeout(() => {
+              calculatePrice();
+              // Auto-expand the package details section
+              setExpandedSections(prev => 
+                prev.includes("package") ? prev : [...prev, "package"]
+              );
+            }, 500);
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing stored values:", error);
+      }
+    }
+  }, []);
+  
+  // Helper to check if a section is complete
+  const isSectionComplete = (section: string): boolean => {
+    if (section === "recipient") {
+      const values = receiverForm.getValues();
+      return Boolean(
+        values.receiverName && 
+        values.receiverPhone && 
+        values.receiverAddress && 
+        values.receiverCity && 
+        values.receiverPostalCode &&
+        values.packageContents &&
+        packageForm.getValues().receiverCountry
+      );
+    } else if (section === "package") {
+      const values = packageForm.getValues();
+      return Boolean(
+        values.packageLength > 0 && 
+        values.packageWidth > 0 && 
+        values.packageHeight > 0 && 
+        values.packageWeight > 0 &&
+        values.serviceLevel
+      );
+    } else if (section === "price") {
+      return Boolean(priceDetails && acceptedPrice);
+    }
+    return false;
+  };
+  
+  // Toggle section expansion
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section) 
+        : [...prev, section]
+    );
+  };
+  
+  function calculateVolumetricWeight(length: number, width: number, height: number): number {
+    // Volumetric weight formula: Length × Width × Height (cm) ÷ 5000 = Volumetric Weight (kg)
+    return (length * width * height) / 5000;
+  }
+  
+  // Update form with pre-selected sender
+  const updateSenderDetails = (value: string) => {
+    setSelectedSender(value);
+    
+    if (value === "MyAddress") {
+      // Load user data for sender information again
+      const getUserData = async () => {
+        try {
+          const response = await fetch("/api/user", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include"
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            if (userData) {
+              // If user has address information, use it for sender details
+              if (userData.companyName) {
+                receiverForm.setValue("senderName", userData.companyName);
+              }
+              if (userData.address) {
+                receiverForm.setValue("senderAddress", userData.address);
+              }
+              if (userData.city) {
+                receiverForm.setValue("senderCity", userData.city);
+              }
+              if (userData.postalCode) {
+                receiverForm.setValue("senderPostalCode", userData.postalCode);
+              }
+              if (userData.phone) {
+                receiverForm.setValue("senderPhone", userData.phone);
+              }
+              if (userData.email) {
+                receiverForm.setValue("senderEmail", userData.email);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error loading user data:", error);
+        }
+      };
+      
+      getUserData();
+    } else if (value === "NewAddress" && customAddress) {
+      // Restore saved custom address if we have one
+      receiverForm.setValue("senderName", customAddress.name);
+      receiverForm.setValue("senderAddress", customAddress.address);
+      receiverForm.setValue("senderCity", customAddress.city);
+      receiverForm.setValue("senderPostalCode", customAddress.postalCode);
+      receiverForm.setValue("senderPhone", customAddress.phone || "");
+      receiverForm.setValue("senderEmail", customAddress.email || "");
+    }
+  };
+  
+  // Calculate price from the API
+  const calculatePrice = async () => {
+    const packageFormData = packageForm.getValues();
+    const receiverFormData = receiverForm.getValues();
+    
+    // Validate required fields
+    if (!packageFormData.receiverCountry || 
+        !packageFormData.packageLength || 
+        !packageFormData.packageWidth || 
+        !packageFormData.packageHeight || 
+        !packageFormData.packageWeight) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all package dimensions and destination country.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Calculate volumetric weight
+    const volumetricWeight = calculateVolumetricWeight(
+      packageFormData.packageLength,
+      packageFormData.packageWidth,
+      packageFormData.packageHeight
+    );
+    
+    // Set billable weight (greater of actual or volumetric)
+    const billable = Math.max(volumetricWeight, packageFormData.packageWeight);
+    setBillableWeight(billable);
+    
+    setIsCalculatingPrice(true);
+    
+    try {
+      const response = await fetch("/api/calculate-price", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          packageLength: packageFormData.packageLength,
+          packageWidth: packageFormData.packageWidth,
+          packageHeight: packageFormData.packageHeight,
+          packageWeight: packageFormData.packageWeight,
+          serviceLevel: packageFormData.serviceLevel,
+          receiverCountry: packageFormData.receiverCountry,
+          senderPostalCode: receiverFormData.senderPostalCode,
+          senderCity: receiverFormData.senderCity,
+          receiverPostalCode: receiverFormData.receiverPostalCode,
+          receiverCity: receiverFormData.receiverCity,
+        }),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to calculate price");
+      }
+      
+      const data = await response.json();
+      setPriceDetails(data);
+      
+      // Check credit limit
+      if (data.totalPrice) {
+        try {
+          // Create a temporary shipment to check credit limit 
+          // Use the same checkCreditLimit function for consistency
+          const exceeds = await checkCreditLimit(data.totalPrice);
+          
+          // If credit limit would be exceeded, show a simple warning toast
+          if (exceeds) {
+            // Show a simple toast notification with basic credit limit warning
+            toast({
+              title: "Credit Limit Warning",
+              description: (
+                <div className="bg-amber-50 p-3 rounded-md border border-amber-200">
+                  <p className="font-semibold text-amber-600 mb-2">Warning: Credit Limit</p>
+                  <p className="text-sm text-gray-700">This shipment would exceed your credit limit.</p>
+                  <p className="text-sm text-gray-700 mt-1">You can still continue, but it's recommended to add funds to your account.</p>
+                </div>
+              ),
+              variant: "default",
+              duration: 8000
+            });
+          }
+          
+          // Continue with the rest of the pricing logic
+        } catch (error) {
+          console.error("Failed to check credit limit:", error);
+          // Don't block the price calculation if credit check fails
+        }
+      }
+      
+      // Expand the price section automatically and scroll to it
+      setExpandedSections(prev => 
+        prev.includes("price") ? prev : [...prev, "price"]
+      );
+      
+      // Scroll to the price section after a short delay to ensure it's visible
+      setTimeout(() => {
+        const priceSection = document.getElementById("price-section");
+        if (priceSection) {
+          priceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    } catch (error) {
+      toast({
+        title: "Price calculation failed",
+        description: "There was a problem calculating the shipping price. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCalculatingPrice(false);
+    }
+  };
+  
+  // Check if creating this shipment would exceed the user's credit limit
+  // Much simpler approach - we don't need state variables as we'll use the server response directly
+  const checkCreditLimit = async (totalPrice: number) => {
+    try {
+      // First create a temporary shipment for credit limit checking
+      const tempRes = await fetch("/api/shipments/temporary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ totalPrice }),
+        credentials: "include"
+      });
+      
+      if (!tempRes.ok) {
+        console.error("Failed to create temporary shipment for credit check");
+        return false;
+      }
+      
+      const tempShipment = await tempRes.json();
+      
+      // Now check if this would exceed the credit limit
+      const res = await fetch(`/api/shipments/check-credit-limit/${tempShipment.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      });
+      
+      if (!res.ok) {
+        console.error("Credit limit check failed");
+        return false;
+      }
+      
+      const creditCheck = await res.json();
+      
+      // Simply return if the limit would be exceeded, no need to store in state
+      return creditCheck.exceeds;
+    } catch (error) {
+      console.error("Error checking credit limit:", error);
+      return false;
+    }
+  };
+  
+  // Shipment creation mutation
+  const createShipmentMutation = useMutation({
+    mutationFn: async (shipmentData: any) => {
+      if (!priceDetails) {
+        throw new Error("Price details not available");
+      }
+      
+      // Validate all sections
+      if (!isSectionComplete("recipient") || !isSectionComplete("package") || !isSectionComplete("price")) {
+        throw new Error("Please complete all sections before creating shipment");
+      }
+      
+      // Check credit limit first
+      const exceeds = await checkCreditLimit(priceDetails.totalPrice);
+      
+      if (exceeds) {
+        // If the credit limit would be exceeded, show a simple notification
+        toast({
+          title: "Credit Limit Exceeded",
+          description: (
+            <div className="bg-red-50 p-3 rounded-md border border-red-200">
+              <p className="font-semibold text-red-600 mb-2">You cannot create this shipment</p>
+              <p className="text-sm text-gray-700 mb-1">Your account balance would fall below the allowed credit limit.</p>
+              <p className="text-sm text-gray-700">Please add funds to your account before creating this shipment, or contact support for assistance.</p>
+            </div>
+          ),
+          variant: "destructive",
+          duration: 10000 // Keep it visible for 10 seconds
+        });
+        
+        // Throw a special error that will be caught in the onError handler
+        throw new Error("CREDIT_LIMIT_EXCEEDED_NOTIFICATION_SHOWN");
+      }
+      
+      const enhancedShipmentData = {
+        ...shipmentData,
+        status: ShipmentStatus.PENDING,
+        price: priceDetails.totalPrice, // Use the calculated price
+        totalPrice: priceDetails.totalPrice, // Add totalPrice field to match what the table expects
+        basePrice: priceDetails.basePrice,
+        fuelCharge: priceDetails.fuelCharge,
+        currency: priceDetails.currency || "USD",
+        carrierName: priceDetails.carrierName || "Shipentegra",
+        estimatedDeliveryDays: priceDetails.estimatedDeliveryDays || 7,
+      };
+      
+      // Use fetch directly instead of apiRequest for more control over response handling
+      const response = await fetch("/api/shipments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(enhancedShipmentData),
+        credentials: "include"
+      });
+      
+      // Always parse the response
+      const responseData = await response.json();
+      console.log("Shipment creation response:", response.status, responseData);
+      
+      // If response has credit details, handle it with a clear notification
+      if (!response.ok && responseData.creditDetails) {
+        console.log("Credit limit exceeded details found in API response:", responseData.creditDetails);
+        
+        // Format the numbers for better readability
+        const formattedUserBalance = `$${(responseData.creditDetails.userBalance / 100).toFixed(2)}`;
+        const formattedShipmentPrice = `$${(responseData.creditDetails.shipmentPrice / 100).toFixed(2)}`;
+        const formattedNewBalance = `$${(responseData.creditDetails.newBalance / 100).toFixed(2)}`;
+        const formattedMinBalance = responseData.creditDetails.minBalance !== null ? 
+          `$${(responseData.creditDetails.minBalance / 100).toFixed(2)}` : 'Not set';
+        
+        // Show a clear, well-formatted toast notification
+        toast({
+          title: "Insufficient Credit Balance",
+          description: 
+            <div className="space-y-2">
+              <p className="font-medium text-red-600">Your shipment cannot be created because it would exceed your credit limit.</p>
+              <div className="grid grid-cols-2 gap-1 text-sm">
+                <p>Current balance:</p>
+                <p className="font-semibold">{formattedUserBalance}</p>
+                <p>Shipment cost:</p>
+                <p className="font-semibold">{formattedShipmentPrice}</p>
+                <p>New balance would be:</p>
+                <p className="font-semibold">{formattedNewBalance}</p>
+                <p>Minimum balance limit:</p>
+                <p className="font-semibold">{formattedMinBalance}</p>
+              </div>
+              <p className="text-sm mt-2">Please add funds to your account or contact support for assistance.</p>
+            </div>,
+          variant: "destructive",
+          duration: 15000 // Show for 15 seconds to ensure user sees it
+        });
+        
+        // Throw a special error to prevent further processing
+        throw new Error("CREDIT_LIMIT_EXCEEDED_NOTIFICATION_SHOWN");
+      }
+      
+      // For other errors, create a detailed error object
+      if (!response.ok) {
+        const error: any = new Error(responseData.message || "Failed to create shipment");
+        error.status = response.status;
+        error.statusText = response.statusText;
+        error.errorData = responseData;
+        throw error;
+      }
+      
+      return responseData;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Shipment created",
+        description: "Your shipment has been successfully created and is pending approval.",
+      });
+      
+      // Invalidate query cache to refresh shipments
+      queryClient.invalidateQueries({ queryKey: ['/api/shipments/my'] });
+      
+      // Navigate back to dashboard
+      navigate("/");
+    },
+    onError: async (error: any) => {
+      console.log("Error creating shipment:", error);
+      
+      // Check if it's a credit limit error by looking for the relevant text in the message
+      // This is the simplest, most reliable approach
+      let errorMessage = "";
+      
+      if (error?.errorData?.message?.includes("credit limit") || 
+          error?.message?.includes("credit limit")) {
+        
+        // This is a credit limit error - show a simple, clear message
+        toast({
+          title: "Credit Limit Exceeded",
+          description: (
+            <div className="bg-red-50 p-3 rounded-md border border-red-200">
+              <p className="font-semibold text-red-600 mb-2">You cannot create this shipment</p>
+              <p className="text-sm text-gray-700 mb-1">Your account balance would fall below the allowed credit limit.</p>
+              <p className="text-sm text-gray-700">Please add funds to your account before creating this shipment, or contact support for assistance.</p>
+            </div>
+          ),
+          variant: "destructive",
+          duration: 10000 // Keep it visible for 10 seconds
+        });
+        return;
+      }
+      
+      // For all other errors, extract the error message text in the simplest way possible
+      if (error?.errorData?.message) {
+        errorMessage = error.errorData.message;
+      } else if (error?.message) {
+        // Clean up the error message if it contains JSON
+        const jsonStart = error.message.indexOf('{');
+        if (jsonStart >= 0) {
+          errorMessage = error.message.substring(0, jsonStart).trim();
+        } else {
+          errorMessage = error.message;
+        }
+      } else {
+        errorMessage = "An unexpected error occurred while creating the shipment.";
+      }
+      
+      // Show the error message
+      toast({
+        title: "Failed to create shipment",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  });
+
+  return (
+    <Layout hideMobileActions={true}>
+      <div className="container py-6">
+        {/* Desktop header */}
+        <div className="hidden md:flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Create New Shipment</h1>
+            <p className="text-muted-foreground mt-1">
+              Fill in the shipment details to create a new order.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="flex items-center"
+            onClick={() => navigate("/")}
+          >
+            <ArrowLeftIcon className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+        
+        {/* Mobile header */}
+        <div className="md:hidden mb-6">
+          <div className="flex items-center mb-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="mr-2 -ml-3 h-9 w-9"
+              onClick={() => navigate("/")}
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span className="sr-only">Back</span>
+            </Button>
+            <h1 className="text-xl font-bold">Create New Shipment</h1>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            Fill in the shipment details to create a new order.
+          </p>
+        </div>
+        
+        {/* Progress indicator */}
+        <div className="mb-8">
+          <div className="relative">
+            <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+              <div 
+                className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500 ease-in-out`}
+                style={{ 
+                  width: `${(
+                    (isSectionComplete("recipient") ? 33 : 0) + 
+                    (isSectionComplete("package") ? 33 : 0) + 
+                    (isSectionComplete("price") ? 34 : 0)
+                  )}%` 
+                }}
+              ></div>
+            </div>
+            
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <div className={`flex items-center gap-1 ${isSectionComplete("recipient") ? "text-primary font-semibold" : ""}`}>
+                {isSectionComplete("recipient") && <Check className="h-3 w-3" />}
+                Recipient
+              </div>
+              <div className={`flex items-center gap-1 ${isSectionComplete("package") ? "text-primary font-semibold" : ""}`}>
+                {isSectionComplete("package") && <Check className="h-3 w-3" />}
+                Package
+              </div>
+              <div className={`flex items-center gap-1 ${isSectionComplete("price") ? "text-primary font-semibold" : ""}`}>
+                {isSectionComplete("price") && <Check className="h-3 w-3" />}
+                Price
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Expandable sections */}
+        <div className="space-y-4">
+          {/* 1. Recipient Information Section */}
+          <Card className={`${expandedSections.includes("recipient") ? "border-primary" : ""}`}>
+            <CardHeader 
+              className={`cursor-pointer ${isSectionComplete("recipient") ? "bg-green-50" : ""}`}
+              onClick={() => toggleSection("recipient")}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Recipient Information</CardTitle>
+                  {isSectionComplete("recipient") && (
+                    <div className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      <Check className="h-3 w-3 mr-1" />
+                      Complete
+                    </div>
+                  )}
+                </div>
+                {expandedSections.includes("recipient") 
+                  ? <ChevronUp className="h-5 w-5" /> 
+                  : <ChevronDown className="h-5 w-5" />
+                }
+              </div>
+            </CardHeader>
+            
+            {expandedSections.includes("recipient") && (
+              <>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      {/* Destination Country */}
+                      <div className="col-span-2">
+                        <Form {...packageForm}>
+                          <FormField
+                            control={packageForm.control}
+                            name="receiverCountry"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Destination Country</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a country" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {COUNTRIES.map((country) => (
+                                      <SelectItem key={country.code} value={country.code}>
+                                        {country.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </Form>
+                      </div>
+                      
+                      {/* Receiver Information */}
+                      <Form {...receiverForm}>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 col-span-2">
+                          <FormField
+                            control={receiverForm.control}
+                            name="receiverName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Full Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Receiver's full name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={receiverForm.control}
+                            name="receiverEmail"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <Input type="email" placeholder="Email address" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={receiverForm.control}
+                            name="receiverPhone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Phone Number</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Phone number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="col-span-2">
+                            <FormField
+                              control={receiverForm.control}
+                              name="receiverAddress"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Address</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Street address" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <FormField
+                            control={receiverForm.control}
+                            name="receiverCity"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>City</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="City" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={receiverForm.control}
+                            name="receiverPostalCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Postal Code</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Postal/Zip code" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="col-span-2">
+                            <FormField
+                              control={receiverForm.control}
+                              name="packageContents"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Package Contents</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="Describe the contents of your package"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                  <FormDescription>
+                                    Please provide a detailed description of the items you're shipping.
+                                  </FormDescription>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </Form>
+                  
+                      {/* Sender Information Section */}
+                      <div className="mt-8 col-span-2">
+                        <h3 className="text-lg font-medium mb-4">Sender Information</h3>
+                        <div className="space-y-4">
+                          <RadioGroup 
+                            value={selectedSender} 
+                            onValueChange={(value) => {
+                              if (value === "NewAddress") {
+                                setIsAddingNewAddress(true);
+                                // Store current address
+                                setCustomAddress({
+                                  name: receiverForm.getValues().senderName,
+                                  address: receiverForm.getValues().senderAddress,
+                                  city: receiverForm.getValues().senderCity,
+                                  postalCode: receiverForm.getValues().senderPostalCode,
+                                  phone: receiverForm.getValues().senderPhone || "",
+                                  email: receiverForm.getValues().senderEmail || ""
+                                });
+                              } else {
+                                setIsAddingNewAddress(false);
+                                updateSenderDetails(value);
+                              }
+                            }}
+                            className="flex flex-wrap gap-3"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="MyAddress" id="my-address" />
+                              <Label htmlFor="my-address">My Address</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="NewAddress" id="new-address" />
+                              <Label htmlFor="new-address">Use Different Address</Label>
+                            </div>
+                          </RadioGroup>
+                          
+                          <Form {...receiverForm}>
+                            {isAddingNewAddress ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md">
+                                <div className="space-y-4 col-span-full">
+                                  <FormField
+                                    control={receiverForm.control}
+                                    name="senderName"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <FormControl>
+                                          <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={receiverForm.control}
+                                    name="senderAddress"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Address</FormLabel>
+                                        <FormControl>
+                                          <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderCity"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>City</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderPostalCode"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Postal Code</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderPhone"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Phone</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderEmail"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Email</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-gray-50 p-3 rounded-md">
+                                  <p className="text-sm"><span className="font-semibold">Name:</span> {receiverForm.getValues().senderName}</p>
+                                  <p className="text-sm"><span className="font-semibold">Address:</span> {receiverForm.getValues().senderAddress}</p>
+                                  <p className="text-sm"><span className="font-semibold">City:</span> {receiverForm.getValues().senderCity}</p>
+                                  <p className="text-sm"><span className="font-semibold">Postal Code:</span> {receiverForm.getValues().senderPostalCode}</p>
+                                  {receiverForm.getValues().senderPhone && <p className="text-sm"><span className="font-semibold">Phone:</span> {receiverForm.getValues().senderPhone}</p>}
+                                  {receiverForm.getValues().senderEmail && <p className="text-sm"><span className="font-semibold">Email:</span> {receiverForm.getValues().senderEmail}</p>}
+                                </div>
+                              </div>
+                            )}
+                          </Form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                  <div></div> {/* Empty div for spacing */}
+                  <Button
+                    onClick={() => {
+                      // Validate recipient section
+                      receiverForm.trigger().then(recipientValid => {
+                        packageForm.trigger("receiverCountry").then(countryValid => {
+                          if (recipientValid && countryValid) {
+                            setExpandedSections(prev => 
+                              prev.includes("package") ? prev : [...prev, "package"]
+                            );
+                            // Auto-collapse this section
+                            setExpandedSections(prev => prev.filter(s => s !== "recipient"));
+                          }
+                        });
+                      });
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    Continue to Package Details
+                  </Button>
+                </CardFooter>
+              </>
+            )}
+          </Card>
+          
+          {/* 2. Package Details Section */}
+          <Card className={`${expandedSections.includes("package") ? "border-primary" : ""}`}>
+            <CardHeader 
+              className={`cursor-pointer ${isSectionComplete("package") ? "bg-green-50" : ""}`}
+              onClick={() => toggleSection("package")}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Box className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Package Details</CardTitle>
+                  {isSectionComplete("package") && (
+                    <div className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      <Check className="h-3 w-3 mr-1" />
+                      Complete
+                    </div>
+                  )}
+                </div>
+                {expandedSections.includes("package") 
+                  ? <ChevronUp className="h-5 w-5" /> 
+                  : <ChevronDown className="h-5 w-5" />
+                }
+              </div>
+            </CardHeader>
+            
+            {expandedSections.includes("package") && (
+              <>
+                <CardContent>
+                  <Form {...packageForm}>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Package dimensions */}
+                        <FormField
+                          control={packageForm.control}
+                          name="packageLength"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Length (cm)</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="0" step="0.1" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={packageForm.control}
+                          name="packageWidth"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Width (cm)</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="0" step="0.1" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={packageForm.control}
+                          name="packageHeight"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Height (cm)</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="0" step="0.1" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={packageForm.control}
+                          name="packageWeight"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Weight (kg)</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="0" step="0.01" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={packageForm.control}
+                          name="pieceCount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Number of Items</FormLabel>
+                              <FormControl>
+                                <Input type="number" min="1" step="1" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={packageForm.control}
+                          name="serviceLevel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Service Level</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select service level" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value={ServiceLevel.STANDARD}>Standard (7-10 days)</SelectItem>
+                                  <SelectItem value={ServiceLevel.EXPRESS}>Express (3-5 days)</SelectItem>
+                                  <SelectItem value={ServiceLevel.PRIORITY}>Priority (1-2 days)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      {/* Display volumetric weight if available */}
+                      {billableWeight !== null && (
+                        <div className="bg-blue-50 p-4 rounded-md mt-4">
+                          <h3 className="font-medium text-blue-700 mb-2">Weight Information</h3>
+                          <p className="text-sm text-blue-600">
+                            <span className="font-medium">Actual Weight:</span> {packageForm.getValues().packageWeight} kg
+                          </p>
+                          <p className="text-sm text-blue-600">
+                            <span className="font-medium">Volumetric Weight:</span> {calculateVolumetricWeight(
+                              packageForm.getValues().packageLength,
+                              packageForm.getValues().packageWidth,
+                              packageForm.getValues().packageHeight
+                            ).toFixed(2)} kg
+                          </p>
+                          <p className="text-sm text-blue-800 font-medium mt-1">
+                            Billable Weight: {billableWeight.toFixed(2)} kg
+                          </p>
+                          <p className="text-xs text-blue-600 mt-2">
+                            The higher of actual weight and volumetric weight is used for billing.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </Form>
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setExpandedSections(prev => 
+                        prev.includes("recipient") ? prev : [...prev, "recipient"]
+                      );
+                      // Auto-collapse this section
+                      setExpandedSections(prev => prev.filter(s => s !== "package"));
+                    }}
+                  >
+                    Back to Recipient Information
+                  </Button>
+                  <Button
+                    onClick={calculatePrice}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={isCalculatingPrice}
+                  >
+                    {isCalculatingPrice ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Calculating...
+                      </>
+                    ) : (
+                      <>
+                        <Calculator className="mr-2 h-4 w-4" />
+                        Calculate Price
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </>
+            )}
+          </Card>
+          
+          {/* 3. Price Details Section */}
+          <Card id="price-section" className={`${expandedSections.includes("price") ? "border-primary" : ""}`}>
+            <CardHeader 
+              className={`cursor-pointer ${isSectionComplete("price") ? "bg-green-50" : ""}`}
+              onClick={() => toggleSection("price")}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <TruckIcon className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Price Details</CardTitle>
+                  {isSectionComplete("price") && (
+                    <div className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      <Check className="h-3 w-3 mr-1" />
+                      Complete
+                    </div>
+                  )}
+                </div>
+                {expandedSections.includes("price") 
+                  ? <ChevronUp className="h-5 w-5" /> 
+                  : <ChevronDown className="h-5 w-5" />
+                }
+              </div>
+            </CardHeader>
+            
+            {expandedSections.includes("price") && (
+              <>
+                <CardContent>
+                  {priceDetails ? (
+                    <div className="space-y-6">
+                      {/* Credit Limit Warning Indicator - appears automatically as a toast now */}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="bg-green-50 p-4 rounded-md">
+                          <h3 className="font-medium text-green-700 mb-4">Shipping Details</h3>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-600">Service Level:</span>
+                              <span className="font-medium text-green-700">{priceDetails.serviceLevel || packageForm.getValues().serviceLevel}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-600">Carrier:</span>
+                              <span className="font-medium text-green-700">{priceDetails.carrierName || "Shipentegra"}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-600">Destination:</span>
+                              <span className="font-medium text-green-700">
+                                {COUNTRIES.find(c => c.code === packageForm.getValues().receiverCountry)?.name || packageForm.getValues().receiverCountry}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-600">Est. Delivery:</span>
+                              <span className="font-medium text-green-700">{priceDetails.estimatedDeliveryDays || "7-10"} days</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-600">Weight:</span>
+                              <span className="font-medium text-green-700">{billableWeight?.toFixed(2)} kg</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-4 rounded-md">
+                          <h3 className="font-medium text-gray-700 mb-4">Price Breakdown</h3>
+                          <div className="space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Base Price:</span>
+                              <span className="font-medium">${(priceDetails.basePrice / 100).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Fuel Surcharge:</span>
+                              <span className="font-medium">${(priceDetails.fuelCharge / 100).toFixed(2)}</span>
+                            </div>
+                            {priceDetails.insurance > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Insurance:</span>
+                                <span className="font-medium">${(priceDetails.insurance / 100).toFixed(2)}</span>
+                              </div>
+                            )}
+                            {priceDetails.additionalFees > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Additional Fees:</span>
+                                <span className="font-medium">${(priceDetails.additionalFees / 100).toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="border-t border-gray-200 pt-2 mt-2">
+                              <div className="flex justify-between font-medium">
+                                <span className="text-gray-800">Total Price:</span>
+                                <span className="text-primary text-lg">${(priceDetails.totalPrice / 100).toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 mt-4">
+                        <input
+                          type="checkbox"
+                          id="acceptPrice"
+                          checked={acceptedPrice}
+                          onChange={(e) => setAcceptedPrice(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <label htmlFor="acceptPrice" className="text-sm text-gray-700">
+                          I accept the shipping price and understand that it will be deducted from my account balance when the shipment is approved.
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 text-center">
+                      <Package className="h-12 w-12 text-gray-300 mb-4" />
+                      <h3 className="text-xl font-medium text-gray-700 mb-2">No Price Information</h3>
+                      <p className="text-gray-500 mb-4">
+                        Please fill in the package details and calculate the price first.
+                      </p>
+                      <Button 
+                        onClick={() => {
+                          setExpandedSections(prev => 
+                            prev.includes("package") ? prev : [...prev, "package"]
+                          );
+                        }}
+                        variant="outline"
+                        className="flex items-center"
+                      >
+                        <Box className="mr-2 h-4 w-4" />
+                        Go to Package Details
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setExpandedSections(prev => 
+                        prev.includes("package") ? prev : [...prev, "package"]
+                      );
+                      // Auto-collapse this section
+                      setExpandedSections(prev => prev.filter(s => s !== "price"));
+                    }}
+                  >
+                    Back to Package Details
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (!acceptedPrice) {
+                        toast({
+                          title: "Please accept the price",
+                          description: "You must accept the price before creating the shipment.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
+                      // Combine form data
+                      const packageData = packageForm.getValues();
+                      const receiverData = receiverForm.getValues();
+                      
+                      const shipmentData = {
+                        ...packageData,
+                        ...receiverData
+                      };
+                      
+                      createShipmentMutation.mutate(shipmentData);
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={!priceDetails || !acceptedPrice || createShipmentMutation.isPending}
+                  >
+                    {createShipmentMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Truck className="mr-2 h-4 w-4" />
+                        Create Shipment
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </>
+            )}
+          </Card>
+        </div>
+      </div>
+      
+      {/* Credit limit warnings are now shown as toast notifications */}
+    </Layout>
+  );
+}

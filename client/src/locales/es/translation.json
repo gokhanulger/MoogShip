@@ -1,0 +1,1039 @@
+{
+  "general": {
+    "errorTitle": "Error",
+    "errorMessage": "Ha ocurrido un error. Por favor, inténtelo de nuevo.",
+    "errorPickupRequest": "No se pudo solicitar la recogida",
+    "errorFetchPickupDetails": "No se pudieron obtener los detalles de la recogida",
+    "successMessage": "Su solicitud ha sido enviada con éxito."
+  },
+  "layout": {
+    "mainContentArea": "Área de contenido principal con herramientas y funciones de envío"
+  },
+  "common": {
+    "dashboard": "Panel de control",
+    "shipments": "Envíos",
+    "createShipment": "Crear envío",
+    "bulkUpload": "Carga masiva",
+    "approvedShipments": "Envíos aprobados",
+    "myShipments": "Mis envíos",
+    "myBalance": "Mi saldo",
+    "myPickups": "Mis recogidas",
+    "buildTemplates": "Crear plantillas",
+    "transactions": "Transacciones",
+    "products": "Productos",
+    "packageTemplates": "Plantillas de paquetes",
+    "recipients": "Destinatarios",
+    "importRecipients": "Importar destinatarios",
+    "myTickets": "Mis tickets",
+    "createTicket": "Crear ticket",
+    "priceCalculator": "Calculadora de precios",
+    "settings": "Configuración",
+    "admin": "Administrador",
+    "manageUsers": "Gestionar usuarios",
+    "manageShipments": "Gestionar envíos",
+    "announcements": "Anuncios",
+    "managePickups": "Gestionar recogidas",
+    "adminTickets": "Tickets de administrador",
+    "logout": "Cerrar sesión",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "submit": "Enviar",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "refresh": "Actualizar",
+    "export": "Exportar",
+    "import": "Importar",
+    "print": "Imprimir",
+    "download": "Descargar",
+    "upload": "Subir",
+    "loading": "Cargando...",
+    "creating": "Creando...",
+    "updating": "Actualizando...",
+    "deleting": "Eliminando...",
+    "noData": "No se encontraron datos",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información",
+    "newShipment": "Nuevo envío",
+    "trackShipments": "Rastrear envíos",
+    "calculatePrice": "Calcular precio",
+    "uploadShipments": "Subir envíos",
+    "viewBalanceDetails": "Ver detalles del saldo",
+    "startInteractiveTour": "Iniciar tour interactivo",
+    "languageSettings": "Configuración de idioma",
+    "supportTicket": "Ticket de soporte",
+    "gettingStarted": "Comenzar",
+    "marketingSite": "Sitio de marketing",
+    "support": "Soporte",
+    "adminPanel": "Panel de administrador",
+    "viewAll": "Ver todo",
+    "all": "Todo",
+    "backToDashboard": "Volver al panel de control",
+    "continue": "Continuar",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "create": "Crear"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "forgotPassword": "Olvidé mi contraseña",
+    "resetPassword": "Restablecer contraseña",
+    "username": "Nombre de usuario",
+    "password": "Contraseña",
+    "email": "Correo electrónico",
+    "name": "Nombre",
+    "confirmPassword": "Confirmar contraseña",
+    "loginSuccess": "Inicio de sesión exitoso",
+    "loginFailed": "Error al iniciar sesión",
+    "logoutSuccess": "Cierre de sesión exitoso",
+    "registerSuccess": "Registro exitoso",
+    "passwordResetSuccess": "Restablecimiento de contraseña exitoso",
+    "passwordResetFailed": "Error al restablecer la contraseña"
+  },
+  "shipping": {
+    "senderInfo": "Información del remitente",
+    "receiverInfo": "Información del destinatario",
+    "packageInfo": "Información del paquete",
+    "customsInfo": "Información de aduanas",
+    "trackingNumber": "Número de seguimiento",
+    "shipmentStatus": "Estado del envío",
+    "shipmentDate": "Fecha de envío",
+    "deliveryDate": "Fecha de entrega",
+    "estimatedDelivery": "Entrega estimada",
+    "origin": "Origen",
+    "destination": "Destino",
+    "weight": "Peso",
+    "dimensions": "Dimensiones",
+    "length": "Longitud",
+    "width": "Ancho",
+    "height": "Alto",
+    "shippingMethod": "Método de envío",
+    "shippingCost": "Costo de envío",
+    "shippingLabel": "Etiqueta de envío",
+    "trackingLink": "Enlace de seguimiento",
+    "createShipmentSuccess": "Envío creado con éxito",
+    "createShipmentFailed": "Error al crear el envío",
+    "updateShipmentSuccess": "Envío actualizado con éxito",
+    "updateShipmentFailed": "Error al actualizar el envío",
+    "deleteShipmentSuccess": "Envío eliminado con éxito",
+    "deleteShipmentFailed": "Error al eliminar el envío",
+    "bulkUploadSuccess": "Carga masiva exitosa",
+    "bulkUploadFailed": "Error en la carga masiva",
+    "pickupScheduled": "Recogida programada",
+    "delivered": "Entregado",
+    "inTransit": "En tránsito",
+    "pending": "Pendiente",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "cancelled": "Cancelado",
+    "completed": "Completado",
+    "onHold": "En espera",
+    "allShipments": "Todos los envíos",
+    "pendingApprovals": "Aprobaciones pendientes",
+    "managePickups": "Gestionar recogidas"
+  },
+  "financial": {
+    "balance": "Saldo",
+    "credits": "Créditos",
+    "debits": "Débitos",
+    "transactions": "Transacciones",
+    "addFunds": "Añadir fondos",
+    "withdrawFunds": "Retirar fondos",
+    "paymentMethod": "Método de pago",
+    "paymentAmount": "Monto de pago",
+    "paymentDate": "Fecha de pago",
+    "paymentStatus": "Estado del pago",
+    "transactionType": "Tipo de transacción",
+    "transactionDetails": "Detalles de la transacción",
+    "transactionDate": "Fecha de la transacción",
+    "transactionAmount": "Monto de la transacción",
+    "transactionSuccess": "Transacción exitosa",
+    "transactionFailed": "Error en la transacción",
+    "fundingSuccess": "Financiación exitosa",
+    "fundingFailed": "Error en la financiación",
+    "withdrawalSuccess": "Retiro exitoso",
+    "withdrawalFailed": "Error en el retiro",
+    "minBalance": "Saldo mínimo",
+    "creditLimit": "Límite de crédito",
+    "currentBalance": "Saldo actual",
+    "availableBalance": "Saldo disponible",
+    "pendingBalance": "Saldo pendiente",
+    "transactionHistory": "Historial de transacciones",
+    "recentTransactions": "Transacciones recientes",
+    "noTransactions": "No se encontraron transacciones",
+    "balanceDetails": "Detalles del saldo",
+    "credit": "Crédito",
+    "debit": "Débito",
+    "newestFirst": "Más recientes primero",
+    "oldestFirst": "Más antiguos primero"
+  },
+  "tables": {
+    "search": "Buscar...",
+    "noResults": "No se encontraron resultados coincidentes",
+    "date": "Fecha",
+    "description": "Descripción",
+    "amount": "Monto",
+    "status": "Estado",
+    "actions": "Acciones",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "selected": "seleccionado",
+    "bulkActions": "Acciones masivas",
+    "loadingData": "Cargando datos..."
+  },
+  "shipmentTable": {
+    "selectAll": "Seleccionar todo",
+    "shipmentId": "ID de envío",
+    "companyCustomer": "Empresa/Cliente",
+    "destinationAddress": "Dirección de destino",
+    "trackingHeader": "Seguimiento",
+    "internalTracking": "Número de seguimiento interno",
+    "carrier": "Transportista",
+    "externalTracking": "Seguimiento de transportista externo",
+    "labelErrorsNote": "Los errores de etiquetas se mostrarán en rojo",
+    "price": "Precio",
+    "originalPrice": "Precio original",
+    "createdDate": "Fecha de creación",
+    "status": "Estado",
+    "actions": "Acciones",
+    "packageContents": {
+      "name": "Nombre",
+      "quantity": "Cantidad",
+      "price": "Precio",
+      "actions": "Acciones"
+    },
+    "tracking": {
+      "title": "Información de seguimiento",
+      "shipment": "Envío",
+      "moogshipTracking": "N° de seguimiento MoogShip",
+      "carrierTracking": "N° de seguimiento transportista",
+      "status": "Estado"
+    }
+  },
+  "support": {
+    "tickets": "Tickets",
+    "newTicket": "Nuevo ticket",
+    "ticketDetails": "Detalles del ticket",
+    "ticketStatus": "Estado del ticket",
+    "ticketPriority": "Prioridad del ticket",
+    "ticketCategory": "Categoría del ticket",
+    "ticketSubject": "Asunto del ticket",
+    "ticketDescription": "Descripción del ticket",
+    "ticketAttachments": "Archivos adjuntos del ticket",
+    "ticketResponses": "Respuestas del ticket",
+    "responseDate": "Fecha de respuesta",
+    "responseAuthor": "Autor de la respuesta",
+    "responseContent": "Contenido de la respuesta",
+    "addResponse": "Añadir respuesta",
+    "closeTicket": "Cerrar ticket",
+    "reopenTicket": "Reabrir ticket",
+    "assignTicket": "Asignar ticket",
+    "priorityHigh": "Alta",
+    "priorityMedium": "Media",
+    "priorityLow": "Baja",
+    "statusOpen": "Abierto",
+    "statusClosed": "Cerrado",
+    "statusInProgress": "En progreso",
+    "statusResolved": "Resuelto",
+    "createTicketSuccess": "Ticket creado con éxito",
+    "createTicketFailed": "Error al crear el ticket",
+    "updateTicketSuccess": "Ticket actualizado con éxito",
+    "updateTicketFailed": "Error al actualizar el ticket",
+    "responseAddedSuccess": "Respuesta añadida con éxito",
+    "responseAddedFailed": "Error al añadir la respuesta",
+    "manageTickets": "Gestionar tickets"
+  },
+  "dashboard": {
+    "welcomeUser": "Bienvenido, {{name}}",
+    "welcomeGuest": "Bienvenido a Moogship",
+    "summary": "Esto es lo que está sucediendo con tus envíos hoy.",
+    "stats": {
+      "totalShipments": "Total de envíos",
+      "pendingApproval": "Pendientes de aprobación",
+      "inTransit": "En tránsito",
+      "delivered": "Entregados"
+    },
+    "recentActivity": {
+      "title": "Actividad reciente",
+      "description": "Tus últimas acciones y actualizaciones"
+    },
+    "performance": {
+      "title": "Métricas de rendimiento",
+      "description": "Estadísticas de envío y rendimiento de entrega",
+      "deliverySuccessRate": "Tasa de éxito de entrega",
+      "statusBreakdown": "Desglose por estado",
+      "topDestinations": "Principales países de destino",
+      "noShipments": "Aún no hay envíos"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "inTransit": "En tránsito",
+      "delivered": "Entregado"
+    },
+    "recentShipments": {
+      "title": "Envíos recientes",
+      "description": "Consulta tus solicitudes de envío recientes y su estado actual."
+    }
+  },
+  "packageTemplates": {
+    "pageTitle": "Plantillas de paquetes",
+    "pageDescription": "Crea y gestiona tus plantillas de paquetes para facilitar la creación de envíos",
+    "dimensions": "Dimensiones",
+    "defaultTemplateBadge": "Plantilla predeterminada",
+    "actions": {
+      "newTemplate": "Nueva plantilla",
+      "createTemplate": "Crear plantilla",
+      "updateTemplate": "Actualizar plantilla",
+      "editTemplate": "Editar plantilla",
+      "deleteTemplate": "Eliminar plantilla",
+      "setAsDefault": "Establecer como plantilla predeterminada"
+    },
+    "empty": {
+      "title": "No hay plantillas de paquetes",
+      "description": "Crea tu primera plantilla de paquete para comenzar"
+    },
+    "dialogs": {
+      "create": {
+        "title": "Crear plantilla de paquete",
+        "description": "Crea una nueva plantilla de paquete para usar al crear envíos"
+      },
+      "edit": {
+        "title": "Editar plantilla de paquete",
+        "description": "Actualiza los detalles de tu plantilla de paquete"
+      },
+      "delete": {
+        "title": "Eliminar plantilla de paquete",
+        "description": "¿Estás seguro de que quieres eliminar esta plantilla?",
+        "warning": "Esta acción no se puede deshacer."
+      }
+    },
+    "table": {
+      "name": "Nombre",
+      "dimensions": "Dimensiones",
+      "volume": "Volumen",
+      "volumetricWeight": "Peso volumétrico",
+      "actions": "Acciones"
+    },
+    "form": {
+      "name": "Nombre de la plantilla",
+      "description": "Descripción (Opcional)",
+      "length": "Longitud (cm)",
+      "width": "Ancho (cm)",
+      "height": "Alto (cm)",
+      "isDefault": "Establecer como plantilla predeterminada",
+      "isDefaultDescription": "Esta plantilla se seleccionará por defecto al crear nuevos envíos",
+      "namePlaceholder": "ej., Caja pequeña",
+      "descriptionPlaceholder": "Descripción del paquete"
+    },
+    "placeholders": {
+      "templateName": "ej., Caja pequeña",
+      "description": "Descripción del paquete"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "confirm": "Confirmar",
+      "save": "Guardar"
+    },
+    "alerts": {
+      "createSuccess": "Plantilla de paquete creada con éxito",
+      "updateSuccess": "Plantilla de paquete actualizada con éxito",
+      "deleteSuccess": "Plantilla de paquete eliminada con éxito",
+      "defaultUpdated": "Plantilla predeterminada actualizada",
+      "error": {
+        "create": "Error al crear la plantilla",
+        "update": "Error al actualizar la plantilla",
+        "delete": "Error al eliminar la plantilla",
+        "setDefault": "Error al establecer la plantilla predeterminada"
+      }
+    }
+  },
+  "productsData": {
+    "pageTitle": "Productos",
+    "pageDescription": "Ver y gestionar tu catálogo de productos",
+    "catalog": {
+      "title": "Catálogo de productos",
+      "subtitle": "Gestiona tu inventario de productos para envíos"
+    },
+    "actions": {
+      "bulkUpload": "Carga masiva",
+      "addProduct": "Añadir producto",
+      "editProduct": "Editar producto",
+      "deleteProduct": "Eliminar producto",
+      "addFirstProduct": "Añadir tu primer producto",
+      "downloadTemplate": "Descargar plantilla",
+      "cancel": "Cancelar",
+      "update": "Actualizar producto"
+    },
+    "search": {
+      "placeholder": "Buscar productos..."
+    },
+    "empty": {
+      "title": "Aún no hay productos",
+      "description": "Todavía no has añadido productos a tu catálogo."
+    },
+    "table": {
+      "productName": "Nombre del producto",
+      "sku": "SKU",
+      "price": "Precio",
+      "hsCode": "Código HS",
+      "countryOfOrigin": "País de origen",
+      "actions": "Acciones",
+      "noSku": "Sin SKU",
+      "notSpecified": "No especificado"
+    },
+    "form": {
+      "addTitle": "Añadir nuevo producto",
+      "addDescription": "Añade un nuevo producto a tu catálogo para usar en envíos.",
+      "editTitle": "Editar producto",
+      "editDescription": "Actualiza los detalles del producto para tu catálogo.",
+      "productName": "Nombre del producto",
+      "productSku": "SKU del producto",
+      "description": "Descripción",
+      "price": "Precio ($)",
+      "quantity": "Cantidad",
+      "hsCode": "Código HS",
+      "countryOfOrigin": "País de origen",
+      "placeholders": {
+        "productName": "Nombre del producto",
+        "productSku": "SKU del producto",
+        "description": "Descripción del producto",
+        "price": "0.00",
+        "quantity": "0",
+        "hsCode": "Código del Sistema Armonizado",
+        "countryOfOrigin": "Código de país (ej: ES)"
+      },
+      "validation": {
+        "nameRequired": "El nombre del producto es obligatorio",
+        "hsCodeRequired": "El código HS es obligatorio",
+        "priceRequired": "El precio es obligatorio",
+        "quantityRequired": "La cantidad es obligatoria",
+        "countryRequired": "El país de origen es obligatorio"
+      }
+    },
+    "alerts": {
+      "createSuccess": "¡Producto creado con éxito!",
+      "updateSuccess": "¡Producto actualizado con éxito!",
+      "deleteSuccess": "¡Producto eliminado con éxito!",
+      "createError": "Error al crear el producto.",
+      "updateError": "Error al actualizar el producto.",
+      "deleteError": "Error al eliminar el producto.",
+      "loadError": "Error al cargar los productos. Por favor, inténtalo de nuevo.",
+      "connectionError": "Error de conexión con el servidor.",
+      "templateDownloadSuccess": "Plantilla descargada con éxito",
+      "templateDownloadError": "Error al descargar la plantilla. Por favor, inténtalo de nuevo."
+    },
+    "bulkUpload": {
+      "title": "Carga masiva de productos",
+      "description": "Sube múltiples productos a la vez usando un archivo de hoja de cálculo.",
+      "instructions": "Descarga la plantilla, rellénala con tus datos de productos y súbela.",
+      "downloadTemplate": "Descargar plantilla",
+      "dragDrop": "Arrastra y suelta tu archivo aquí, o haz clic para navegador",
+      "fileTypes": "Tipos de archivo soportados: .xlsx, .xls, .csv",
+      "uploadingStatus": "Subiendo archivo...",
+      "resultsTitle": "Resultados de la carga",
+      "successCount": "Procesados con éxito",
+      "errorCount": "Fallos de procesamiento",
+      "duplicatesCount": "Duplicados",
+      "productsAdded": "Productos añadidos",
+      "close": "Cerrar"
+    },
+    "deleteConfirmation": {
+      "title": "Eliminar producto",
+      "description": "¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.",
+      "cancel": "Cancelar",
+      "confirm": "Eliminar"
+    }
+  },
+  "shipments": {
+    "title": "Mis envíos",
+    "filters": {
+      "searchPlaceholder": "Buscar envíos...",
+      "statusPlaceholder": "Filtrar por estado",
+      "datePlaceholder": "Filtrar por fecha",
+      "allStatuses": "Todos los estados",
+      "last7Days": "Últimos 7 días",
+      "last30Days": "Últimos 30 días",
+      "last90Days": "Últimos 90 días",
+      "thisYear": "Este año"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "inTransit": "En tránsito",
+      "delivered": "Entregado",
+      "rejected": "Rechazado"
+    },
+    "actions": {
+      "refresh": "Actualizar",
+      "createNew": "Crear nuevo"
+    }
+  },
+  "approvedShipments": {
+    "title": "Mis envíos aprobados",
+    "description": "Ver y rastrear envíos aprobados",
+    "refresh": "Actualizar",
+    "search": "Buscar por número de seguimiento, destinatario o país...",
+    "tabs": {
+      "approved": "Aprobados",
+      "inTransit": "En tránsito",
+      "delivered": "Entregados"
+    },
+    "tableHeaders": {
+      "approvedShipments": "Envíos aprobados",
+      "shipmentsInTransit": "Envíos en tránsito",
+      "deliveredShipments": "Envíos entregados",
+      "noShipmentsFound": "No se encontraron envíos",
+      "noApproved": "Aún no tienes envíos aprobados.",
+      "noInTransit": "No tienes envíos en tránsito.",
+      "noDelivered": "No tienes envíos entregados."
+    },
+    "columns": {
+      "tracking": "Número de seguimiento",
+      "recipient": "Destinatario",
+      "destination": "Destino",
+      "date": "Fecha",
+      "status": "Estado",
+      "actions": "Acciones"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "processing": "Procesando",
+      "approved": "Aprobado",
+      "in_transit": "En tránsito",
+      "delivered": "Entregado",
+      "cancelled": "Cancelado",
+      "rejected": "Rechazado"
+    },
+    "buttons": {
+      "track": "Rastrear",
+      "label": "Etiqueta",
+      "downloadLabel": "Descargar etiqueta"
+    },
+    "tracking": {
+      "dialogTitle": "Seguimiento del envío",
+      "dialogDescription": "Detalles de seguimiento para",
+      "currentStatus": "Estado actual",
+      "lastUpdated": "Última actualización",
+      "currentLocation": "Ubicación actual",
+      "estimatedDelivery": "Entrega estimada",
+      "trackingHistory": "Historial de seguimiento",
+      "noTrackingInfo": "Aún no hay información de seguimiento disponible para este envío.",
+      "eventStatus": {
+        "picked_up": "Recogido",
+        "in_transit": "En tránsito",
+        "out_for_delivery": "En reparto",
+        "delivered": "Entregado",
+        "exception": "Excepción",
+        "attempted_delivery": "Intento de entrega",
+        "package_accepted": "Paquete aceptado"
+      },
+      "eventDescription": {
+        "picked_up": "Paquete recogido",
+        "in_transit": "Paquete en tránsito",
+        "out_for_delivery": "Paquete en reparto",
+        "delivered": "Paquete entregado",
+        "exception": "Se produjo un problema en la entrega",
+        "attempted_delivery": "Se intentó realizar la entrega, pero no tuvo éxito",
+        "package_accepted": "Paquete aceptado en el centro de distribución"
+      }
+    },
+    "hoverCards": {
+      "recipientDetails": "Detalles del destinatario",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "address": "Dirección",
+      "destinationDetails": "Detalles del destino",
+      "from": "Origen",
+      "to": "Destino",
+      "postalCode": "Código postal",
+      "serviceLevel": "Nivel de servicio"
+    }
+  },
+  "balance": {
+    "title": "Mi saldo",
+    "currentBalance": "Saldo actual",
+    "availableFunds": "Fondos disponibles",
+    "balanceManagement": "Gestión del saldo",
+    "accountInfo": "Información de tu cuenta",
+    "creditLimit": "Límite de crédito",
+    "availableCredit": "Crédito disponible",
+    "adminManaged": "El saldo de tu cuenta es gestionado por el administrador.",
+    "contactAdmin": "Para consultas sobre el saldo o para añadir fondos, por favor contacta con el administrador.",
+    "bankInformation": "Información bancaria",
+    "bankInfoDescription": "Utiliza esta información para realizar depósitos en tu cuenta",
+    "accountDetails": "Detalles de la cuenta",
+    "importantInformation": "Información importante",
+    "includeUsername": "Incluye tu nombre de usuario en la descripción del pago",
+    "contactSupport": "Después de realizar el pago, por favor contacta con soporte para confirmación",
+    "creditAfterVerification": "Tu cuenta será acreditada una vez que se verifique el pago"
+  },
+  "createShipment": {
+    "title": "Crear nuevo envío",
+    "subtitle": "Completa los detalles del envío para crear un nuevo pedido.",
+    "backToDashboard": "Volver al panel de control",
+    "sections": {
+      "recipient": "Información del destinatario",
+      "package": "Detalles del paquete", 
+      "price": "Precio y envío"
+    },
+    "recipientInfo": {
+      "title": "Información del destinatario",
+      "name": "Nombre del destinatario",
+      "phone": "Número de teléfono",
+      "email": "Correo electrónico (Opcional)",
+      "address": "Dirección",
+      "city": "Ciudad",
+      "postalCode": "Código postal",
+      "contents": "Descripción del contenido del paquete"
+    },
+    "senderInfo": {
+      "title": "Información del remitente",
+      "name": "Nombre del remitente",
+      "phone": "Número de teléfono",
+      "email": "Correo electrónico (Opcional)",
+      "address": "Dirección",
+      "city": "Ciudad",
+      "postalCode": "Código postal"
+    },
+    "packageDetails": {
+      "title": "Detalles del paquete",
+      "destinationCountry": "País de destino",
+      "serviceLevel": "Nivel de servicio",
+      "length": "Longitud (cm)",
+      "width": "Ancho (cm)",
+      "height": "Alto (cm)",
+      "weight": "Peso (kg)",
+      "pieces": "Número de piezas"
+    },
+    "priceDetails": {
+      "title": "Precio y envío",
+      "basePrice": "Precio base",
+      "fuelCharge": "Cargo por combustible",
+      "totalPrice": "Precio total",
+      "carrier": "Transportista",
+      "estimatedDelivery": "Entrega estimada en {{days}} días hábiles",
+      "billableWeight": "Peso facturable: {{weight}} kg",
+      "acceptTerms": "Acepto el precio de envío y estoy de acuerdo con los términos",
+      "completePackageFirst": "Por favor, completa primero los detalles del paquete y calcula el precio."
+    },
+    "actions": {
+      "continueToPackage": "Continuar a detalles del paquete",
+      "calculatePrice": "Calcular precio de envío",
+      "createShipment": "Crear envío",
+      "goToPackage": "Ir a detalles del paquete"
+    },
+    "validation": {
+      "recipientName": "El nombre del destinatario es requerido",
+      "phone": "El número de teléfono es requerido",
+      "email": "Debe ser un correo electrónico válido",
+      "address": "La dirección es requerida",
+      "city": "La ciudad es requerida",
+      "postalCode": "El código postal es requerido",
+      "contents": "El contenido del paquete es requerido",
+      "contentsMaxLength": "Máximo 100 caracteres",
+      "senderName": "El nombre del remitente es requerido",
+      "senderAddress": "La dirección del remitente es requerida",
+      "senderCity": "La ciudad del remitente es requerida",
+      "senderPostalCode": "El código postal del remitente es requerido",
+      "destinationCountry": "El país de destino es requerido",
+      "length": "La longitud debe ser al menos 1 cm",
+      "width": "El ancho debe ser al menos 1 cm",
+      "height": "El alto debe ser al menos 1 cm",
+      "weight": "El peso debe ser al menos 0,1 kg",
+      "pieces": "Debe tener al menos 1 pieza",
+      "serviceLevel": "El nivel de servicio es requerido",
+      "completeFields": "Por favor, completa todos los campos requeridos",
+      "ensureFieldsFilled": "Asegúrate de que todos los campos obligatorios en las secciones de destinatario y paquete estén completos.",
+      "priceCalculationFailed": "Cálculo de precio fallido",
+      "tryAgain": "Ocurrió un problema al calcular el precio de envío. Por favor, inténtalo de nuevo.",
+      "completeSections": "Por favor, completa todas las secciones antes de crear el envío"
+    }
+  },
+  "myPickups": {
+    "title": "Mis Solicitudes de Recogida",
+    "subtitle": "Gestione las solicitudes de recogida para sus envíos",
+    "refresh": "Actualizar",
+    "requestPickup": "Solicitar Recogida",
+    "requestShipmentPickup": "Solicitar Recogida de Envío",
+    "requestDescription": "Seleccione los envíos que desea incluir en esta solicitud de recogida. Todos los envíos seleccionados se recogerán en la misma fecha.",
+    "pickupDate": "Fecha de Recogida",
+    "selectDate": "Seleccionar una fecha",
+    "pickupNotes": "Notas de Recogida (Opcional)",
+    "notesPlaceholder": "Instrucciones especiales para la recogida...",
+    "selectShipments": "Seleccionar Envíos",
+    "loadingShipments": "Cargando envíos...",
+    "noEligibleShipments": "No se encontraron envíos elegibles",
+    "eligibilityNote": "Solo se pueden seleccionar envíos aprobados sin una solicitud de recogida existente.",
+    "selectColumn": "Seleccionar",
+    "id": "ID",
+    "recipient": "Destinatario",
+    "destination": "Destino",
+    "service": "Servicio",
+    "shipmentsSelected": "envío(s) seleccionado(s)",
+    "pendingWarning": "Advertencia: Está solicitando la recogida de envío(s) pendiente(s)",
+    "pendingDescription": "Los detalles del paquete y el precio pueden cambiar antes de la aprobación. El transportista solo recogerá los envíos aprobados.",
+    "cancel": "Cancelar",
+    "requestPickupButton": "Solicitar Recogida",
+    "myPickupRequests": "Mis Solicitudes de Recogida",
+    "myPickupDescription": "Ver y gestionar sus solicitudes de recogida",
+    "failedToLoad": "Error al cargar las solicitudes de recogida",
+    "tryAgain": "Intentar de Nuevo",
+    "noPickupsYet": "Aún no hay solicitudes de recogida",
+    "noPickupsDescription": "Utilice el botón \"Solicitar Recogida\" para programar una recogida para sus envíos aprobados.",
+    "newPickupRequest": "Nueva Solicitud de Recogida",
+    "requestedOn": "Solicitado el",
+    "status": "Estado",
+    "actions": "Acciones",
+    "notScheduled": "No programado",
+    "viewDetails": "Ver Detalles",
+    "pickupRequest": "Solicitud de Recogida",
+    "shipmentsInPickup": "envío(s) en esta solicitud de recogida",
+    "package": "Paquete",
+    "notes": "Notas",
+    "pieces": "piezas",
+    "billable": "Facturable",
+    "scheduled": "Programado",
+    "close": "Cerrar"
+  },
+  
+  "etsyImportGuide": {
+    "toggleGuide": "Alternar Guía de Importación de Etsy",
+    "title": "Guía de Importación de Etsy",
+    "description": "Siga estos pasos para importar sus pedidos de Etsy",
+    "step1": {
+      "title": "Vaya a Descargas de Etsy",
+      "description": "Visite el administrador de tiendas de Etsy para descargar sus pedidos",
+      "downloadUrl": "etsy.com/your/shops/me/download"
+    },
+    "step2": {
+      "title": "Seleccione Pedidos para Descargar",
+      "description": "En la página de Etsy, seleccione el tipo de archivo que desea descargar etiquetado como",
+      "ordersLabel": "Pedidos",
+      "timeSelection": "Elija el período de tiempo para los pedidos que desea importar",
+      "imageAlt": "Interfaz de descarga de pedidos de Etsy",
+      "tip": "Descargue los pedidos de los últimos 30-90 días para obtener mejores resultados"
+    },
+    "step3": {
+      "title": "Revise su Correo Electrónico",
+      "description": "Etsy enviará un enlace de descarga a su correo electrónico",
+      "fromEmail": "De correo electrónico",
+      "imageAlt": "Botón de descarga de Etsy en el correo electrónico",
+      "note": "El correo electrónico puede tardar unos minutos en llegar. Revise su carpeta de spam si no lo ve"
+    },
+    "step4": {
+      "title": "Importar a Nuestro Sistema",
+      "description": "Cargue el archivo CSV aquí. El sistema extraerá automáticamente la información del destinatario y los detalles del pedido."
+    },
+    "step5": {
+      "title": "Verificar Dimensiones",
+      "description": "Después de cargar, confirme o edite las dimensiones del paquete para un cálculo correcto de la tarifa de envío."
+    },
+    "important": {
+      "title": "Importante: Configuración Predeterminada del Paquete",
+      "defaultDimensions": "Dimensiones predeterminadas del paquete de Etsy",
+      "warning": "¡Asegúrese de editar estas dimensiones para cada pedido si es necesario para obtener tarifas de envío precisas!"
+    }
+  },
+  "recipientsData": {
+    "pageTitle": "Base de Datos de Destinatarios",
+    "pageDescription": "Gestione su información de destinatarios frecuentes para envíos",
+    "actions": {
+      "addRecipient": "Agregar Destinatario",
+      "editRecipient": "Editar Destinatario",
+      "deleteRecipient": "Eliminar Destinatario",
+      "importRecipients": "Importar Destinatarios",
+      "exportRecipients": "Exportar CSV",
+      "setAsDefault": "Establecer como Predeterminado"
+    },
+    "viewToggle": {
+      "grid": "Vista de Cuadrícula",
+      "table": "Vista de Tabla"
+    },
+    "defaultRecipientBadge": "Predeterminado",
+    "empty": {
+      "title": "Sin Destinatarios",
+      "description": "Agregue su primer destinatario para comenzar"
+    },
+    "dialogs": {
+      "add": {
+        "title": "Agregar Nuevo Destinatario",
+        "description": "Ingrese los detalles del destinatario para guardarlos para futuros envíos"
+      },
+      "edit": {
+        "title": "Editar Destinatario",
+        "description": "Actualice su información de destinatario"
+      },
+      "delete": {
+        "title": "Eliminar Destinatario",
+        "description": "¿Está seguro de que desea eliminar este destinatario?",
+        "warning": "Esta acción no se puede deshacer."
+      }
+    },
+    "card": {
+      "phone": "Teléfono",
+      "email": "Correo Electrónico",
+      "address": "Dirección"
+    },
+    "table": {
+      "name": "Nombre",
+      "address": "Dirección",
+      "city": "Ciudad",
+      "state": "Estado/Provincia",
+      "postalCode": "Código Postal",
+      "country": "País",
+      "phone": "Teléfono",
+      "email": "Correo Electrónico",
+      "contact": "Contacto",
+      "actions": "Acciones"
+    },
+    "form": {
+      "name": "Nombre",
+      "address": "Dirección",
+      "city": "Ciudad",
+      "state": "Estado/Provincia",
+      "postalCode": "Código Postal",
+      "country": "País",
+      "phone": "Teléfono",
+      "email": "Correo Electrónico",
+      "defaultRecipient": "Establecer como destinatario predeterminado",
+      "defaultRecipientDescription": "Este destinatario será seleccionado automáticamente para nuevos envíos"
+    },
+    "placeholders": {
+      "name": "Nombre completo del destinatario",
+      "address": "Dirección del destinatario",
+      "city": "Ciudad",
+      "state": "Estado/Provincia",
+      "postalCode": "Código postal",
+      "country": "País",
+      "phone": "Número de teléfono",
+      "email": "Dirección de correo electrónico"
+    },
+    "buttons": {
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "confirm": "Confirmar",
+      "copyAddress": "Copiar Dirección",
+      "saveRecipient": "Guardar Destinatario",
+      "updateRecipient": "Actualizar Destinatario",
+      "setAsDefault": "Establecer como Predeterminado"
+    },
+    "notifications": {
+      "copied": {
+        "title": "Copiado al Portapapeles",
+        "description": "Detalles del destinatario copiados al portapapeles"
+      }
+    },
+    "alerts": {
+      "createSuccess": "Destinatario creado exitosamente",
+      "updateSuccess": "Destinatario actualizado exitosamente",
+      "deleteSuccess": "Destinatario eliminado exitosamente",
+      "defaultUpdated": "Destinatario predeterminado actualizado",
+      "exportSuccess": "Destinatarios exportados exitosamente",
+      "exportFailed": "Error al exportar destinatarios",
+      "noExportData": "No hay destinatarios para exportar",
+      "error": {
+        "create": "Error al crear destinatario",
+        "update": "Error al actualizar destinatario",
+        "delete": "Error al eliminar destinatario",
+        "setDefault": "Error al establecer destinatario predeterminado"
+      }
+    }
+  },
+  "marketing": {
+    "navigation": {
+      "features": "Características",
+      "benefits": "Beneficios",
+      "testimonials": "Testimonios",
+      "pricing": "Precios"
+    },
+    "hero": {
+      "title": "El envío internacional <span>más económico</span>",
+      "subtitle": "Ayudamos a vendedores de EE.UU. y Europa a obtener las mejores tarifas de envío, ahorrando dinero en cada paquete. Sin suscripciones, solo las tarifas más bajas de la industria.",
+      "startShipping": "Comenzar a enviar",
+      "learnMore": "Más información",
+      "trustedBy": "Confiado por <span>más de 1000</span> empresas en todo el mundo"
+    },
+    "tracking": {
+      "title": "Rastrear su envío",
+      "subtitle": "Ingrese su número de seguimiento a continuación para obtener actualizaciones en tiempo real sobre la ubicación de su paquete y el estado de la entrega."
+    },
+    "dashboard": {
+      "preview": "Panel de Control MoogShip",
+      "shipments": "Envíos",
+      "savings": "Ahorros",
+      "countries": "Países",
+      "monthlyShipments": "Envíos mensuales",
+      "recentShipments": "Envíos recientes"
+    },
+    "partners": {
+      "title": "CONFIADO POR LÍDERES DE LA INDUSTRIA"
+    },
+    "features": {
+      "title": "Potentes características para envíos internacionales",
+      "subtitle": "Nuestra plataforma combina tecnología avanzada con experiencia logística para optimizar sus operaciones de envío internacional.",
+      "feature1": {
+        "title": "Gestión de envíos globales",
+        "description": "Rastree y gestione envíos internacionales en más de 190 países con actualizaciones en tiempo real y visibilidad completa durante todo el proceso de entrega."
+      },
+      "feature2": {
+        "title": "Integración multioperador",
+        "description": "Compare tarifas y servicios de los principales proveedores de envío globales para encontrar la opción más rentable para sus paquetes internacionales."
+      },
+      "feature3": {
+        "title": "Generación automática de etiquetas",
+        "description": "Cree e imprima etiquetas de envío conformes con un solo clic. Nuestro sistema genera automáticamente toda la documentación requerida para el despacho de aduanas."
+      },
+      "feature4": {
+        "title": "Gestión de destinatarios",
+        "description": "Almacene y gestione un número ilimitado de destinatarios con verificación detallada de direcciones y sugerencias inteligentes para una entrada de datos más rápida."
+      },
+      "feature5": {
+        "title": "Gestión de catálogo de productos",
+        "description": "Cree y administre su catálogo de productos con detalles completos que incluyen SKUs, dimensiones, pesos e información aduanera para un envío más rápido."
+      },
+      "feature6": {
+        "title": "Soporte multilingüe",
+        "description": "Utilice la plataforma en su idioma preferido con soporte para inglés, ruso, turco, ucraniano, alemán, francés, árabe y español."
+      },
+      "highlight": {
+        "tag": "Capacidad destacada",
+        "title": "Panel de control integral",
+        "description": "Obtenga una vista panorámica de todas sus operaciones de envío con nuestro intuitivo panel de control. Monitoree el estado de los envíos, realice un seguimiento de los gastos e identifique oportunidades para optimizar sus operaciones logísticas.",
+        "point1": "Actualizaciones de estado de envío en tiempo real",
+        "point2": "Análisis detallado de costos e informes de ahorro",
+        "point3": "Análisis interactivos con informes exportables",
+        "cta": "Probar el panel de control"
+      }
+    },
+    "benefits": {
+      "title": "¿Por qué elegir MoogShip?",
+      "subtitle": "Nuestra plataforma está diseñada para resolver los complejos desafíos del envío internacional y la gestión logística.",
+      "qualityTitle": "Calidad y confiabilidad",
+      "qualitySubtitle": "Una red de transportistas verificada con monitoreo de rendimiento garantiza un servicio consistente de alta calidad para cada envío.",
+      "qualityPoints": [
+        "99.7% de entregas a tiempo",
+        "Actualizaciones de seguimiento en tiempo real",
+        "Resolución proactiva de problemas"
+      ],
+      "costTitle": "Rentabilidad",
+      "costSubtitle": "Ahorre en cada envío con nuestros descuentos por volumen y algoritmos de enrutamiento inteligentes.",
+      "costPoints": [
+        "Hasta un 30% de ahorro en costos de envío",
+        "Precios transparentes sin cargos ocultos",
+        "Descuentos basados en volumen"
+      ],
+      "supportTitle": "Soporte incomparable",
+      "supportSubtitle": "Nuestros expertos en logística proporcionan orientación personalizada y soporte para todas sus necesidades de envío.",
+      "supportPoints": [
+        "Servicio al cliente 24/7",
+        "Gestores de cuenta dedicados",
+        "Orientación aduanera experta"
+      ],
+      "benefit1": {
+        "title": "Ahorre en cada paquete",
+        "description": "Acceda a las mejores tarifas de envío a través de nuestra tecnología de comparación de tarifas y asociaciones con grandes transportistas.",
+        "item1": "Descuentos prenegociados con grandes transportistas",
+        "item2": "Sin tarifas de suscripción mensual ni mínimos",
+        "item3": "Precios transparentes sin cargos ocultos"
+      },
+      "benefit2": {
+        "title": "Envío a más de 220 países",
+        "description": "Expanda su negocio globalmente con nuestra amplia red de transportistas y proceso de envío internacional optimizado.",
+        "item1": "Documentación aduanera automatizada",
+        "item2": "Cumplimiento integrado de normativas internacionales",
+        "item3": "Opciones de recogida local en países clave"
+      },
+      "benefit3": {
+        "title": "Simplifique su flujo de trabajo",
+        "description": "Ahorre tiempo con nuestra plataforma intuitiva, diseñada para hacer que el envío internacional sea tan sencillo como el envío nacional.",
+        "item1": "Creación e impresión de etiquetas con un clic",
+        "item2": "Creación y seguimiento masivo de envíos",
+        "item3": "Integración perfecta con las principales plataformas de comercio electrónico"
+      }
+    },
+    "testimonials": {
+      "title": "Lo que dicen nuestros clientes",
+      "subtitle": "Empresas de todo el mundo confían en MoogShip para sus necesidades de envío global.",
+      "testimonial1": {
+        "quote": "MoogShip ha transformado completamente nuestro proceso de envío. Hemos reducido nuestros costos de envío internacional en un 40%, entregando paquetes más rápido que nunca. Su plataforma es intuitiva y el equipo de soporte siempre está dispuesto a ayudar.",
+        "name": "Sarah Johnson",
+        "position": "Propietaria de tienda online, EE.UU."
+      },
+      "testimonial2": {
+        "quote": "Solo la función de documentación aduanera automatizada ya vale la pena registrarse. Lo que antes tomaba horas ahora sucede con unos pocos clics. Enviamos productos diariamente a más de 30 países, y MoogShip ha eliminado todos nuestros dolores de cabeza con el papeleo.",
+        "name": "Marcus Hendricks",
+        "position": "Vendedor internacional, Alemania"
+      },
+      "testimonial3": {
+        "quote": "Para una pequeña empresa, cada centavo cuenta. MoogShip nos ha ahorrado miles de dólares en costos de envío el año pasado. Sus herramientas de impresión masiva de etiquetas y gestión de paquetes son perfectas para nuestras necesidades de envío de alto volumen. ¡Altamente recomendado!",
+        "name": "Elena Rodriguez",
+        "position": "Propietaria de pequeña empresa, España"
+      }
+    },
+    "ecommerce": {
+      "title": "Optimizado para vendedores de comercio electrónico",
+      "subtitle": "Integración perfecta con sus mercados favoritos para optimizar las operaciones de envío y reducir costos.",
+      "amazonTitle": "Vendedores de Amazon",
+      "amazonSubtitle": "Optimice sus envíos FBA y pedidos directos al cliente con nuestras soluciones especializadas para vendedores de Amazon.",
+      "amazonPoints": [
+        "Servicios de preparación FBA",
+        "Etiquetado compatible con Amazon"
+      ],
+      "etsyTitle": "Vendedores de Etsy",
+      "etsySubtitle": "Entregue productos artesanales en todo el mundo con opciones de envío asequibles diseñadas para emprendedores de Etsy.",
+      "etsyPoints": [
+        "Embalaje especializado para artesanías",
+        "Fácil integración con tienda Etsy"
+      ],
+      "walmartTitle": "Vendedores de Walmart",
+      "walmartSubtitle": "Cumpla con los requisitos de entrega de Walmart con nuestras soluciones especializadas para vendedores de marketplace.",
+      "walmartPoints": [
+        "Soporte de fulfillment de Walmart",
+        "Tiempos de entrega competitivos"
+      ],
+      "wayfairTitle": "Vendedores de Wayfair",
+      "wayfairSubtitle": "Envíe muebles y artículos para el hogar de manera eficiente con nuestras soluciones de envío especializadas para artículos grandes.",
+      "wayfairPoints": [
+        "Experiencia en artículos grandes",
+        "Opciones de entrega con guante blanco"
+      ]
+    },
+    "screenshots": {
+      "title": "Potente plataforma de envío",
+      "subtitle": "Nuestro panel de control fácil de usar proporciona todo lo que necesita para administrar eficientemente sus envíos globales.",
+      "dashboardTitle": "Panel de control intuitivo",
+      "dashboardSubtitle": "Obtenga una visión general completa de todos sus envíos, saldos e información de cuenta en un solo lugar.",
+      "shipmentTitle": "Gestión de envíos",
+      "shipmentSubtitle": "Cree, rastree y administre todos sus envíos con nuestras completas herramientas de envío.",
+      "pricingTitle": "Precios en tiempo real",
+      "pricingSubtitle": "Obtenga cotizaciones instantáneas basadas en dimensiones, peso y destino para tomar decisiones informadas."
+    },
+    "cta": {
+      "title": "¿Listo para reducir sus costos de envío?",
+      "subtitle": "Únase a los vendedores de Amazon, Etsy, Walmart y Wayfair que ahorran en cada envío con las tarifas exclusivas de MoogShip.",
+      "getStarted": "Comenzar ahora",
+      "getQuote": "Obtener cotización"
+    },
+    "footer": {
+      "description": "La plataforma logística de envío global para empresas de todos los tamaños.",
+      "company": "Empresa",
+      "companyLinks": ["Acerca de", "Carreras", "Prensa", "Noticias", "Contacto"],
+      "services": "Servicios",
+      "serviceLinks": ["Envío Global", "Despacho de Aduanas", "Transporte de Carga", "Almacenamiento", "Cadena de Suministro"],
+      "legal": "Legal",
+      "legalLinks": ["Términos de Servicio", "Política de Privacidad", "Política de Cookies", "GDPR", "Regulaciones de Envío"],
+      "contactOffices": "Contacto y Oficinas",
+      "allRightsReserved": "Todos los derechos reservados.",
+      "terms": "Términos",
+      "privacy": "Privacidad",
+      "cookies": "Cookies"
+    }
+  }
+}

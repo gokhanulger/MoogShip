@@ -1,0 +1,56 @@
+{
+  "shipment": {
+    "id": 734,
+    "selectedService": "shipentegra-eco",
+    "shippingProvider": "shipentegra",
+    "carrierName": "MoogShip-Eco"
+  },
+  "sender": {
+    "name": "Naturalbabaygift",
+    "email": "etsyhesap18@gmail.com",
+    "phone": "+905365799575",
+    "address": "Beylikdüzü Mahallesi, Marmara Caddesi",
+    "city": "İstanbul",
+    "postalCode": "18340",
+    "country": "TR"
+  },
+  "receiver": {
+    "name": "Courtney Pingel",
+    "email": "(Not provided)",
+    "phone": "(Not provided)",
+    "address": "3457 N Hamlin Ave",
+    "city": "Chicago",
+    "state": "IL",
+    "postalCode": "60618",
+    "country": "US"
+  },
+  "package": {
+    "length": 56,
+    "width": 8,
+    "height": 4,
+    "weight": 0.43,
+    "contents": "Crib hanger",
+    "pieceCount": 1
+  },
+  "customs": {
+    "value": 10.00,
+    "itemCount": 1,
+    "gtip": "442199",
+    "iossNumber": null
+  },
+  "pricing": {
+    "basePrice": 822,
+    "fuelCharge": 91,
+    "totalPrice": 913,
+    "originalBasePrice": 658,
+    "originalFuelCharge": 73,
+    "originalTotalPrice": 815,
+    "appliedMultiplier": 1.25,
+    "currency": "USD"
+  },
+  "insurance": {
+    "isInsured": false,
+    "insuranceValue": null,
+    "insuranceCost": null
+  }
+}

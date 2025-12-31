@@ -1,0 +1,2125 @@
+import { 
+  users, 
+  shipments, 
+  transactions, 
+  announcements,
+  pickupRequests,
+  pickupShipments,
+  supportTickets,
+  ticketResponses,
+  userProducts,
+  type User, 
+  type InsertUser, 
+  type Shipment, 
+  type InsertShipment, 
+  type Transaction, 
+  type InsertTransaction,
+  type Announcement,
+  type InsertAnnouncement,
+  type PickupRequest,
+  type PickupShipment,
+  type SupportTicket,
+  type InsertTicket,
+  type TicketResponse,
+  type InsertTicketResponse,
+  type UserProduct,
+  type InsertUserProduct,
+  ShipmentStatus,
+  PickupStatus,
+  TicketStatus,
+  TicketPriority,
+  TicketCategory
+} from "@shared/schema";
+import * as schema from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { db } from "./db";
+import { pool } from "./db";
+import { eq, and, or, desc, asc, sql, inArray, isNull, not } from "drizzle-orm";
+
+// Create session store
+const PostgresSessionStore = connectPg(session);
+const MemoryStore = createMemoryStore(session);
+
+export interface IStorage {
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserCount(): Promise<number>;
+  createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserBalance(userId: number, amount: number): Promise<User | undefined>;
+  updateShipmentTrackingInfo(shipmentId: number, trackingNumber: string, labelUrl: string): Promise<Shipment | undefined>;
+  setUserBalance(userId: number, balance: number): Promise<User | undefined>;
+  updateUser(userId: number, userData: Partial<User>): Promise<User | undefined>;
+  approveUser(userId: number, adminId: number): Promise<User | undefined>;
+  rejectUser(userId: number, adminId: number, reason: string): Promise<User | undefined>;
+  deleteUser(userId: number): Promise<User | undefined>;
+  getPendingUsers(): Promise<User[]>;
+  
+  // Shipment operations
+  createShipment(shipment: InsertShipment, userId: number, packageItems?: any[]): Promise<Shipment>;
+  createBulkShipments(shipments: InsertShipment[], userId: number): Promise<Shipment[]>;
+  getUserShipments(userId: number): Promise<Shipment[]>;
+  getAllShipments(): Promise<Shipment[]>;
+  getPendingShipments(): Promise<Shipment[]>;
+  getShipment(id: number): Promise<Shipment | undefined>;
+  getShipmentsByIds(ids: number[]): Promise<Shipment[]>;
+  updateShipment(id: number, shipmentData: Partial<Shipment>): Promise<Shipment | undefined>;
+  updateShipmentStatus(id: number, status: ShipmentStatus, labelUrl?: string, trackingNumber?: string, rejectionReason?: string): Promise<Shipment | undefined>;
+  getShipmentPackageItems(shipmentId: number): Promise<schema.PackageItem[]>;
+  addPackageItemToShipment(shipmentId: number, packageItem: schema.InsertPackageItem): Promise<schema.PackageItem>;
+  
+  // Transaction operations
+  createTransaction(userId: number, amount: number, description: string, relatedShipmentId?: number): Promise<Transaction>;
+  getUserTransactions(userId: number): Promise<Transaction[]>;
+  
+  // Announcement operations
+  createAnnouncement(announcement: InsertAnnouncement, createdBy: number): Promise<Announcement>;
+  getAnnouncement(id: number): Promise<Announcement | undefined>;
+  getActiveAnnouncements(): Promise<Announcement[]>;
+  getAllAnnouncements(): Promise<Announcement[]>;
+  updateAnnouncement(id: number, data: Partial<Announcement>): Promise<Announcement | undefined>;
+  deleteAnnouncement(id: number): Promise<Announcement | undefined>;
+  
+  // Pickup request operations
+  createPickupRequest(userId: number, pickupDate: Date, pickupNotes?: string, pickupAddress?: string, 
+                      pickupCity?: string, pickupPostalCode?: string): Promise<{ pickupRequest: any, pickupShipments: any[] }>;
+  addShipmentsToPickupRequest(pickupRequestId: number, shipmentIds: number[]): Promise<any[]>;
+  getPickupRequestById(id: number): Promise<any>;
+  getUserPickupRequests(userId: number): Promise<any[]>;
+  getAllPickupRequests(): Promise<any[]>;
+  getPickupRequestWithShipments(id: number): Promise<{ pickupRequest: any, shipments: Shipment[], user: User }>;
+  updatePickupRequestStatus(id: number, status: PickupStatus, notes?: string): Promise<any>;
+  
+  // Support ticket operations
+  createSupportTicket(ticket: any): Promise<SupportTicket>;
+  getSupportTicket(id: number): Promise<SupportTicket | undefined>;
+  getUserSupportTickets(userId: number): Promise<SupportTicket[]>;
+  getAllSupportTickets(): Promise<SupportTicket[]>;
+  getOpenSupportTickets(): Promise<SupportTicket[]>;
+  updateSupportTicket(id: number, data: Partial<SupportTicket>): Promise<SupportTicket | undefined>;
+  assignSupportTicket(id: number, adminId: number): Promise<SupportTicket | undefined>;
+  closeSupportTicket(id: number, adminId: number, reason: string): Promise<SupportTicket | undefined>;
+  addTicketResponse(response: InsertTicketResponse): Promise<TicketResponse>;
+  getTicketResponses(ticketId: number): Promise<TicketResponse[]>;
+
+  // Price history operations
+  recordPriceHistory(data: schema.InsertPriceHistory): Promise<schema.PriceHistory>;
+  getPriceHistory(shipmentId: number): Promise<schema.PriceHistory[]>;
+  
+  // User products operations
+  createUserProduct(userId: number, product: InsertUserProduct): Promise<UserProduct>;
+  getUserProducts(userId: number): Promise<UserProduct[]>;
+  getUserProductById(id: number): Promise<UserProduct | undefined>;
+  searchUserProducts(userId: number, query: string): Promise<UserProduct[]>;
+  updateUserProduct(id: number, productData: Partial<UserProduct>): Promise<UserProduct | undefined>;
+  deleteUserProduct(id: number): Promise<UserProduct | undefined>;
+  
+  // Session store
+  sessionStore: any; // session store type
+}
+
+export class DatabaseStorage implements IStorage {
+  sessionStore: any;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
+    });
+    
+    // Create admin user by default if it doesn't exist
+    this.getUserByUsername("admin").then(user => {
+      if (!user) {
+        this.createUser({
+          username: "admin",
+          password: "$2b$10$oQ6Ol0SK0X7fGXNQMURSpe14ywc4G4QRDSk4qzWCXj0n/fLQ44q8u", // "adminpass"
+          name: "Admin User",
+          email: "admin@moogship.com",
+          role: "admin"
+        });
+      }
+    });
+  }
+  
+  // User products operations
+  async createUserProduct(userId: number, product: InsertUserProduct): Promise<UserProduct> {
+    try {
+      const now = new Date();
+      
+      const [createdProduct] = await db.insert(userProducts).values({
+        ...product,
+        userId,
+        createdAt: now,
+        updatedAt: now
+      }).returning();
+      
+      return createdProduct;
+    } catch (error) {
+      console.error("Error creating user product:", error);
+      throw error;
+    }
+  }
+  
+  async getUserProducts(userId: number): Promise<UserProduct[]> {
+    try {
+      return await db
+        .select()
+        .from(userProducts)
+        .where(eq(userProducts.userId, userId))
+        .orderBy(asc(userProducts.name));
+    } catch (error) {
+      console.error("Error getting user products:", error);
+      return [];
+    }
+  }
+  
+  async getUserProductById(id: number): Promise<UserProduct | undefined> {
+    try {
+      const [product] = await db
+        .select()
+        .from(userProducts)
+        .where(eq(userProducts.id, id));
+      
+      return product;
+    } catch (error) {
+      console.error("Error getting user product by ID:", error);
+      return undefined;
+    }
+  }
+  
+  async searchUserProducts(userId: number, query: string): Promise<UserProduct[]> {
+    try {
+      if (!query || query.trim() === '') {
+        return this.getUserProducts(userId);
+      }
+      
+      // Convert query to lowercase for case-insensitive search
+      const searchQuery = `%${query.toLowerCase()}%`;
+      
+      // Use SQL ILIKE for case-insensitive partial matching
+      return await db
+        .select()
+        .from(userProducts)
+        .where(and(
+          eq(userProducts.userId, userId),
+          or(
+            sql`LOWER(${userProducts.name}) LIKE ${searchQuery}`,
+            sql`LOWER(${userProducts.description}) LIKE ${searchQuery}`,
+            sql`LOWER(${userProducts.manufacturer}) LIKE ${searchQuery}`,
+            sql`LOWER(${userProducts.gtin}) LIKE ${searchQuery}`
+          )
+        ))
+        .orderBy(asc(userProducts.name));
+    } catch (error) {
+      console.error("Error searching user products:", error);
+      return [];
+    }
+  }
+  
+  async updateUserProduct(id: number, productData: Partial<UserProduct>): Promise<UserProduct | undefined> {
+    try {
+      const product = await this.getUserProductById(id);
+      
+      if (!product) {
+        return undefined;
+      }
+      
+      const [updatedProduct] = await db
+        .update(userProducts)
+        .set({
+          ...productData,
+          updatedAt: new Date()
+        })
+        .where(eq(userProducts.id, id))
+        .returning();
+      
+      return updatedProduct;
+    } catch (error) {
+      console.error("Error updating user product:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteUserProduct(id: number): Promise<UserProduct | undefined> {
+    try {
+      const product = await this.getUserProductById(id);
+      
+      if (!product) {
+        return undefined;
+      }
+      
+      await db.delete(userProducts).where(eq(userProducts.id, id));
+      
+      return product;
+    } catch (error) {
+      console.error("Error deleting user product:", error);
+      return undefined;
+    }
+  }
+  
+  // Support ticket operations
+  async createSupportTicket(ticket: any): Promise<SupportTicket> {
+    const now = new Date();
+    
+    const [createdTicket] = await db.insert(supportTickets).values({
+      ...ticket,
+      status: TicketStatus.OPEN,
+      createdAt: now,
+      updatedAt: now,
+      assignedTo: null,
+      closedBy: null,
+      closedAt: null,
+      closureReason: null
+    }).returning();
+    
+    return createdTicket;
+  }
+  
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    const [ticket] = await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.id, id));
+    
+    return ticket;
+  }
+  
+  async getUserSupportTickets(userId: number): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.createdAt));
+  }
+  
+  async getAllSupportTickets(): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .orderBy(desc(supportTickets.createdAt));
+  }
+  
+  async getOpenSupportTickets(): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(supportTickets)
+      .where(
+        or(
+          eq(supportTickets.status, TicketStatus.OPEN),
+          eq(supportTickets.status, TicketStatus.IN_PROGRESS),
+          eq(supportTickets.status, TicketStatus.WAITING_ON_CUSTOMER)
+        )
+      )
+      .orderBy(desc(supportTickets.createdAt));
+  }
+  
+  async updateSupportTicket(id: number, data: Partial<SupportTicket>): Promise<SupportTicket | undefined> {
+    const ticket = await this.getSupportTicket(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    const [updatedTicket] = await db
+      .update(supportTickets)
+      .set({ 
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(supportTickets.id, id))
+      .returning();
+    
+    return updatedTicket;
+  }
+  
+  async assignSupportTicket(id: number, adminId: number): Promise<SupportTicket | undefined> {
+    const ticket = await this.getSupportTicket(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    // Update the ticket status and assignee
+    const [updatedTicket] = await db
+      .update(supportTickets)
+      .set({ 
+        status: TicketStatus.IN_PROGRESS,
+        assignedTo: adminId,
+        updatedAt: new Date()
+      })
+      .where(eq(supportTickets.id, id))
+      .returning();
+    
+    return updatedTicket;
+  }
+  
+  async closeSupportTicket(id: number, adminId: number, reason: string): Promise<SupportTicket | undefined> {
+    const ticket = await this.getSupportTicket(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    const now = new Date();
+    
+    // Update the ticket status and set closure information
+    const [updatedTicket] = await db
+      .update(supportTickets)
+      .set({ 
+        status: TicketStatus.CLOSED,
+        closedBy: adminId,
+        closedAt: now,
+        closureReason: reason,
+        updatedAt: now
+      })
+      .where(eq(supportTickets.id, id))
+      .returning();
+    
+    return updatedTicket;
+  }
+  
+  async addTicketResponse(response: InsertTicketResponse): Promise<TicketResponse> {
+    const [createdResponse] = await db
+      .insert(ticketResponses)
+      .values({
+        ...response,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return createdResponse;
+  }
+  
+  async getTicketResponses(ticketId: number): Promise<TicketResponse[]> {
+    return await db
+      .select()
+      .from(ticketResponses)
+      .where(eq(ticketResponses.ticketId, ticketId))
+      .orderBy(asc(ticketResponses.createdAt));
+  }
+  
+  // Announcement operations
+  async createAnnouncement(announcement: InsertAnnouncement, createdBy: number): Promise<Announcement> {
+    const now = new Date();
+    
+    const [createdAnnouncement] = await db.insert(announcements).values({
+      ...announcement,
+      createdBy,
+      createdAt: now,
+      updatedAt: now
+    }).returning();
+    
+    return createdAnnouncement;
+  }
+  
+  async getAnnouncement(id: number): Promise<Announcement | undefined> {
+    const [announcement] = await db
+      .select()
+      .from(announcements)
+      .where(eq(announcements.id, id));
+    
+    return announcement;
+  }
+  
+  async getActiveAnnouncements(): Promise<Announcement[]> {
+    const now = new Date();
+    
+    return await db
+      .select()
+      .from(announcements)
+      .where(
+        and(
+          eq(announcements.isActive, true),
+          // Only include non-expired announcements or those without expiration
+          sql`(${announcements.expiresAt} IS NULL OR ${announcements.expiresAt} > ${now})`
+        )
+      )
+      .orderBy(desc(announcements.createdAt));
+  }
+  
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return await db
+      .select()
+      .from(announcements)
+      .orderBy(desc(announcements.createdAt));
+  }
+  
+  async updateAnnouncement(id: number, data: Partial<Announcement>): Promise<Announcement | undefined> {
+    const announcement = await this.getAnnouncement(id);
+    
+    if (!announcement) {
+      return undefined;
+    }
+    
+    const [updatedAnnouncement] = await db
+      .update(announcements)
+      .set({ 
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(announcements.id, id))
+      .returning();
+    
+    return updatedAnnouncement;
+  }
+  
+  async deleteAnnouncement(id: number): Promise<Announcement | undefined> {
+    const announcement = await this.getAnnouncement(id);
+    
+    if (!announcement) {
+      return undefined;
+    }
+    
+    await db.delete(announcements).where(eq(announcements.id, id));
+    
+    return announcement;
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  async deleteUser(userId: number): Promise<User | undefined> {
+    // First get the user to return later
+    const user = await this.getUser(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Delete the user
+    await db.delete(users).where(eq(users.id, userId));
+    
+    return user;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  
+  async updateUserBalance(userId: number, amount: number): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Update the user's balance
+    const [updatedUser] = await db
+      .update(users)
+      .set({ 
+        balance: user.balance + amount 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async setUserBalance(userId: number, balance: number): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Set the user's balance to the exact amount
+    const [updatedUser] = await db
+      .update(users)
+      .set({ 
+        balance: balance 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async updateUser(userId: number, userData: Partial<User>): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // If userData contains a password, use it, otherwise preserve original password
+    const password = userData.password || user.password;
+    
+    // Update the user, preserving sensitive fields except password if provided
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...userData,
+        // Explicitly set password based on logic above
+        password,
+        // Preserve other sensitive fields
+        balance: userData.balance !== undefined ? userData.balance : user.balance,
+        isApproved: userData.isApproved !== undefined ? userData.isApproved : user.isApproved,
+        approvedBy: userData.approvedBy !== undefined ? userData.approvedBy : user.approvedBy,
+        approvedAt: userData.approvedAt !== undefined ? userData.approvedAt : user.approvedAt,
+        rejectionReason: userData.rejectionReason !== undefined ? userData.rejectionReason : user.rejectionReason
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async createTransaction(userId: number, amount: number, description: string, relatedShipmentId?: number): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values({
+        userId,
+        amount,
+        description,
+        relatedShipmentId: relatedShipmentId || null
+      })
+      .returning();
+    
+    return transaction;
+  }
+  
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  // Shipment operations
+  async createShipment(insertShipment: InsertShipment, userId: number, packageItems?: any[]): Promise<Shipment> {
+    const now = new Date();
+    
+    // Extract pricing and service properties from insertShipment if they exist
+    const { 
+      serviceLevel,
+      basePrice,
+      fuelCharge,
+      taxes,
+      totalPrice,
+      carrierName,
+      estimatedDeliveryDays,
+      // New original price fields
+      originalBasePrice,
+      originalFuelCharge,
+      originalTotalPrice,
+      appliedMultiplier,
+      // Extract package items to handle separately
+      packageItems: itemsData,
+      ...validData 
+    } = insertShipment as any; // Use any to handle extra properties
+    
+    const [shipment] = await db.insert(shipments).values({
+      ...validData,
+      userId,
+      status: ShipmentStatus.PENDING,
+      serviceLevel: serviceLevel || null,
+      labelUrl: null,
+      trackingNumber: null,
+      trackingInfo: null,
+      basePrice: basePrice || null,
+      fuelCharge: fuelCharge || null,
+      taxes: taxes || null,
+      totalPrice: totalPrice || null,
+      // Store original price information
+      originalBasePrice: originalBasePrice || basePrice || null,
+      originalFuelCharge: originalFuelCharge || fuelCharge || null,
+      originalTotalPrice: originalTotalPrice || totalPrice || null,
+      appliedMultiplier: appliedMultiplier || 1,
+      carrierName: carrierName || null,
+      estimatedDeliveryDays: estimatedDeliveryDays || null,
+      customerAccepted: false,
+      createdAt: now,
+      updatedAt: now
+    }).returning();
+    
+    // Handle package items if provided
+    const items = packageItems || itemsData;
+    if (items && Array.isArray(items) && items.length > 0) {
+      console.log(`Adding ${items.length} package items to shipment ${shipment.id}`);
+      
+      // Insert each package item
+      for (const item of items) {
+        await this.addPackageItemToShipment(shipment.id, item);
+      }
+    }
+    
+    return shipment;
+  }
+  
+  // Add a new method to save package items
+  async addPackageItemToShipment(shipmentId: number, packageItem: any): Promise<any> {
+    const now = new Date();
+    
+    // Insert the package item
+    const [createdItem] = await db.insert(schema.packageItems).values({
+      shipmentId,
+      name: packageItem.name,
+      description: packageItem.description || null,
+      quantity: packageItem.quantity || 1,
+      price: packageItem.price || 0,
+      gtin: packageItem.gtin || null,
+      hsCode: packageItem.hsCode || null,
+      weight: packageItem.weight || null,
+      length: packageItem.length || null,
+      width: packageItem.width || null,
+      height: packageItem.height || null,
+      countryOfOrigin: packageItem.countryOfOrigin || null,
+      manufacturer: packageItem.manufacturer || null,
+      createdAt: now,
+      updatedAt: now
+    }).returning();
+    
+    return createdItem;
+  }
+  
+  // Add a method to retrieve package items for a shipment
+  async getShipmentPackageItems(shipmentId: number): Promise<any[]> {
+    return await db
+      .select()
+      .from(schema.packageItems)
+      .where(eq(schema.packageItems.shipmentId, shipmentId))
+      .orderBy(asc(schema.packageItems.id));
+  }
+  
+  async createBulkShipments(insertShipments: InsertShipment[], userId: number): Promise<Shipment[]> {
+    const createdShipments: Shipment[] = [];
+    
+    for (const insertShipment of insertShipments) {
+      const shipment = await this.createShipment(insertShipment, userId);
+      createdShipments.push(shipment);
+    }
+    
+    return createdShipments;
+  }
+  
+  async getUserShipments(userId: number): Promise<Shipment[]> {
+    return await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.userId, userId));
+  }
+  
+  async getAllShipments(): Promise<Shipment[]> {
+    return await db.select().from(shipments);
+  }
+  
+  async getPendingShipments(): Promise<Shipment[]> {
+    return await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.status, ShipmentStatus.PENDING));
+  }
+  
+  async getShipment(id: number): Promise<Shipment | undefined> {
+    const [shipment] = await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.id, id));
+    
+    return shipment;
+  }
+  
+  async getShipmentsByIds(ids: number[]): Promise<Shipment[]> {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+    
+    return await db
+      .select()
+      .from(shipments)
+      .where(inArray(shipments.id, ids));
+  }
+  
+  async updateShipmentTrackingInfo(shipmentId: number, trackingNumber: string, labelUrl: string): Promise<Shipment | undefined> {
+    console.log(`Updating tracking info for shipment ${shipmentId}: tracking=${trackingNumber}, label=${labelUrl}`);
+    return this.updateShipment(shipmentId, {
+      trackingNumber,
+      labelUrl
+    });
+  }
+  
+  async updateShipment(id: number, shipmentData: Partial<Shipment>): Promise<Shipment | undefined> {
+    const existingShipment = await this.getShipment(id);
+    
+    if (!existingShipment) {
+      return undefined;
+    }
+    
+    const updateData: Partial<Shipment> = {
+      ...shipmentData,
+      updatedAt: new Date()
+    };
+    
+    const [updatedShipment] = await db
+      .update(shipments)
+      .set(updateData)
+      .where(eq(shipments.id, id))
+      .returning();
+    
+    return updatedShipment;
+  }
+  
+  async updateShipmentStatus(
+    id: number, 
+    status: ShipmentStatus, 
+    labelUrl?: string, 
+    trackingNumber?: string,
+    rejectionReason?: string
+  ): Promise<Shipment | undefined> {
+    const existingShipment = await this.getShipment(id);
+    
+    if (!existingShipment) {
+      return undefined;
+    }
+    
+    const updateData: Partial<Shipment> = {
+      status,
+      updatedAt: new Date()
+    };
+    
+    if (labelUrl) {
+      updateData.labelUrl = labelUrl;
+    }
+    
+    if (trackingNumber) {
+      updateData.trackingNumber = trackingNumber;
+      // Default tracking info
+      updateData.trackingInfo = [
+        { 
+          timestamp: new Date().toISOString(), 
+          status: 'Package accepted by carrier', 
+          location: 'Istanbul, Turkey' 
+        }
+      ];
+    }
+    
+    if (rejectionReason && status === ShipmentStatus.REJECTED) {
+      updateData.rejectionReason = rejectionReason;
+    }
+    
+    const [updatedShipment] = await db
+      .update(shipments)
+      .set(updateData)
+      .where(eq(shipments.id, id))
+      .returning();
+    
+    return updatedShipment;
+  }
+  
+  // Pickup request operations
+  async createPickupRequest(
+    userId: number, 
+    pickupDate: Date, 
+    pickupNotes?: string, 
+    pickupAddress?: string, 
+    pickupCity?: string, 
+    pickupPostalCode?: string
+  ): Promise<{ pickupRequest: any, pickupShipments: any[] }> {
+    // Get user information to populate pickup address if not provided
+    const user = await this.getUser(userId);
+    
+    const [newPickupRequest] = await db
+      .insert(schema.pickupRequests)
+      .values({
+        userId,
+        pickupDate,
+        pickupNotes: pickupNotes || null,
+        pickupAddress: pickupAddress || user?.address || null,
+        pickupCity: pickupCity || user?.city || null,
+        pickupPostalCode: pickupPostalCode || user?.postalCode || null,
+        pickupStatus: schema.PickupStatus.PENDING,
+      })
+      .returning();
+      
+    return { 
+      pickupRequest: newPickupRequest, 
+      pickupShipments: [] 
+    };
+  }
+  
+  async addShipmentsToPickupRequest(pickupRequestId: number, shipmentIds: number[]): Promise<any[]> {
+    const addedShipments = [];
+    
+    // First check which shipments are already in a pickup request
+    const existingShipments = await db
+      .select()
+      .from(schema.shipments)
+      .where(inArray(schema.shipments.id, shipmentIds))
+      .where(eq(schema.shipments.pickupRequested, true));
+    
+    const existingIds = new Set(existingShipments.map(s => s.id));
+    const newShipmentIds = shipmentIds.filter(id => !existingIds.has(id));
+    
+    console.log(`Adding ${newShipmentIds.length} new shipments to pickup request, skipping ${existingIds.size} already in a pickup`);
+    
+    // For each shipment ID that's not already in a pickup, create an entry in the relationship table
+    for (const shipmentId of newShipmentIds) {
+      try {
+        const [pickupShipment] = await db
+          .insert(schema.pickupShipments)
+          .values({
+            pickupRequestId,
+            shipmentId
+          })
+          .returning();
+          
+        // Also update each shipment to mark it as having a pickup requested
+        await this.updateShipment(shipmentId, {
+          pickupRequested: true,
+          pickupStatus: schema.PickupStatus.PENDING
+        });
+        
+        addedShipments.push(pickupShipment);
+      } catch (error) {
+        console.error(`Failed to add shipment ${shipmentId} to pickup request:`, error);
+        // Continue with other shipments even if one fails
+      }
+    }
+    
+    return addedShipments;
+  }
+  
+  async getPickupRequestById(id: number): Promise<any> {
+    const [pickupRequest] = await db
+      .select()
+      .from(schema.pickupRequests)
+      .where(eq(schema.pickupRequests.id, id));
+      
+    return pickupRequest;
+  }
+  
+  async getUserPickupRequests(userId: number): Promise<any[]> {
+    return await db
+      .select()
+      .from(schema.pickupRequests)
+      .where(eq(schema.pickupRequests.userId, userId))
+      .orderBy(desc(schema.pickupRequests.requestDate));
+  }
+  
+  async getAllPickupRequests(): Promise<any[]> {
+    return await db
+      .select()
+      .from(schema.pickupRequests)
+      .orderBy(desc(schema.pickupRequests.requestDate));
+  }
+  
+  async getPickupRequestWithShipments(id: number): Promise<{ pickupRequest: any, shipments: Shipment[], user: User }> {
+    // Get the pickup request
+    const pickupRequest = await this.getPickupRequestById(id);
+    
+    if (!pickupRequest) {
+      throw new Error('Pickup request not found');
+    }
+    
+    // Get the user who created the pickup request
+    const user = await this.getUser(pickupRequest.userId);
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    // Get all shipment IDs associated with this pickup request
+    const pickupShipments = await db
+      .select()
+      .from(schema.pickupShipments)
+      .where(eq(schema.pickupShipments.pickupRequestId, id));
+      
+    // Get all shipment details
+    const shipmentDetails: Shipment[] = [];
+    for (const ps of pickupShipments) {
+      const shipment = await this.getShipment(ps.shipmentId);
+      if (shipment) {
+        shipmentDetails.push(shipment);
+      }
+    }
+    
+    return {
+      pickupRequest,
+      shipments: shipmentDetails,
+      user
+    };
+  }
+  
+  async updatePickupRequestStatus(id: number, status: schema.PickupStatus, notes?: string): Promise<any> {
+    const [updatedPickupRequest] = await db
+      .update(schema.pickupRequests)
+      .set({
+        pickupStatus: status,
+        pickupNotes: notes || null,
+        lastUpdated: new Date()
+      })
+      .where(eq(schema.pickupRequests.id, id))
+      .returning();
+      
+    // If status is updated, also update all associated shipments
+    if (updatedPickupRequest) {
+      const pickupShipments = await db
+        .select()
+        .from(schema.pickupShipments)
+        .where(eq(schema.pickupShipments.pickupRequestId, id));
+        
+      for (const ps of pickupShipments) {
+        await this.updateShipment(ps.shipmentId, {
+          pickupStatus: status
+        });
+      }
+    }
+    
+    return updatedPickupRequest;
+  }
+}
+
+// Fallback to in-memory storage for development if database connection fails
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private shipments: Map<number, Shipment>;
+  private announcements: Map<number, Announcement>;
+  private supportTickets: Map<number, SupportTicket>;
+  private ticketResponses: Map<number, TicketResponse>;
+  private packageItems: Map<number, schema.PackageItem>;
+  sessionStore: any;
+  private userCurrentId: number;
+  private shipmentCurrentId: number;
+  private announcementCurrentId: number;
+  private supportTicketCurrentId: number;
+  private ticketResponseCurrentId: number;
+  private packageItemCurrentId: number;
+
+  constructor() {
+    this.users = new Map();
+    this.shipments = new Map();
+    this.announcements = new Map();
+    this.supportTickets = new Map();
+    this.ticketResponses = new Map();
+    this.packageItems = new Map();
+    this.userCurrentId = 1;
+    this.shipmentCurrentId = 1;
+    this.announcementCurrentId = 1;
+    this.supportTicketCurrentId = 1;
+    this.ticketResponseCurrentId = 1;
+    this.packageItemCurrentId = 1;
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+    
+    // Create admin user by default
+    this.createUser({
+      username: "admin",
+      password: "$2b$10$oQ6Ol0SK0X7fGXNQMURSpe14ywc4G4QRDSk4qzWCXj0n/fLQ44q8u", // "adminpass"
+      name: "Admin User",
+      email: "admin@moogship.com",
+      role: "admin"
+    });
+  }
+  
+  // Support ticket operations
+  async createSupportTicket(ticket: any): Promise<SupportTicket> {
+    const id = this.supportTicketCurrentId++;
+    const now = new Date();
+    
+    const supportTicket: SupportTicket = {
+      ...ticket,
+      id,
+      status: TicketStatus.OPEN,
+      createdAt: now,
+      updatedAt: now,
+      assignedTo: null,
+      closedBy: null,
+      closedAt: null,
+      closureReason: null
+    };
+    
+    this.supportTickets.set(id, supportTicket);
+    return supportTicket;
+  }
+  
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    return this.supportTickets.get(id);
+  }
+  
+  async getUserSupportTickets(userId: number): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .filter(ticket => ticket.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async getAllSupportTickets(): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async getOpenSupportTickets(): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .filter(ticket => 
+        ticket.status === TicketStatus.OPEN ||
+        ticket.status === TicketStatus.IN_PROGRESS ||
+        ticket.status === TicketStatus.WAITING_ON_CUSTOMER
+      )
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async updateSupportTicket(id: number, data: Partial<SupportTicket>): Promise<SupportTicket | undefined> {
+    const ticket = this.supportTickets.get(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    const updatedTicket: SupportTicket = {
+      ...ticket,
+      ...data,
+      updatedAt: new Date()
+    };
+    
+    this.supportTickets.set(id, updatedTicket);
+    return updatedTicket;
+  }
+  
+  async assignSupportTicket(id: number, adminId: number): Promise<SupportTicket | undefined> {
+    const ticket = this.supportTickets.get(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    const updatedTicket: SupportTicket = {
+      ...ticket,
+      status: TicketStatus.IN_PROGRESS,
+      assignedTo: adminId,
+      updatedAt: new Date()
+    };
+    
+    this.supportTickets.set(id, updatedTicket);
+    return updatedTicket;
+  }
+  
+  async closeSupportTicket(id: number, adminId: number, reason: string): Promise<SupportTicket | undefined> {
+    const ticket = this.supportTickets.get(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    const now = new Date();
+    const updatedTicket: SupportTicket = {
+      ...ticket,
+      status: TicketStatus.CLOSED,
+      closedBy: adminId,
+      closedAt: now,
+      closureReason: reason,
+      updatedAt: now
+    };
+    
+    this.supportTickets.set(id, updatedTicket);
+    return updatedTicket;
+  }
+  
+  async addTicketResponse(response: InsertTicketResponse): Promise<TicketResponse> {
+    const id = this.ticketResponseCurrentId++;
+    
+    const ticketResponse: TicketResponse = {
+      ...response,
+      id,
+      createdAt: new Date()
+    };
+    
+    this.ticketResponses.set(id, ticketResponse);
+    
+    // Update the ticket status based on who responded
+    if (response.isAdminResponse) {
+      this.updateSupportTicket(response.ticketId, {
+        status: TicketStatus.WAITING_ON_CUSTOMER
+      });
+    } else {
+      // If this is a customer response and status is waiting_on_customer, change back to in_progress
+      const ticket = this.supportTickets.get(response.ticketId);
+      if (ticket && ticket.status === TicketStatus.WAITING_ON_CUSTOMER) {
+        this.updateSupportTicket(response.ticketId, {
+          status: TicketStatus.IN_PROGRESS
+        });
+      }
+    }
+    
+    return ticketResponse;
+  }
+  
+  async getTicketResponses(ticketId: number): Promise<TicketResponse[]> {
+    return Array.from(this.ticketResponses.values())
+      .filter(response => response.ticketId === ticketId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+  
+  // Announcement operations
+  async createAnnouncement(announcement: InsertAnnouncement, createdBy: number): Promise<Announcement> {
+    const id = this.announcementCurrentId++;
+    const now = new Date();
+    
+    const createdAnnouncement: Announcement = {
+      ...announcement,
+      id,
+      createdBy,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.announcements.set(id, createdAnnouncement);
+    return createdAnnouncement;
+  }
+  
+  async getAnnouncement(id: number): Promise<Announcement | undefined> {
+    return this.announcements.get(id);
+  }
+  
+  async getActiveAnnouncements(): Promise<Announcement[]> {
+    const now = new Date();
+    
+    return Array.from(this.announcements.values()).filter(announcement => 
+      announcement.isActive && 
+      (!announcement.expiresAt || new Date(announcement.expiresAt) > now)
+    ).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+  
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return Array.from(this.announcements.values())
+      .sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  }
+  
+  async updateAnnouncement(id: number, data: Partial<Announcement>): Promise<Announcement | undefined> {
+    const announcement = this.announcements.get(id);
+    
+    if (!announcement) {
+      return undefined;
+    }
+    
+    const updatedAnnouncement: Announcement = {
+      ...announcement,
+      ...data,
+      updatedAt: new Date()
+    };
+    
+    this.announcements.set(id, updatedAnnouncement);
+    return updatedAnnouncement;
+  }
+  
+  async deleteAnnouncement(id: number): Promise<Announcement | undefined> {
+    const announcement = this.announcements.get(id);
+    
+    if (!announcement) {
+      return undefined;
+    }
+    
+    this.announcements.delete(id);
+    return announcement;
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.userCurrentId++;
+    const now = new Date();
+    // Ensure role is set
+    const userWithRole = {
+      ...insertUser, 
+      role: insertUser.role || 'user'
+    };
+    const user: User = { ...userWithRole, id, createdAt: now };
+    this.users.set(id, user);
+    return user;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
+  async updateUserBalance(userId: number, amount: number): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Update the user's balance
+    const updatedUser: User = {
+      ...user,
+      balance: (user.balance || 0) + amount
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  async setUserBalance(userId: number, balance: number): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Set the user's balance to the exact amount
+    const updatedUser: User = {
+      ...user,
+      balance: balance
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateUser(userId: number, userData: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // If userData contains a password, use it, otherwise preserve original password
+    const password = userData.password || user.password;
+    
+    // Update the user, preserving sensitive fields except password if provided
+    const updatedUser: User = {
+      ...user,
+      ...userData,
+      // Explicitly set password based on logic above
+      password,
+      // Preserve other sensitive fields
+      balance: userData.balance !== undefined ? userData.balance : user.balance,
+      isApproved: userData.isApproved !== undefined ? userData.isApproved : user.isApproved || false,
+      approvedBy: userData.approvedBy !== undefined ? userData.approvedBy : user.approvedBy,
+      approvedAt: userData.approvedAt !== undefined ? userData.approvedAt : user.approvedAt,
+      rejectionReason: userData.rejectionReason !== undefined ? userData.rejectionReason : user.rejectionReason
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  private transactions: Map<number, Transaction> = new Map();
+  private transactionCurrentId: number = 1;
+  
+  async createTransaction(userId: number, amount: number, description: string, relatedShipmentId?: number): Promise<Transaction> {
+    const id = this.transactionCurrentId++;
+    const now = new Date();
+    
+    const transaction: Transaction = {
+      id,
+      userId,
+      amount,
+      description,
+      relatedShipmentId: relatedShipmentId || null,
+      createdAt: now
+    };
+    
+    this.transactions.set(id, transaction);
+    return transaction;
+  }
+  
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return Array.from(this.transactions.values())
+      .filter(transaction => transaction.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  // Shipment operations
+  async createShipment(insertShipment: InsertShipment, userId: number, packageItems?: any[]): Promise<Shipment> {
+    const id = this.shipmentCurrentId++;
+    const now = new Date();
+    
+    // Extract pricing and service properties from insertShipment if they exist
+    const { 
+      serviceLevel,
+      basePrice,
+      fuelCharge,
+      taxes,
+      totalPrice,
+      carrierName,
+      estimatedDeliveryDays,
+      // New original price fields
+      originalBasePrice,
+      originalFuelCharge,
+      originalTotalPrice,
+      appliedMultiplier,
+      // Extract package items to handle separately
+      packageItems: itemsData,
+      ...validData 
+    } = insertShipment as any; // Use any to handle extra properties
+    
+    const shipment: Shipment = {
+      ...validData,
+      id,
+      userId,
+      status: ShipmentStatus.PENDING,
+      serviceLevel: serviceLevel || null,
+      labelUrl: null,
+      trackingNumber: null,
+      trackingInfo: null,
+      basePrice: basePrice || null,
+      fuelCharge: fuelCharge || null,
+      taxes: taxes || null,
+      totalPrice: totalPrice || null,
+      // Store original price information
+      originalBasePrice: originalBasePrice || basePrice || null,
+      originalFuelCharge: originalFuelCharge || fuelCharge || null,
+      originalTotalPrice: originalTotalPrice || totalPrice || null,
+      appliedMultiplier: appliedMultiplier || 1,
+      carrierName: carrierName || null,
+      estimatedDeliveryDays: estimatedDeliveryDays || null,
+      customerAccepted: false,
+      currency: "USD",
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.shipments.set(id, shipment);
+    
+    // Handle package items if provided
+    const items = packageItems || itemsData;
+    if (items && Array.isArray(items) && items.length > 0) {
+      console.log(`Adding ${items.length} package items to shipment ${shipment.id}`);
+      
+      // Insert each package item
+      for (const item of items) {
+        await this.addPackageItemToShipment(shipment.id, item);
+      }
+    }
+    
+    return shipment;
+  }
+  
+  async createBulkShipments(insertShipments: InsertShipment[], userId: number): Promise<Shipment[]> {
+    const createdShipments: Shipment[] = [];
+    
+    for (const insertShipment of insertShipments) {
+      const shipment = await this.createShipment(insertShipment, userId);
+      createdShipments.push(shipment);
+    }
+    
+    return createdShipments;
+  }
+  
+  async getUserShipments(userId: number): Promise<Shipment[]> {
+    return Array.from(this.shipments.values()).filter(
+      (shipment) => shipment.userId === userId
+    );
+  }
+  
+  async getAllShipments(): Promise<Shipment[]> {
+    return Array.from(this.shipments.values());
+  }
+  
+  async getPendingShipments(): Promise<Shipment[]> {
+    console.log('Getting pending shipments from in-memory storage');
+    const allShipments = Array.from(this.shipments.values());
+    console.log('Total shipments in memory:', allShipments.length);
+    
+    const pendingShipments = allShipments.filter(
+      (shipment) => shipment.status === ShipmentStatus.PENDING
+    );
+    
+    console.log('Found pending shipments:', pendingShipments.length);
+    console.log('Pending shipment IDs:', pendingShipments.map(s => s.id));
+    
+    return pendingShipments;
+  }
+  
+  async getShipment(id: number): Promise<Shipment | undefined> {
+    return this.shipments.get(id);
+  }
+  
+  async updateShipmentTrackingInfo(shipmentId: number, trackingNumber: string, labelUrl: string): Promise<Shipment | undefined> {
+    console.log(`MemStorage: Updating tracking info for shipment ${shipmentId}: tracking=${trackingNumber}, label=${labelUrl}`);
+    return this.updateShipment(shipmentId, {
+      trackingNumber,
+      labelUrl
+    });
+  }
+  
+  // Package items operations
+  async addPackageItemToShipment(shipmentId: number, packageItem: schema.InsertPackageItem): Promise<schema.PackageItem> {
+    const id = this.packageItemCurrentId++;
+    const now = new Date();
+    
+    const item: schema.PackageItem = {
+      ...packageItem,
+      id,
+      shipmentId,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.packageItems.set(id, item);
+    return item;
+  }
+  
+  async getShipmentPackageItems(shipmentId: number): Promise<schema.PackageItem[]> {
+    return Array.from(this.packageItems.values())
+      .filter(item => item.shipmentId === shipmentId)
+      .sort((a, b) => a.id - b.id);
+  }
+
+  async updateShipment(id: number, shipmentData: Partial<Shipment>): Promise<Shipment | undefined> {
+    const shipment = this.shipments.get(id);
+    
+    if (!shipment) {
+      return undefined;
+    }
+    
+    const updatedShipment: Shipment = {
+      ...shipment,
+      ...shipmentData,
+      updatedAt: new Date()
+    };
+    
+    this.shipments.set(id, updatedShipment);
+    return updatedShipment;
+  }
+  
+  async updateShipmentStatus(
+    id: number, 
+    status: ShipmentStatus, 
+    labelUrl?: string, 
+    trackingNumber?: string,
+    rejectionReason?: string
+  ): Promise<Shipment | undefined> {
+    const shipment = this.shipments.get(id);
+    
+    if (!shipment) {
+      return undefined;
+    }
+    
+    const updatedShipment: Shipment = {
+      ...shipment,
+      status,
+      updatedAt: new Date()
+    };
+    
+    // Handle labelUrl (convert undefined to null if needed)
+    updatedShipment.labelUrl = labelUrl !== undefined ? labelUrl : shipment.labelUrl;
+    
+    // Handle trackingNumber (convert undefined to null if needed)
+    if (trackingNumber !== undefined) {
+      updatedShipment.trackingNumber = trackingNumber || null;
+      
+      // Add tracking info if a tracking number was provided
+      if (trackingNumber) {
+        updatedShipment.trackingInfo = [
+          { 
+            timestamp: new Date().toISOString(), 
+            status: 'Package accepted by carrier', 
+            location: 'Istanbul, Turkey' 
+          }
+        ];
+      }
+    }
+    
+    // Handle rejection reason
+    if (rejectionReason && status === ShipmentStatus.REJECTED) {
+      updatedShipment.rejectionReason = rejectionReason;
+    }
+    
+    this.shipments.set(id, updatedShipment);
+    return updatedShipment;
+  }
+}
+
+// Create both storage implementations
+const dbStorage = new DatabaseStorage();
+const memStorage = new MemStorage();
+
+// Database storage that stores everything in the database
+export class DatabaseOnlyStorage implements IStorage {
+  sessionStore: any;
+  
+  // Update shipment tracking information
+  async updateShipmentTrackingInfo(shipmentId: number, trackingNumber: string, labelUrl: string): Promise<Shipment | undefined> {
+    return dbStorage.updateShipmentTrackingInfo(shipmentId, trackingNumber, labelUrl);
+  }
+  
+  // Price history operations
+  async recordPriceHistory(data: schema.InsertPriceHistory): Promise<schema.PriceHistory> {
+    try {
+      const [result] = await db.insert(schema.priceHistory).values(data).returning();
+      return result;
+    } catch (error) {
+      console.error("Error recording price history:", error);
+      throw error;
+    }
+  }
+  
+  async getPriceHistory(shipmentId: number): Promise<schema.PriceHistory[]> {
+    try {
+      return await db.select()
+        .from(schema.priceHistory)
+        .where(eq(schema.priceHistory.shipmentId, shipmentId))
+        .orderBy(desc(schema.priceHistory.createdAt));
+    } catch (error) {
+      console.error("Error fetching price history:", error);
+      throw error;
+    }
+  }
+  
+  // User products operations
+  async createUserProduct(userId: number, product: InsertUserProduct): Promise<UserProduct> {
+    try {
+      const now = new Date();
+      
+      const [createdProduct] = await db.insert(userProducts).values({
+        ...product,
+        userId,
+        createdAt: now,
+        updatedAt: now
+      }).returning();
+      
+      return createdProduct;
+    } catch (error) {
+      console.error("Error creating user product:", error);
+      throw error;
+    }
+  }
+  
+  async getUserProducts(userId: number): Promise<UserProduct[]> {
+    try {
+      return await db
+        .select()
+        .from(userProducts)
+        .where(eq(userProducts.userId, userId))
+        .orderBy(asc(userProducts.name));
+    } catch (error) {
+      console.error("Error getting user products:", error);
+      return [];
+    }
+  }
+  
+  async getUserProductById(id: number): Promise<UserProduct | undefined> {
+    try {
+      const [product] = await db
+        .select()
+        .from(userProducts)
+        .where(eq(userProducts.id, id));
+      
+      return product;
+    } catch (error) {
+      console.error("Error getting user product by ID:", error);
+      return undefined;
+    }
+  }
+  
+  async searchUserProducts(userId: number, query: string): Promise<UserProduct[]> {
+    try {
+      if (!query || query.trim() === '') {
+        return this.getUserProducts(userId);
+      }
+      
+      // Convert query to lowercase for case-insensitive search
+      const searchQuery = `%${query.toLowerCase()}%`;
+      
+      // Use SQL ILIKE for case-insensitive partial matching
+      return await db
+        .select()
+        .from(userProducts)
+        .where(and(
+          eq(userProducts.userId, userId),
+          or(
+            sql`LOWER(${userProducts.name}) LIKE ${searchQuery}`,
+            sql`LOWER(${userProducts.description}) LIKE ${searchQuery}`,
+            sql`LOWER(${userProducts.manufacturer}) LIKE ${searchQuery}`,
+            sql`LOWER(${userProducts.gtin}) LIKE ${searchQuery}`
+          )
+        ))
+        .orderBy(asc(userProducts.name));
+    } catch (error) {
+      console.error("Error searching user products:", error);
+      return [];
+    }
+  }
+  
+  async updateUserProduct(id: number, productData: Partial<UserProduct>): Promise<UserProduct | undefined> {
+    try {
+      const product = await this.getUserProductById(id);
+      
+      if (!product) {
+        return undefined;
+      }
+      
+      const [updatedProduct] = await db
+        .update(userProducts)
+        .set({
+          ...productData,
+          updatedAt: new Date()
+        })
+        .where(eq(userProducts.id, id))
+        .returning();
+      
+      return updatedProduct;
+    } catch (error) {
+      console.error("Error updating user product:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteUserProduct(id: number): Promise<UserProduct | undefined> {
+    try {
+      const product = await this.getUserProductById(id);
+      
+      if (!product) {
+        return undefined;
+      }
+      
+      await db.delete(userProducts).where(eq(userProducts.id, id));
+      
+      return product;
+    } catch (error) {
+      console.error("Error deleting user product:", error);
+      return undefined;
+    }
+  }
+  
+
+  
+  // Support ticket operations
+  async createSupportTicket(ticket: any): Promise<SupportTicket> {
+    const now = new Date();
+    
+    const [createdTicket] = await db.insert(schema.supportTickets).values({
+      ...ticket,
+      status: schema.TicketStatus.OPEN,
+      createdAt: now,
+      updatedAt: now
+    }).returning();
+    
+    return createdTicket;
+  }
+  
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    const [ticket] = await db
+      .select()
+      .from(schema.supportTickets)
+      .where(eq(schema.supportTickets.id, id));
+    
+    return ticket;
+  }
+  
+  async getUserSupportTickets(userId: number): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(schema.supportTickets)
+      .where(eq(schema.supportTickets.userId, userId))
+      .orderBy(desc(schema.supportTickets.createdAt));
+  }
+  
+  async getAllSupportTickets(): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(schema.supportTickets)
+      .orderBy(desc(schema.supportTickets.createdAt));
+  }
+  
+  async getOpenSupportTickets(): Promise<SupportTicket[]> {
+    return await db
+      .select()
+      .from(schema.supportTickets)
+      .where(
+        or(
+          eq(schema.supportTickets.status, schema.TicketStatus.OPEN),
+          eq(schema.supportTickets.status, schema.TicketStatus.IN_PROGRESS),
+          eq(schema.supportTickets.status, schema.TicketStatus.WAITING_ON_CUSTOMER)
+        )
+      )
+      .orderBy(desc(schema.supportTickets.createdAt));
+  }
+  
+  async updateSupportTicket(id: number, data: Partial<SupportTicket>): Promise<SupportTicket | undefined> {
+    const ticket = await this.getSupportTicket(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    const [updatedTicket] = await db
+      .update(schema.supportTickets)
+      .set({ 
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.supportTickets.id, id))
+      .returning();
+    
+    return updatedTicket;
+  }
+  
+  async assignSupportTicket(id: number, adminId: number): Promise<SupportTicket | undefined> {
+    const ticket = await this.getSupportTicket(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    // Update the ticket status and assign to admin
+    const [updatedTicket] = await db
+      .update(schema.supportTickets)
+      .set({ 
+        status: schema.TicketStatus.IN_PROGRESS,
+        assignedTo: adminId,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.supportTickets.id, id))
+      .returning();
+    
+    return updatedTicket;
+  }
+  
+  async closeSupportTicket(id: number, adminId: number, reason: string): Promise<SupportTicket | undefined> {
+    const ticket = await this.getSupportTicket(id);
+    
+    if (!ticket) {
+      return undefined;
+    }
+    
+    // Close the ticket with a reason
+    const now = new Date();
+    const [updatedTicket] = await db
+      .update(schema.supportTickets)
+      .set({ 
+        status: schema.TicketStatus.CLOSED,
+        closedBy: adminId,
+        closedAt: now,
+        closureReason: reason,
+        updatedAt: now
+      })
+      .where(eq(schema.supportTickets.id, id))
+      .returning();
+    
+    return updatedTicket;
+  }
+  
+  async addTicketResponse(response: InsertTicketResponse): Promise<TicketResponse> {
+    const [createdResponse] = await db
+      .insert(schema.ticketResponses)
+      .values(response)
+      .returning();
+    
+    // If this is an admin response, update the ticket status
+    if (response.isAdminResponse) {
+      await this.updateSupportTicket(response.ticketId, {
+        status: schema.TicketStatus.WAITING_ON_CUSTOMER
+      });
+    } else {
+      // If this is a customer response, update ticket status back to in_progress
+      await this.updateSupportTicket(response.ticketId, {
+        status: schema.TicketStatus.IN_PROGRESS
+      });
+    }
+    
+    return createdResponse;
+  }
+  
+  async getTicketResponses(ticketId: number): Promise<TicketResponse[]> {
+    return await db
+      .select()
+      .from(schema.ticketResponses)
+      .where(eq(schema.ticketResponses.ticketId, ticketId))
+      .orderBy(asc(schema.ticketResponses.createdAt));
+  }
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool,
+      createTableIfMissing: true,
+      tableName: 'session', // Explicit table name
+      ttl: 86400 * 30 // 30 days in seconds
+    });
+    console.log('Using database storage for all operations with 30-day session persistence');
+  }
+  
+  // Pickup operations
+  async createPickupRequest(
+    userId: number, 
+    pickupDate: Date, 
+    pickupNotes?: string, 
+    pickupAddress?: string, 
+    pickupCity?: string, 
+    pickupPostalCode?: string
+  ): Promise<{ pickupRequest: any, pickupShipments: any[] }> {
+    return dbStorage.createPickupRequest(
+      userId, 
+      pickupDate, 
+      pickupNotes, 
+      pickupAddress, 
+      pickupCity, 
+      pickupPostalCode
+    );
+  }
+  
+  async addShipmentsToPickupRequest(pickupRequestId: number, shipmentIds: number[]): Promise<any[]> {
+    return dbStorage.addShipmentsToPickupRequest(pickupRequestId, shipmentIds);
+  }
+  
+  async getPickupRequestById(id: number): Promise<any> {
+    return dbStorage.getPickupRequestById(id);
+  }
+  
+  async getUserPickupRequests(userId: number): Promise<any[]> {
+    return dbStorage.getUserPickupRequests(userId);
+  }
+  
+  async getAllPickupRequests(): Promise<any[]> {
+    return dbStorage.getAllPickupRequests();
+  }
+  
+  async getPickupRequestWithShipments(id: number): Promise<{ pickupRequest: any, shipments: Shipment[], user: User }> {
+    return dbStorage.getPickupRequestWithShipments(id);
+  }
+  
+  async updatePickupRequestStatus(id: number, status: PickupStatus, notes?: string): Promise<any> {
+    return dbStorage.updatePickupRequestStatus(id, status, notes);
+  }
+  
+  // Announcement operations
+  async createAnnouncement(announcement: InsertAnnouncement, createdBy: number): Promise<Announcement> {
+    return dbStorage.createAnnouncement(announcement, createdBy);
+  }
+  
+  async getAnnouncement(id: number): Promise<Announcement | undefined> {
+    return dbStorage.getAnnouncement(id);
+  }
+  
+  async getActiveAnnouncements(): Promise<Announcement[]> {
+    return dbStorage.getActiveAnnouncements();
+  }
+  
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return dbStorage.getAllAnnouncements();
+  }
+  
+  async updateAnnouncement(id: number, data: Partial<Announcement>): Promise<Announcement | undefined> {
+    return dbStorage.updateAnnouncement(id, data);
+  }
+  
+  async deleteAnnouncement(id: number): Promise<Announcement | undefined> {
+    return dbStorage.deleteAnnouncement(id);
+  }
+
+  // Forward all operations to the database storage implementation
+  async getUser(id: number): Promise<User | undefined> {
+    return dbStorage.getUser(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return dbStorage.getUserByUsername(username);
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+  
+  async getUserCount(): Promise<number> {
+    const result = await db.select({ count: sql`count(*)` }).from(users);
+    return Number(result[0].count);
+  }
+  
+  async getPendingUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.role, 'user'),
+        eq(users.isApproved, false)
+      ));
+  }
+  
+  async approveUser(userId: number, adminId: number): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ 
+        isApproved: true,
+        approvedBy: adminId,
+        approvedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async rejectUser(userId: number, adminId: number, reason: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ 
+        isApproved: false,
+        rejectionReason: reason
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    return dbStorage.createUser(insertUser);
+  }
+  
+  async deleteUser(userId: number): Promise<User | undefined> {
+    return dbStorage.deleteUser(userId);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return dbStorage.getAllUsers();
+  }
+  
+  async updateUserBalance(userId: number, amount: number): Promise<User | undefined> {
+    return dbStorage.updateUserBalance(userId, amount);
+  }
+  
+  async setUserBalance(userId: number, balance: number): Promise<User | undefined> {
+    return dbStorage.setUserBalance(userId, balance);
+  }
+  
+  // Package item operations
+  async addPackageItemToShipment(shipmentId: number, packageItem: schema.InsertPackageItem): Promise<schema.PackageItem> {
+    return dbStorage.addPackageItemToShipment(shipmentId, packageItem);
+  }
+  
+  async getShipmentPackageItems(shipmentId: number): Promise<schema.PackageItem[]> {
+    return dbStorage.getShipmentPackageItems(shipmentId);
+  }
+  
+  
+  async updateUser(userId: number, userData: Partial<User>): Promise<User | undefined> {
+    // Get current user to ensure it exists
+    const currentUser = await this.getUser(userId);
+    if (!currentUser) {
+      return undefined;
+    }
+    
+    // If userData contains a password, use it, otherwise preserve original password
+    const password = userData.password || currentUser.password;
+    
+    // Update the user record
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...userData,
+        // Explicitly set password based on logic above
+        password,
+        // Preserve other sensitive fields unless explicitly provided
+        balance: userData.balance !== undefined ? userData.balance : currentUser.balance,
+        isApproved: userData.isApproved !== undefined ? userData.isApproved : currentUser.isApproved,
+        approvedBy: userData.approvedBy !== undefined ? userData.approvedBy : currentUser.approvedBy,
+        approvedAt: userData.approvedAt !== undefined ? userData.approvedAt : currentUser.approvedAt,
+        rejectionReason: userData.rejectionReason !== undefined ? userData.rejectionReason : currentUser.rejectionReason
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async createTransaction(userId: number, amount: number, description: string, relatedShipmentId?: number): Promise<Transaction> {
+    return dbStorage.createTransaction(userId, amount, description, relatedShipmentId);
+  }
+  
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return dbStorage.getUserTransactions(userId);
+  }
+  
+  async createShipment(insertShipment: InsertShipment, userId: number): Promise<Shipment> {
+    return dbStorage.createShipment(insertShipment, userId);
+  }
+
+  async createBulkShipments(insertShipments: InsertShipment[], userId: number): Promise<Shipment[]> {
+    return dbStorage.createBulkShipments(insertShipments, userId);
+  }
+
+  async getUserShipments(userId: number): Promise<Shipment[]> {
+    return dbStorage.getUserShipments(userId);
+  }
+
+  async getAllShipments(): Promise<Shipment[]> {
+    return dbStorage.getAllShipments();
+  }
+
+  async getPendingShipments(): Promise<Shipment[]> {
+    return dbStorage.getPendingShipments();
+  }
+
+  async getShipment(id: number): Promise<Shipment | undefined> {
+    return dbStorage.getShipment(id);
+  }
+  
+  async getShipmentsByIds(ids: number[]): Promise<Shipment[]> {
+    return dbStorage.getShipmentsByIds(ids);
+  }
+  
+  async updateShipment(id: number, shipmentData: Partial<Shipment>): Promise<Shipment | undefined> {
+    return dbStorage.updateShipment(id, shipmentData);
+  }
+
+  async updateShipmentStatus(
+    id: number, 
+    status: ShipmentStatus, 
+    labelUrl?: string, 
+    trackingNumber?: string,
+    rejectionReason?: string
+  ): Promise<Shipment | undefined> {
+    return dbStorage.updateShipmentStatus(id, status, labelUrl, trackingNumber, rejectionReason);
+  }
+
+  // User products operations
+  async createUserProduct(userId: number, product: InsertUserProduct): Promise<UserProduct> {
+    return dbStorage.createUserProduct(userId, product);
+  }
+
+  async getUserProducts(userId: number): Promise<UserProduct[]> {
+    return dbStorage.getUserProducts(userId);
+  }
+
+  async getUserProductById(id: number): Promise<UserProduct | undefined> {
+    return dbStorage.getUserProductById(id);
+  }
+
+  async searchUserProducts(userId: number, query: string): Promise<UserProduct[]> {
+    return dbStorage.searchUserProducts(userId, query);
+  }
+
+  async updateUserProduct(id: number, productData: Partial<UserProduct>): Promise<UserProduct | undefined> {
+    return dbStorage.updateUserProduct(id, productData);
+  }
+
+  async deleteUserProduct(id: number): Promise<UserProduct | undefined> {
+    return dbStorage.deleteUserProduct(id);
+  }
+}
+
+// Export DatabaseOnlyStorage to use database for all operations
+export const storage = new DatabaseOnlyStorage();

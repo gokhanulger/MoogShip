@@ -1,0 +1,1131 @@
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useLocation, useRoute } from "wouter";
+import Layout from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon, Package, Plus, Trash2, Calculator, TruckIcon } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { usePriceCalculator } from "@/hooks/use-price-calculator";
+import { ServiceLevel } from "@shared/schema";
+import Cookies from "js-cookie";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Loader2 } from "lucide-react";
+
+// List of countries for the dropdown
+const countries = [
+  { value: "United States", label: "United States" },
+  { value: "United Kingdom", label: "United Kingdom" },
+  { value: "Germany", label: "Germany" },
+  { value: "France", label: "France" },
+  { value: "Italy", label: "Italy" },
+  { value: "Spain", label: "Spain" },
+  { value: "Canada", label: "Canada" },
+  { value: "Australia", label: "Australia" },
+  { value: "Japan", label: "Japan" },
+  { value: "China", label: "China" },
+  { value: "Russia", label: "Russia" },
+  { value: "India", label: "India" },
+  { value: "Brazil", label: "Brazil" },
+];
+
+// Form schema for basic package information
+const packageFormSchema = z.object({
+  receiverCountry: z.string().min(1, "Country is required"),
+  packageLength: z.string().min(1, "Length is required"),
+  packageWidth: z.string().min(1, "Width is required"),
+  packageHeight: z.string().min(1, "Height is required"),
+  packageWeight: z.string().min(1, "Weight is required"),
+  pieceCount: z.string().default("1"),
+  // Service level is hidden from UI but still needed for API
+  serviceLevel: z.enum([ServiceLevel.STANDARD, ServiceLevel.EXPRESS, ServiceLevel.PRIORITY]).default(ServiceLevel.STANDARD),
+});
+
+// Form schema for receiver information
+const receiverFormSchema = z.object({
+  receiverName: z.string().min(1, "Receiver name is required"),
+  receiverAddress: z.string().min(1, "Address is required"),
+  receiverCity: z.string().min(1, "City is required"),
+  receiverPostalCode: z.string().min(1, "Postal code is required"),
+  receiverPhone: z.string().min(1, "Phone is required"),
+  receiverEmail: z.string().email("Invalid email").optional(),
+  packageContents: z.string().min(1, "Package contents is required"),
+  // Sender fields
+  senderName: z.string().min(1, "Sender name is required"),
+  senderAddress: z.string().min(1, "Address is required"),
+  senderCity: z.string().min(1, "City is required"),
+  senderPostalCode: z.string().min(1, "Postal code is required"),
+  senderPhone: z.string().min(1, "Phone is required"),
+  senderEmail: z.string().email("Invalid email").optional(),
+});
+
+// Combine both schemas for final submission
+const shipmentSchema = packageFormSchema.merge(receiverFormSchema);
+type ShipmentFormValues = z.infer<typeof shipmentSchema>;
+
+type PackageItem = {
+  id: string;
+  length: number;
+  width: number;
+  height: number;
+  weight: number;
+  volumetricWeight: number;
+  finalWeight: number;
+  pieces: number;
+};
+
+export default function ShipmentCreate() {
+  const [, navigate] = useLocation();
+  const [, params] = useRoute('/shipment-create');
+  const { toast } = useToast();
+  const [step, setStep] = useState(1); // 1: Receiver details, 2: Package details, 3: Price confirmation
+  const [packages, setPackages] = useState<PackageItem[]>([]);
+  const [selectedSender, setSelectedSender] = useState("TR Ofis");
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  const [priceDetails, setPriceDetails] = useState<any>(null);
+  const [acceptedPrice, setAcceptedPrice] = useState(false);
+  const [billableWeight, setBillableWeight] = useState<number | null>(null);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  
+  const priceCalculator = usePriceCalculator();
+  
+  // Form for the package details step
+  const packageForm = useForm<z.infer<typeof packageFormSchema>>({
+    resolver: zodResolver(packageFormSchema),
+    defaultValues: {
+      receiverCountry: "",
+      packageLength: "",
+      packageWidth: "",
+      packageHeight: "",
+      packageWeight: "",
+      pieceCount: "1",
+      serviceLevel: ServiceLevel.STANDARD,
+    },
+  });
+  
+  // Update billable weight in real-time as dimensions change
+  useEffect(() => {
+    const subscription = packageForm.watch((value, { name }) => {
+      // Only recalculate if one of the dimension or weight fields changed
+      if (name && ['packageLength', 'packageWidth', 'packageHeight', 'packageWeight'].includes(name)) {
+        const length = parseFloat(value.packageLength as string);
+        const width = parseFloat(value.packageWidth as string);
+        const height = parseFloat(value.packageHeight as string);
+        const weight = parseFloat(value.packageWeight as string);
+        
+        // Only calculate if all values are valid numbers
+        if (length && width && height && weight) {
+          const { finalWeight } = calculateVolumetricWeight(length, width, height, weight);
+          setBillableWeight(finalWeight);
+        } else {
+          setBillableWeight(null);
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [packageForm]);
+  
+  // Form for the receiver information step
+  const receiverForm = useForm<z.infer<typeof receiverFormSchema>>({
+    resolver: zodResolver(receiverFormSchema),
+    defaultValues: {
+      receiverName: "",
+      receiverAddress: "",
+      receiverCity: "",
+      receiverPostalCode: "",
+      receiverPhone: "",
+      receiverEmail: "",
+      packageContents: "",
+      // Default sender information based on selected office
+      senderName: "TR Ofis",
+      senderAddress: "Halil Rifat Pasa Mh. Perpa Tic.",
+      senderCity: "Istanbul",
+      senderPostalCode: "34384",
+      senderPhone: "",
+      senderEmail: "",
+    },
+  });
+  
+  // Calculate volumetric weight for a package
+  const calculateVolumetricWeight = (
+    lengthCm: number, 
+    widthCm: number, 
+    heightCm: number, 
+    weightKg: number
+  ) => {
+    const dimensionalFactor = 5000;
+    const volumetricWeight = (lengthCm * widthCm * heightCm) / dimensionalFactor;
+    
+    // Use the greater of actual weight or volumetric weight
+    let finalWeight = Math.max(weightKg, volumetricWeight);
+    
+    // Ensure finalWeight meets the minimum requirement
+    if (finalWeight < 0.01) {
+      finalWeight = 0.5; // Set to the minimum allowed weight
+    }
+    
+    return {
+      volumetricWeight: parseFloat(volumetricWeight.toFixed(2)),
+      finalWeight: parseFloat(finalWeight.toFixed(2))
+    };
+  };
+
+  // Add a new package to the list
+  const addPackage = () => {
+    const formData = packageForm.getValues();
+    
+    // Convert form values to numbers
+    const length = parseFloat(formData.packageLength);
+    const width = parseFloat(formData.packageWidth);
+    const height = parseFloat(formData.packageHeight);
+    const weight = parseFloat(formData.packageWeight);
+    const pieces = parseInt(formData.pieceCount) || 1;
+    
+    if (!length || !width || !height || !weight) {
+      toast({
+        title: "Invalid package dimensions",
+        description: "Please enter valid numbers for all package dimensions and weight.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const { volumetricWeight, finalWeight } = calculateVolumetricWeight(length, width, height, weight);
+    
+    const newPackage: PackageItem = {
+      id: Date.now().toString(),
+      length,
+      width,
+      height,
+      weight,
+      volumetricWeight,
+      finalWeight,
+      pieces
+    };
+    
+    setPackages([...packages, newPackage]);
+    
+    // Reset package form fields
+    packageForm.setValue("packageLength", "");
+    packageForm.setValue("packageWidth", "");
+    packageForm.setValue("packageHeight", "");
+    packageForm.setValue("packageWeight", "");
+    packageForm.setValue("pieceCount", "1");
+    
+    toast({
+      title: "Package added",
+      description: `Added ${pieces} piece(s) of ${length}×${width}×${height}cm, ${weight}kg (${finalWeight}kg billable)`,
+    });
+  };
+  
+  // Remove a package from the list
+  const removePackage = (id: string) => {
+    setPackages(packages.filter(pkg => pkg.id !== id));
+    
+    // If all packages are removed, clear the price details
+    if (packages.length <= 1) {
+      setPriceDetails(null);
+      setAcceptedPrice(false);
+    }
+  };
+  
+  // Calculate shipping price
+  const calculatePrice = async (): Promise<boolean> => {
+    const formData = packageForm.getValues();
+    
+    // Use the current form values directly
+    const length = parseFloat(formData.packageLength);
+    const width = parseFloat(formData.packageWidth);
+    const height = parseFloat(formData.packageHeight);
+    const weight = parseFloat(formData.packageWeight);
+    const pieces = parseInt(formData.pieceCount) || 1;
+    
+    if (!length || !width || !height || !weight) {
+      toast({
+        title: "Missing package details",
+        description: "Please enter valid numbers for all package dimensions and weight.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    try {
+      setIsCalculatingPrice(true);
+      
+      // Calculate the volumetric weight for pricing
+      const { volumetricWeight, finalWeight } = calculateVolumetricWeight(length, width, height, weight);
+      
+      // Create a package object for the shipment (but don't add it to the list yet)
+      const newPackage: PackageItem = {
+        id: Date.now().toString(),
+        length,
+        width,
+        height,
+        weight,
+        volumetricWeight,
+        finalWeight,
+        pieces
+      };
+      
+      // Store the package for later use in the shipment
+      setPackages([newPackage]);
+      
+      // Get the sender postal code based on selected office
+      const senderPostalCode = selectedSender === "TR Ofis" ? "34384" : "34445";
+      
+      // Call the price calculation API
+      const result = await priceCalculator.mutateAsync({
+        senderPostalCode,
+        senderCity: "Istanbul",
+        receiverPostalCode: "00000", // Placeholder, we don't have this yet
+        receiverCity: "City", // Placeholder
+        receiverCountry: formData.receiverCountry,
+        packageLength: length,
+        packageWidth: width,
+        packageHeight: height,
+        packageWeight: finalWeight, // Use the billable weight
+        serviceLevel: formData.serviceLevel
+      });
+      
+      setPriceDetails(result);
+      setAcceptedPrice(true); // Auto-accept price when coming from calculator
+      
+      toast({
+        title: "Price calculated successfully",
+        description: `Total price: ${result.currency} ${(result.totalPrice / 100).toFixed(2)}`,
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error calculating price",
+        description: error.message || "Failed to calculate price. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsCalculatingPrice(false);
+    }
+  };
+  
+  // Update sender details when office selection changes
+  const updateSenderDetails = (office: string) => {
+    setSelectedSender(office);
+    
+    if (office === "TR Ofis") {
+      receiverForm.setValue("senderName", "TR Ofis");
+      receiverForm.setValue("senderAddress", "Halil Rifat Pasa Mh. Perpa Tic.");
+      receiverForm.setValue("senderCity", "Istanbul");
+      receiverForm.setValue("senderPostalCode", "34384");
+    } else if (office === "Guner") {
+      receiverForm.setValue("senderName", "Guner");
+      receiverForm.setValue("senderAddress", "Ornektepe mh etibank cd");
+      receiverForm.setValue("senderCity", "Istanbul");
+      receiverForm.setValue("senderPostalCode", "34445");
+    }
+  };
+  
+  // Proceed to the receiver information step
+  const proceedToReceiverInfo = async () => {
+    const isValid = await packageForm.trigger();
+    
+    if (!isValid) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required package information.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!priceDetails) {
+      toast({
+        title: "Price not calculated",
+        description: "Please calculate shipping price before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!acceptedPrice) {
+      toast({
+        title: "Price not accepted",
+        description: "Please accept the shipping price before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Move to step 2
+    setStep(2);
+  };
+  
+  // Go back to the package details step
+  const backToPackageInfo = () => {
+    setStep(1);
+  };
+  
+  // Mutation for creating the shipment
+  const createShipmentMutation = useMutation({
+    mutationFn: async (shipmentData: any) => {
+      // Transform packages data for API
+      const packageItems = packages.map(pkg => ({
+        length: pkg.length,
+        width: pkg.width,
+        height: pkg.height,
+        weight: pkg.weight,
+        pieces: pkg.pieces
+      }));
+      
+      // Prepare pricing data
+      const basePrice = priceDetails?.basePrice || 0;
+      const fuelCharge = priceDetails?.fuelCharge || 0;
+      const totalPrice = priceDetails?.totalPrice || 0;
+      const carrierName = priceDetails?.carrierName || "";
+      
+      // Send the API request
+      const res = await fetch("/api/shipments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ...shipmentData,
+          packages: packageItems,
+          basePrice,
+          fuelCharge,
+          totalPrice,
+          carrierName,
+          estimatedDeliveryDays: priceDetails?.estimatedDeliveryDays || 0
+        })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create shipment");
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      // Invalidate shipments query to refetch
+      queryClient.invalidateQueries({ queryKey: ["/api/shipments/my"] });
+      
+      toast({
+        title: "Shipment created successfully",
+        description: "Your shipment has been submitted and is pending approval.",
+      });
+      
+      // Navigate to shipments list
+      navigate("/shipments");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create shipment",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle final shipment submission
+  const handleSubmitShipment = async (data: z.infer<typeof receiverFormSchema>) => {
+    const packageFormData = packageForm.getValues();
+    
+    // Combine both forms' data
+    const shipmentData = {
+      ...packageFormData,
+      ...data
+    };
+    
+    createShipmentMutation.mutate(shipmentData);
+  };
+  
+  // Load package data from localStorage (set by the calculator dialog)
+  useEffect(() => {
+    const loadFromLocalStorage = async () => {
+      // Don't process if we already handled the data
+      if (initialDataLoaded) {
+        console.log("Initial data already loaded, skipping localStorage processing");
+        return;
+      }
+      
+      // Retrieve data from localStorage with detailed logging
+      const length = localStorage.getItem('calculator_length');
+      console.log("Length from localStorage:", length);
+      
+      const width = localStorage.getItem('calculator_width');
+      console.log("Width from localStorage:", width);
+      
+      const height = localStorage.getItem('calculator_height');
+      console.log("Height from localStorage:", height);
+      
+      const weight = localStorage.getItem('calculator_weight');
+      console.log("Weight from localStorage:", weight);
+      
+      const country = localStorage.getItem('calculator_country');
+      console.log("Country from localStorage:", country);
+      
+      const service = localStorage.getItem('calculator_service');
+      console.log("Service from localStorage:", service);
+      
+      const contents = localStorage.getItem('calculator_contents');
+      console.log("Contents from localStorage:", contents);
+      
+      console.log("localStorage data summary:", { length, width, height, weight, country, service, contents });
+      
+      // Check if we have all the required parameters
+      if (length && width && height && weight && country) {
+        console.log("All required localStorage data found, populating forms");
+        
+        try {
+          // Mark as loaded first to prevent duplicate loading
+          setInitialDataLoaded(true);
+          
+          // Set package contents if provided
+          if (contents) {
+            console.log("Setting package contents:", contents);
+            receiverForm.setValue('packageContents', contents);
+          }
+          
+          // Set package form values
+          packageForm.setValue('packageLength', length);
+          packageForm.setValue('packageWidth', width);
+          packageForm.setValue('packageHeight', height);
+          packageForm.setValue('packageWeight', weight);
+          packageForm.setValue('receiverCountry', country);
+          
+          if (service && Object.values(ServiceLevel).includes(service as ServiceLevel)) {
+            packageForm.setValue('serviceLevel', service as ServiceLevel);
+          }
+          
+          console.log("About to calculate price and go to step 2");
+          
+          try {
+            console.log("Calculating price...");
+            await calculatePrice();
+            console.log("Price calculation successful");
+            
+            // Auto-accept the price when coming from calculator
+            setAcceptedPrice(true);
+            
+            // Don't auto-navigate to step 2 if we're following the new flow
+            // Instead, set up the package details and wait for user to proceed
+            
+            // Clear localStorage after successful processing
+            localStorage.removeItem('calculator_length');
+            localStorage.removeItem('calculator_width');
+            localStorage.removeItem('calculator_height');
+            localStorage.removeItem('calculator_weight');
+            localStorage.removeItem('calculator_country');
+            localStorage.removeItem('calculator_service');
+            localStorage.removeItem('calculator_contents');
+          } catch (error) {
+            console.error("Price calculation failed:", error);
+            // Reset the initialDataLoaded flag so they can try again
+            setInitialDataLoaded(false);
+          }
+        } catch (err) {
+          console.error("Error processing localStorage data:", err);
+          setInitialDataLoaded(false);
+        }
+      } else {
+        console.log("No localStorage data found or missing required parameters");
+      }
+    };
+    
+    loadFromLocalStorage();
+  }, [initialDataLoaded, packageForm, receiverForm, calculatePrice, setAcceptedPrice, setStep]);
+  
+  return (
+    <Layout>
+      <div className="py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="flex items-center mb-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mr-2"
+              onClick={() => navigate("/shipments")}
+            >
+              <ArrowLeftIcon className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            <h1 className="text-2xl font-semibold text-gray-900">Create New Shipment</h1>
+          </div>
+          
+          {step === 1 ? (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Recipient Information</CardTitle>
+                <CardDescription>
+                  Enter the recipient's details for your shipment.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...receiverForm}>
+                  <form className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      {/* Destination Country */}
+                      <div className="col-span-2">
+                        <FormField
+                          control={packageForm.control}
+                          name="receiverCountry"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Destination Country</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a country" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {countries.map((country) => (
+                                    <SelectItem key={country.value} value={country.value}>
+                                      {country.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      {/* Receiver Information */}
+                      <FormField
+                        control={receiverForm.control}
+                        name="receiverName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Receiver's full name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={receiverForm.control}
+                        name="receiverEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="Email address" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={receiverForm.control}
+                        name="receiverPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Phone number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="col-span-2">
+                        <FormField
+                          control={receiverForm.control}
+                          name="receiverAddress"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Address</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Street address" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={receiverForm.control}
+                        name="receiverCity"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input placeholder="City" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={receiverForm.control}
+                        name="receiverPostalCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postal Code</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Postal/Zip code" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="col-span-2">
+                        <FormField
+                          control={receiverForm.control}
+                          name="packageContents"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Package Contents</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Describe the contents of your package"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                              <FormDescription>
+                                Please provide a detailed description of the items you're shipping.
+                              </FormDescription>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </form>
+                </Form>
+                
+                {/* Sender Information Section */}
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium mb-4">Sender Information</h3>
+                  <div className="space-y-4">
+                    <RadioGroup 
+                      defaultValue={selectedSender} 
+                      onValueChange={updateSenderDetails}
+                      className="flex space-x-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="TR Ofis" id="tr-ofis" />
+                        <Label htmlFor="tr-ofis">TR Ofis</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Guner" id="guner" />
+                        <Label htmlFor="guner">Guner</Label>
+                      </div>
+                    </RadioGroup>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <p className="text-sm"><span className="font-semibold">Name:</span> {receiverForm.getValues().senderName}</p>
+                        <p className="text-sm"><span className="font-semibold">Address:</span> {receiverForm.getValues().senderAddress}</p>
+                        <p className="text-sm"><span className="font-semibold">City:</span> {receiverForm.getValues().senderCity}</p>
+                        <p className="text-sm"><span className="font-semibold">Postal Code:</span> {receiverForm.getValues().senderPostalCode}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end">
+                <Button
+                  onClick={() => setStep(2)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Next: Package Details
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Package Details</CardTitle>
+                <CardDescription>
+                  Enter the package dimensions and calculate shipping price.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...packageForm}>
+                  <form className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      {/* Destination Country - already selected in step 1 */}
+                      
+                      {/* Package Dimensions */}
+                      <FormField
+                        control={packageForm.control}
+                        name="packageLength"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Length (cm)</FormLabel>
+                            <FormControl>
+                              <Input type="number" min="1" step="0.1" placeholder="Length" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={packageForm.control}
+                        name="packageWidth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Width (cm)</FormLabel>
+                            <FormControl>
+                              <Input type="number" min="1" step="0.1" placeholder="Width" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={packageForm.control}
+                        name="packageHeight"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Height (cm)</FormLabel>
+                            <FormControl>
+                              <Input type="number" min="1" step="0.1" placeholder="Height" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={packageForm.control}
+                        name="packageWeight"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Weight (kg)</FormLabel>
+                            <FormControl>
+                              <Input type="number" min="0.1" step="0.1" placeholder="Weight" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={packageForm.control}
+                        name="pieceCount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pieces</FormLabel>
+                            <FormControl>
+                              <Input type="number" min="1" step="1" placeholder="Number of pieces" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={packageForm.control}
+                        name="serviceLevel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Service Level</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select service level" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value={ServiceLevel.STANDARD}>Standard</SelectItem>
+                                <SelectItem value={ServiceLevel.EXPRESS}>Express</SelectItem>
+                                <SelectItem value={ServiceLevel.PRIORITY}>Priority</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="col-span-2">
+                        {billableWeight && (
+                          <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+                            <p className="text-sm text-blue-800 font-medium">
+                              <span className="font-bold">Billable Weight:</span> {billableWeight.toFixed(2)} kg 
+                              {billableWeight > parseFloat(packageForm.getValues().packageWeight) && (
+                                <span className="ml-2 text-amber-600">
+                                  (Volumetric weight is used as it's higher than actual weight)
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        )}
+                        <Button 
+                          type="button" 
+                          onClick={calculatePrice}
+                          className="w-full flex items-center justify-center"
+                          disabled={isCalculatingPrice}
+                        >
+                          {isCalculatingPrice ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Calculating Price...
+                            </>
+                          ) : (
+                            <>
+                              <Calculator className="h-4 w-4 mr-1" />
+                              Calculate Shipping Price
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                </Form>
+                
+                {/* Price Details */}
+                {priceDetails && (
+                  <div className="mt-8">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <TruckIcon className="h-5 w-5 mr-2" />
+                          Shipping Price
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Base Price:</span>
+                            <span>{priceDetails.currency} {(priceDetails.basePrice / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Fuel Charge:</span>
+                            <span>{priceDetails.currency} {(priceDetails.fuelCharge / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold border-t pt-2 mt-2">
+                            <span>Total Price:</span>
+                            <span>{priceDetails.currency} {(priceDetails.totalPrice / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Estimated Delivery:</span>
+                            <span>{priceDetails.estimatedDeliveryDays} days</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Carrier:</span>
+                            <span>{priceDetails.carrierName}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center mt-4 pt-4 border-t">
+                          <input
+                            type="checkbox"
+                            id="accept-price"
+                            checked={acceptedPrice}
+                            onChange={(e) => setAcceptedPrice(e.target.checked)}
+                            className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          />
+                          <label htmlFor="accept-price" className="ml-2 block text-sm text-gray-900">
+                            I accept the shipping price and terms
+                          </label>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                >
+                  Back to Recipient Information
+                </Button>
+                
+                {priceDetails && (
+                  <Button
+                    onClick={() => {
+                      if (!acceptedPrice) {
+                        toast({
+                          title: "Please accept the price",
+                          description: "You must accept the shipping price to continue.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
+                      // Add a confirmation step here - step 3
+                      setStep(3);
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={!priceDetails || !acceptedPrice}
+                  >
+                    Continue to Create Shipment
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          ) : step === 3 ? (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Shipment Confirmation</CardTitle>
+                <CardDescription>
+                  Review your shipment details and confirm creation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  {/* Recipient Information Summary */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Recipient Information</h3>
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm"><span className="font-semibold">Name:</span> {receiverForm.getValues().receiverName}</p>
+                          <p className="text-sm"><span className="font-semibold">Email:</span> {receiverForm.getValues().receiverEmail || 'Not provided'}</p>
+                          <p className="text-sm"><span className="font-semibold">Phone:</span> {receiverForm.getValues().receiverPhone}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm"><span className="font-semibold">Address:</span> {receiverForm.getValues().receiverAddress}</p>
+                          <p className="text-sm"><span className="font-semibold">City:</span> {receiverForm.getValues().receiverCity}</p>
+                          <p className="text-sm"><span className="font-semibold">Postal Code:</span> {receiverForm.getValues().receiverPostalCode}</p>
+                          <p className="text-sm"><span className="font-semibold">Country:</span> {packageForm.getValues().receiverCountry}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Package Information Summary */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Package Details</h3>
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm"><span className="font-semibold">Dimensions:</span> {packageForm.getValues().packageLength} × {packageForm.getValues().packageWidth} × {packageForm.getValues().packageHeight} cm</p>
+                          <p className="text-sm"><span className="font-semibold">Weight:</span> {packageForm.getValues().packageWeight} kg</p>
+                          <p className="text-sm"><span className="font-semibold">Pieces:</span> {packageForm.getValues().pieceCount}</p>
+                          <p className="text-sm"><span className="font-semibold">Service Level:</span> {packageForm.getValues().serviceLevel}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm"><span className="font-semibold">Package Contents:</span> {receiverForm.getValues().packageContents}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Sender Information Summary */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Sender Information</h3>
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm"><span className="font-semibold">Name:</span> {receiverForm.getValues().senderName}</p>
+                          <p className="text-sm"><span className="font-semibold">Phone:</span> {receiverForm.getValues().senderPhone || 'Not provided'}</p>
+                          <p className="text-sm"><span className="font-semibold">Email:</span> {receiverForm.getValues().senderEmail || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm"><span className="font-semibold">Address:</span> {receiverForm.getValues().senderAddress}</p>
+                          <p className="text-sm"><span className="font-semibold">City:</span> {receiverForm.getValues().senderCity}</p>
+                          <p className="text-sm"><span className="font-semibold">Postal Code:</span> {receiverForm.getValues().senderPostalCode}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Pricing Summary */}
+                  {priceDetails && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Shipping Price</h3>
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm font-semibold">Base Price:</span>
+                            <span className="text-sm">{priceDetails.currency} {(priceDetails.basePrice / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-semibold">Fuel Charge:</span>
+                            <span className="text-sm">{priceDetails.currency} {(priceDetails.fuelCharge / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold border-t pt-2 mt-2">
+                            <span>Total Price:</span>
+                            <span>{priceDetails.currency} {(priceDetails.totalPrice / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-semibold">Estimated Delivery:</span>
+                            <span>{priceDetails.estimatedDeliveryDays} days</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-semibold">Carrier:</span>
+                            <span>{priceDetails.carrierName}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                >
+                  Back to Package Details
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    const packageFormData = packageForm.getValues();
+                    const receiverFormData = receiverForm.getValues();
+                    
+                    // Combine both forms' data
+                    const shipmentData = {
+                      ...packageFormData,
+                      ...receiverFormData
+                    };
+                    
+                    createShipmentMutation.mutate(shipmentData);
+                  }}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={createShipmentMutation.isPending}
+                >
+                  {createShipmentMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Shipment...
+                    </>
+                  ) : (
+                    "Create Shipment"
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+        </div>
+      </div>
+    </Layout>
+  );
+}

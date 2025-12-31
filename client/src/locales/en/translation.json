@@ -1,0 +1,2770 @@
+{
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading",
+    "copied": "Copied",
+    "copy": "Copy",
+    "close": "Close",
+    "refresh": "Refresh",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View",
+    "download": "Download",
+    "viewAll": "View All",
+    "create": "Create",
+    "tickets": "Tickets",
+    "support": "Support",
+    "copyTrackingNumber": "Copy tracking number",
+    "dashboard": "Dashboard",
+    "shipments": "Shipments",
+    "createShipment": "Create Shipment",
+    "newShipment": "Create Shipment",
+    "draftShipments": "Draft Shipments",
+    "drafts": "Drafts",
+    "bulkUpload": "Bulk Upload",
+    "approvedShipments": "Approved Shipments",
+    "myShipments": "My Shipments",
+    "myBalance": "My Balance",
+    "myPickups": "My Pickups",
+    "trackShipments": "Approved Shipments",
+    "buildTemplates": "Build Templates",
+    "myReturns": "My Product Returns",
+    "products": "Products",
+    "packageTemplates": "Package Templates",
+    "recipients": "Recipients",
+    "returnManagement": "Product Return Management",
+    "returnReports": "Return Reports",
+    "refundRequests": "Shipping Fee Refund Requests",
+    "manageUsers": "Manage Users",
+    "announcements": "Announcements",
+    "home": "Home",
+    "logout": "Logout",
+    "adminPanel": "Admin Panel",
+    "add": "Add",
+    "complete": "Complete",
+    "quantity": "Quantity",
+    "actions": "Actions",
+    "gettingStarted": "Getting Started",
+    "cards": "Cards",
+    "table": "Table",
+    "calculating": "Calculating...",
+    "marketingSite": "Marketing Site",
+    "dimensions": "Dimensions",
+    "product": "Product Content",
+    "gtipCode": "GTIP Code",
+    "customsValue": "Customs Value",
+    "currency": "Currency",
+    "insurance": "Insurance",
+    "dimensionDetails": {
+      "length": "Length",
+      "width": "Width", 
+      "height": "Height"
+    }
+  },
+  "support": {
+    "tickets": "Support Tickets",
+    "newTicket": "New Ticket"
+  },
+
+  "supportTickets": {
+    "pageTitle": "My Support Tickets",
+    "pageDescription": "View and manage your support requests",
+    "refreshing": "Refreshing...",
+    "refreshButton": "Refresh tickets",
+    "newTicket": "New Ticket",
+    "loading": "Loading tickets...",
+    "loadError": "Failed to load your tickets",
+    "tryAgain": "Try Again",
+    "emptyState": {
+      "title": "No Support Tickets",
+      "description": "You haven't submitted any support tickets yet. If you need help with anything, please create a new ticket.",
+      "action": "Create Your First Ticket"
+    },
+    "table": {
+      "caption": "A list of your support tickets",
+      "id": "ID",
+      "title": "Title",
+      "category": "Category",
+      "priority": "Priority",
+      "status": "Status",
+      "created": "Created",
+      "action": "Action",
+      "viewButton": "View"
+    },
+    "create": {
+      "title": "Submit a Support Ticket",
+      "description": "Need help? Submit a ticket and our support team will assist you as soon as possible.",
+      "form": {
+        "subject": {
+          "label": "Ticket Subject",
+          "placeholder": "Brief description of your issue",
+          "description": "Keep it short and descriptive"
+        },
+        "category": {
+          "label": "Category",
+          "placeholder": "Select a category",
+          "options": {
+            "shipping": "Shipping",
+            "pickup": "Pickup",
+            "billing": "Billing",
+            "technical": "Technical",
+            "other": "Other"
+          }
+        },
+        "priority": {
+          "label": "Priority",
+          "placeholder": "Select priority",
+          "options": {
+            "low": "Low",
+            "medium": "Medium",
+            "high": "High",
+            "urgent": "Urgent"
+          }
+        },
+        "description": {
+          "label": "Detailed Description",
+          "placeholder": "Please provide details about your issue",
+          "description": "Include any relevant details that might help us resolve your issue faster"
+        },
+        "submit": "Submit Ticket"
+      },
+      "toast": {
+        "success": {
+          "title": "Ticket Submitted",
+          "description": "Your support ticket has been submitted successfully. We'll get back to you soon."
+        },
+        "error": {
+          "title": "Submission Failed",
+          "description": "Failed to submit your support ticket. Please try again."
+        }
+      }
+    }
+  },
+  "general": {
+    "errorTitle": "Error",
+    "errorMessage": "An error occurred. Please try again.",
+    "errorPickupRequest": "Failed to request pickup",
+    "errorFetchPickupDetails": "Failed to fetch pickup details",
+    "successMessage": "Your request has been submitted successfully."
+  },
+  "notifications": {
+    "iossNumberRequired": "IOSS Number Required",
+    "iossNumberRequiredDescription": "An IOSS number is required for shipments to EU countries",
+    "hmrcNumberRequired": "HMRC Number Required",
+    "hmrcNumberRequiredDescription": "An HMRC number is required for shipments to {{countryName}}",
+    "insufficientFunds": "Insufficient funds",
+    "addFundsToBalance": "Please add ${{amount}} to your balance to create this shipment."
+  },
+  "validations": {
+    "iossNumberRequired": "IOSS number is required for shipments to EU countries",
+    "hmrcNumberRequired": "HMRC number is required for shipments to {{countryName}}",
+    "validationFailed": "Validation Failed",
+    "htsCodeRequired": "HTS Code Required",
+    "htsCodeRequiredDescription": "Please enter a valid HTS code (at least 6 digits) for each product in the Package Contents section.",
+    "missingFields": "Missing fields: {{fields}}",
+    "fillAllRequiredFields": "Please fill in all required fields",
+    "lengthTooSmall": "Length must be at least 1 cm",
+    "widthTooSmall": "Width must be at least 1 cm",
+    "heightTooSmall": "Height must be at least 1 cm",
+    "weightTooSmall": "Weight must be at least 0.1 kg",
+    "contentsRequired": "Package contents are required",
+    "countryRequired": "Destination country is required",
+    "atLeastOnePackage": "Must have at least 1 package",
+    "atLeastOneItem": "Must have at least 1 item",
+    "customsValueNotNegative": "Customs value must be 0 or greater",
+    "serviceLevelRequired": "Service level is required"
+  },
+  "layout": {
+    "mainContentArea": "Main content area with shipping tools and features"
+  },
+  "returns": {
+    "title": "My Product Returns",
+    "subtitle": "View and manage your product returns",
+    "createButton": "Create New Return",
+    "searchPlaceholder": "Search returns...",
+    "statusFilter": {
+      "all": "All",
+      "pending": "Pending",
+      "received": "Received",
+      "completed": "Completed"
+    },
+    "table": {
+      "senderName": "Sender Name",
+      "tracking": "Tracking",
+      "orderNumber": "Order No",
+      "productName": "Product Name",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions",
+      "controlled": "Controlled",
+      "notControlled": "Not Controlled",
+      "carrier": "Carrier",
+      "trackingNumber": "Tracking No",
+      "returnReason": "Reason",
+      "created": "Created",
+      "updated": "Updated"
+    },
+    "status": {
+      "pending": "Pending",
+      "received": "Received",
+      "completed": "Completed"
+    },
+    "createDialog": {
+      "title": "Create New Return",
+      "subtitle": "Enter the required information for product return",
+      "senderName": "Sender Name",
+      "senderNamePlaceholder": "Enter sender name",
+      "trackingCarrier": "Carrier",
+      "trackingCarrierPlaceholder": "Select carrier",
+      "trackingNumber": "Tracking Number",
+      "trackingNumberPlaceholder": "Enter tracking number",
+      "orderNumber": "Order Number (Optional)",
+      "orderNumberPlaceholder": "Enter order number",
+      "productName": "Product Name (Optional)",
+      "productNamePlaceholder": "Enter product name",
+      "returnReason": "Return Reason (Optional)",
+      "returnReasonPlaceholder": "Enter return reason",
+      "cancel": "Cancel",
+      "create": "Create Return",
+      "creating": "Creating..."
+    },
+    "photosDialog": {
+      "title": "Return Photos",
+      "noPhotos": "No photos have been uploaded for this return yet.",
+      "close": "Close"
+    },
+    "controlled": {
+      "markAsControlled": "Mark as Controlled",
+      "markAsNotControlled": "Mark as Not Controlled",
+      "success": "Success",
+      "successMessage": "Return marked as {{status}}",
+      "controlled": "controlled",
+      "notControlled": "not controlled",
+      "error": "Error",
+      "errorMessage": "An error occurred while updating return status"
+    },
+    "noReturns": {
+      "title": "No Returns Found",
+      "message": "You haven't created any returns yet."
+    },
+    "loading": "Loading returns...",
+    "error": "An error occurred while loading returns",
+    "searchPlaceholder": "Search returns (sender, tracking no, order no)",
+    "actions": {
+      "viewDetails": "Details"
+    },
+    "detailDialog": {
+      "title": "Return Details",
+      "notFound": "Return record not found",
+      "basicInfo": "Basic Information",
+      "returnId": "Return ID",
+      "senderName": "Sender",
+      "carrier": "Carrier",
+      "trackingNumber": "Tracking Number",
+      "status": "Status"
+    },
+    "sellerNotes": {
+      "title": "My Notes",
+      "placeholder": "Write your notes about this return here...",
+      "save": "Save",
+      "saving": "Saving...",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "empty": "No notes added yet",
+      "success": "Your notes have been updated successfully",
+      "error": "An error occurred while updating notes"
+    }
+  },
+  "auth": {
+    "signUp": "Sign Up",
+    "login": "Login",
+    "register": "Register",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "alerts": {
+      "emailVerification": {
+        "title": "Email Verification Required",
+        "description": "You need to verify your email address before you can log in. Please check your email for a verification link.",
+        "resendInfo": "Didn't receive the email? You can request a new verification email below.",
+        "actionButton": "Close"
+      }
+    },
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "name": "Name",
+    "confirmPassword": "Confirm Password",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed",
+    "logoutSuccess": "Logout successful",
+    "registerSuccess": "Registration successful",
+    "passwordResetSuccess": "Password reset successful",
+    "passwordResetFailed": "Password reset failed",
+    "logo": {
+      "alt": "Moogship Logo"
+    },
+    "specialization": "Simplifying Global E-commerce Shipping for Everyone",
+    "backToHome": "Back to Home",
+    "login": {
+      "tab": "Login",
+      "title": "Login to your account",
+      "description": "Enter your credentials to access your account",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "loginButton": "Login",
+      "loggingIn": "Logging in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register",
+      "forgotPassword": "Forgot your password?"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to reset your password",
+      "description": "Enter your email address and we'll send you a password reset link.",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "Enter your email address",
+      "sendButton": "Send Reset Link",
+      "sending": "Sending...",
+      "backToLogin": "Back to login",
+      "success": {
+        "title": "Email Sent",
+        "description": "Password reset link has been sent to your email address. Please check your inbox.",
+        "instruction1": "Check your email inbox (including spam folder)",
+        "instruction2": "Click the reset link in the email",
+        "instruction3": "Follow the instructions to set your new password"
+      },
+      "error": {
+        "title": "Error",
+        "description": "Failed to send password reset email. Please try again."
+      }
+    },
+    "resetPassword": {
+      "title": "Set New Password",
+      "subtitle": "Create a new password for your account",
+      "description": "Please enter your new password. Password must be at least 6 characters long.",
+      "passwordLabel": "New Password",
+      "passwordPlaceholder": "Enter your new password",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Enter your password again",
+      "resetButton": "Reset Password",
+      "resetting": "Resetting...",
+      "backToLogin": "Back to login",
+      "success": {
+        "title": "Password Reset",
+        "description": "Your password has been successfully reset. You can now login with your new password."
+      },
+      "error": {
+        "title": "Error",
+        "description": "Password reset failed. Please try again."
+      },
+      "invalidToken": {
+        "title": "Invalid Link",
+        "description": "This password reset link is invalid or has expired. Please request a new reset link."
+      }
+    },
+    "loginTab": {
+      "tab": "Login",
+      "title": "Login to your account",
+      "description": "Enter your credentials to access your account",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "loginButton": "Login",
+      "loggingIn": "Logging in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register"
+    },
+    "register": {
+      "tab": "Register",
+      "title": "Create an account",
+      "description": "Enter your details to create a new account",
+      "companySection": "Company Information",
+      "addressSection": "Address Information",
+      "shippingSection": "Shipping Information",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "john.doe@example.com",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+90 XXX XXX XX XX",
+      "phoneHelp": "Please include your country code (e.g., +90 for Turkey)",
+      "username": "Username",
+      "usernamePlaceholder": "johndoe",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "Your company name",
+      "companyType": "Company Type",
+      "companyTypeBusiness": "Business",
+      "companyTypeIndividual": "Individual",
+      "taxId": "Tax ID Number",
+      "taxIdPlaceholder": "Tax ID / VAT Number",
+      "tckn": "Turkish ID Number (TCKN)",
+      "tcknPlaceholder": "11-digit Turkish Identification Number",
+      "addressLine1": "Address Line 1",
+      "addressLine1Placeholder": "Primary address line",
+      "addressCharLimit": "Maximum 35 characters for compatibility with shipping providers",
+      "addressLine2": "Address Line 2 (Optional)",
+      "addressLine2Placeholder": "Secondary address line (optional)",
+      "city": "City",
+      "cityPlaceholder": "City",
+      "postalCode": "Postal Code",
+      "postalCodePlaceholder": "Postal code",
+      "country": "Country",
+      "countryPlaceholder": "Country",
+      "monthlyShipmentVolume": "Monthly Shipment Volume",
+      "monthlyShipmentVolumePlaceholder": "Estimated monthly shipments",
+      "monthlyShipmentVolumeHelp": "Approximate number of shipments per month",
+      "registerButton": "Register",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Login"
+    },
+    "hero": {
+      "logoAlt": "Moogship Logo",
+      "title": "E-commerce Global Shipping",
+      "description": "Moogship helps Amazon, Etsy, Shopify, Walmart, and Wayfair sellers ship packages globally from Turkey with ease. Track in real-time and manage all shipping needs from one place.",
+      "feature1Title": "E-commerce Shipping",
+      "feature1Description": "Easily manage marketplace orders with specialized shipping solutions.",
+      "feature2Title": "Marketplace Integration",
+      "feature2Description": "Seamlessly connect your Amazon, Etsy, Shopify, Walmart, and Wayfair stores.",
+      "marketplacesTitle": "Serving sellers from top marketplaces"
+    },
+    "alerts": {
+      "registration": {
+        "failedTitle": "Registration Failed",
+        "failedDescription": "Please check your information and try again.",
+        "emailExists": "This email address is already registered. Please use a different email or try to login.",
+        "usernameExists": "This username is already taken. Please choose a different username.",
+        "actionButton": "I Understand"
+      },
+      "registrationSuccess": {
+        "title": "Registration Successful",
+        "description": "Your account has been submitted for approval. You will be able to log in once your account has been approved.",
+        "emailInfo": "Please check your email for further instructions.",
+        "actionButton": "Continue to Login"
+      },
+      "loginFailed": {
+        "title": "Login Failed",
+        "description": "The username or password you entered is incorrect.",
+        "actionButton": "Try Again"
+      },
+      "accountPendingApproval": {
+        "title": "Account Pending Approval",
+        "description": "Your account is currently pending admin approval. You will be able to log in once your account has been approved.",
+        "supportInfo": "If you need immediate assistance, please contact our support team.",
+        "actionButton": "I Understand"
+      }
+    },
+    "footer": {
+      "logoAlt": "Moogship Logo",
+      "socialMedia": {
+        "facebook": "Facebook",
+        "facebookInitial": "F",
+        "twitter": "Twitter",
+        "twitterInitial": "T",
+        "linkedin": "LinkedIn",
+        "linkedinInitial": "L",
+        "instagram": "Instagram",
+        "instagramInitial": "I"
+      }
+    }
+  },
+  "marketing": {
+    "navigation": {
+      "features": "Features",
+      "benefits": "Benefits",
+      "testimonials": "Testimonials",
+      "pricing": "Pricing"
+    },
+    "hero": {
+      "title": "Lowest-Cost <span class=\"text-blue-600\">Global Shipping</span>",
+      "subtitle": "We help US and European e-commerce sellers get the best possible shipping rates, saving you money on every package. No subscriptions, just the lowest fees in the industry.",
+      "startShipping": "Start Shipping",
+      "learnMore": "Learn More",
+      "signup": "Sign Up",
+      "trustedBy": "Trusted by <span class=\"font-medium\">1,000+</span> businesses worldwide"
+    },
+    "tracking": {
+      "title": "Track Your Shipment",
+      "subtitle": "Enter your tracking number below to get real-time updates on your package location and delivery status."
+    },
+    "partners": {
+      "title": "TRUSTED BY INDUSTRY LEADERS"
+    },
+    "features": {
+      "title": "Powerful Features for Global Shipping",
+      "subtitle": "Our platform combines advanced technology with logistics expertise to streamline your international shipping operations.",
+      "feature1": {
+        "title": "Global Shipping Management",
+        "description": "Track and manage international shipments across 190+ countries with real-time updates and complete visibility throughout the delivery process.",
+        "item1": "Simplified customs documentation",
+        "item2": "Real-time shipment tracking"
+      },
+      "feature2": {
+        "title": "Multi-Carrier Integration",
+        "description": "Compare rates and services from leading global shipping providers to find the most cost-effective option for your international packages.",
+        "item1": "Side-by-side rate comparison",
+        "item2": "Single interface for all carriers"
+      },
+      "feature3": {
+        "title": "Automated Label Generation",
+        "description": "Create and print compliant shipping labels with one click. Our system automatically generates all required documentation for customs clearance.",
+        "item1": "PDF label storage and printing",
+        "item2": "Automated customs documentation"
+      },
+      "feature4": {
+        "title": "Recipient Management",
+        "description": "Store and manage an unlimited number of recipients with detailed address verification and smart suggestions for faster data entry.",
+        "item1": "Address book with search",
+        "item2": "CSV bulk import capability"
+      },
+      "feature5": {
+        "title": "Product Catalog Management",
+        "description": "Build and manage your product catalog with comprehensive details including SKUs, dimensions, weights, and customs information for faster shipping.",
+        "item1": "Product templates for quick shipping",
+        "item2": "Automatic customs value calculation"
+      },
+      "feature6": {
+        "title": "Multi-language Support",
+        "description": "Use the platform in your preferred language with support for English, Russian, Turkish, Ukrainian, German, French, Arabic, and Spanish.",
+        "item1": "Complete translation of UI elements",
+        "item2": "Language-specific shipping documentation"
+      },
+      "highlight": {
+        "tag": "Featured Capability",
+        "title": "Comprehensive Dashboard",
+        "description": "Get a bird's-eye view of all your shipping operations with our intuitive dashboard. Monitor shipment status, track expenses, and identify opportunities to optimize your logistics operations.",
+        "point1": "Real-time shipment status updates",
+        "point2": "Detailed cost analysis and savings reports",
+        "point3": "Interactive analytics with exportable reports",
+        "cta": "Try the Dashboard"
+      }
+    },
+    "benefits": {
+      "title": "Why Choose MoogShip?",
+      "subtitle": "Our platform was built to solve the complex challenges of international shipping and logistics management.",
+      "benefit1": {
+        "title": "Save Up to 70% on Shipping",
+        "description": "Access exclusive discounted rates from leading global carriers that traditional shipping platforms cannot match.",
+        "item1": "Pre-negotiated discounts with major carriers",
+        "item2": "No monthly subscription fees or minimums",
+        "item3": "Transparent pricing with no hidden charges"
+      },
+      "benefit2": {
+        "title": "Ship to 190+ Countries",
+        "description": "Expand your business globally with our extensive carrier network and streamlined international shipping process.",
+        "item1": "Automated customs documentation",
+        "item2": "Built-in compliance with international regulations",
+        "item3": "Local pickup options in major countries"
+      },
+      "benefit3": {
+        "title": "Simplify Your Workflow",
+        "description": "Save time with our intuitive platform designed to make international shipping as easy as domestic.",
+        "item1": "One-click label generation and printing",
+        "item2": "Bulk shipment creation and tracking",
+        "item3": "Seamless integration with major e-commerce platforms"
+      }
+    },
+    "dashboard": {
+      "preview": "MoogShip Dashboard",
+      "shipments": "Shipments",
+      "savings": "Savings",
+      "countries": "Countries",
+      "monthlyShipments": "Monthly Shipments",
+      "recentShipments": "Recent Shipments"
+    },
+    "footer": {
+      "description": "Global shipping logistics platform for businesses of all sizes.",
+      "company": "Company",
+      "companyLinks": ["About Us", "Our Team", "Careers"],
+      "services": "Services", 
+      "serviceLinks": ["Global Shipping", "Tracking", "Support"],
+      "legal": "Legal",
+      "legalLinks": ["Privacy Policy", "Terms of Service", "Cookie Policy"],
+      "contactOffices": "Contact & Offices",
+      "allRightsReserved": "All rights reserved.",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "cookies": "Cookies"
+    }
+  },
+  "shipments": {
+    "title": "My Shipments",
+    "actions": {
+      "createNew": "Create New Shipment"
+    },
+    "filters": {
+      "search": "Search shipments...",
+      "searchPlaceholder": "Search shipments...",
+      "statusPlaceholder": "Filter by status",
+      "datePlaceholder": "Filter by date",
+      "allStatuses": "All Statuses",
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "last90Days": "Last 90 Days",
+      "thisYear": "This Year",
+      "itemsPerPage": {
+        "25": "25 items",
+        "50": "50 items", 
+        "100": "100 items"
+      }
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "pre_transit": "Pre Transit",
+      "in_transit": "In Transit",
+      "inTransit": "In Transit",
+      "delivered": "Delivered",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "draft": "Draft"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "createNew": "Create New"
+    }
+  },
+  "draftShipments": {
+    "title": "Draft Shipments",
+    "subtitle": "Create and manage your shipment drafts",
+    "drafts": "Draft Shipments",
+    "newShipment": "New Shipment",
+    "searchPlaceholder": "Search drafts...",
+    "loadError": "Error loading drafts",
+    "noDrafts": "No draft shipments",
+    "createFirstDraft": "Start creating shipments and save them as drafts",
+    "startCreating": "Start Creating",
+    "noSearchResults": "No drafts match your search",
+    "tryDifferentSearch": "Try a different search term",
+    "name": "Name",
+    "sender": "Sender",
+    "receiver": "Receiver",
+    "lastUpdated": "Last Updated",
+    "untitledDraft": "Untitled Draft",
+    "notSpecified": "Not specified",
+    "continue": "Continue",
+    "convert": "Convert",
+    "deleteConfirmTitle": "Delete Draft Shipment",
+    "deleteConfirmDesc": "This action cannot be undone. This will permanently delete this draft shipment.",
+    "convertConfirmTitle": "Convert to Shipment",
+    "convertConfirmDesc": "This will create a new shipment using this draft's information. The draft will remain until you delete it.",
+    "confirmConvert": "Convert to Shipment"
+  },
+  
+  "shipping": {
+    "senderInfo": "Sender Information",
+    "receiverInfo": "Receiver Information",
+    "packageInfo": "Package Information",
+    "customsInfo": "Customs Information",
+    "trackingNumber": "Tracking Number",
+    "countryCodeNotFound": "Could not find code for country:",
+    "recipientSelected": "Recipient Selected",
+    "formFilledWith": "Filled form with {{name}}'s information",
+    "missingInformation": "Missing information",
+    "selectDestinationCountry": "Please select a destination country.",
+    "missingPackages": "Missing packages",
+    "addPackageWithDimensions": "Please add at least one package with dimensions.",
+    "priceCalculationFailed": "Price calculation failed",
+    "priceCalculationError": "There was a problem calculating the shipping price. Please try again.",
+    "recipientDataError": "Failed to fill form with recipient data",
+    "shipmentStatus": "Shipment Status",
+    "shipmentDate": "Shipment Date",
+    "deliveryDate": "Delivery Date",
+    "estimatedDelivery": "Estimated Delivery",
+    "origin": "Origin",
+    "destination": "Destination",
+    "weight": "Weight",
+    "dimensions": "Dimensions",
+    "length": "Length",
+    "width": "Width",
+    "height": "Height",
+    "shippingMethod": "Shipping Method",
+    "shippingCost": "Shipping Cost",
+    "shippingLabel": "Shipping Label",
+    "trackingLink": "Tracking Link",
+    "creatingLabel": "Creating Label...",
+    "createShipment": "",
+    "creatingShipment": "Creating Shipment...",
+    "acceptPriceAndCreateLabel": "Accept Price and Create Label",
+    "goToPackageDetails": "Go to Package Details",
+    "backToPackageDetails": "Back to Package Details",
+    "priceDetailsWillAppear": "Price details will appear here after you calculate the shipping cost.",
+    "createShipmentSuccess": "Shipment created successfully",
+    "createShipmentFailed": "Failed to create shipment",
+    "updateShipmentSuccess": "Shipment updated successfully",
+    "updateShipmentFailed": "Failed to update shipment",
+    "deleteShipmentSuccess": "Shipment deleted successfully",
+    "deleteShipmentFailed": "Failed to delete shipment",
+    "bulkUploadSuccess": "Bulk upload successful",
+    "bulkUploadFailed": "Bulk upload failed",
+    "pickupScheduled": "Pickup Scheduled",
+    "delivered": "Delivered",
+    "inTransit": "In Transit",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "completed": "Completed",
+    "onHold": "On Hold",
+    "allShipments": "All Shipments",
+    "pendingApprovals": "Pending Approvals",
+    "managePickups": "Manage Pickups",
+    "packageChanged": {
+      "title": "Package Information Changed",
+      "description": "Package dimensions or weight have been modified. Please recalculate for updated pricing."
+    }
+  },
+  "financial": {
+    "balance": "Balance",
+    "credits": "Credits",
+    "debits": "Debits",
+    "transactions": "Transactions",
+    "addFunds": "Add Funds",
+    "withdrawFunds": "Withdraw Funds",
+    "paymentMethod": "Payment Method",
+    "paymentAmount": "Payment Amount",
+    "paymentDate": "Payment Date",
+    "paymentStatus": "Payment Status",
+    "transactionType": "Transaction Type",
+    "transactionDetails": "Transaction Details",
+    "transactionDate": "Transaction Date",
+    "transactionAmount": "Transaction Amount",
+    "transactionSuccess": "Transaction successful",
+    "transactionFailed": "Transaction failed",
+    "fundingSuccess": "Funding successful",
+    "fundingFailed": "Funding failed",
+    "withdrawalSuccess": "Withdrawal successful",
+    "withdrawalFailed": "Withdrawal failed",
+    "minBalance": "Minimum Balance",
+    "creditLimit": "Credit Limit",
+    "currentBalance": "Current Balance", 
+    "availableBalance": "Available Balance",
+    "pendingBalance": "Pending Balance",
+    "transactionHistory": "Transaction History",
+    "recentTransactions": "Recent Transactions",
+    "noTransactions": "No transactions found",
+    "balanceDetails": "Balance Details",
+    "credit": "Credit",
+    "debit": "Debit",
+    "newestFirst": "Newest First",
+    "oldestFirst": "Oldest First"
+  },
+  "tables": {
+    "search": "Search...",
+    "noResults": "No matching results found",
+    "date": "Date",
+    "description": "Description",
+    "amount": "Amount",
+    "status": "Status",
+    "actions": "Actions",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selected": "selected",
+    "bulkActions": "Bulk Actions",
+    "loadingData": "Loading data..."
+  },
+  "support": {
+    "tickets": "Tickets",
+    "newTicket": "New Ticket",
+    "ticketDetails": "Ticket Details",
+    "ticketStatus": "Ticket Status",
+    "ticketPriority": "Ticket Priority",
+    "ticketCategory": "Ticket Category",
+    "ticketSubject": "Ticket Subject",
+    "ticketDescription": "Ticket Description",
+    "ticketAttachments": "Ticket Attachments",
+    "ticketResponses": "Ticket Responses",
+    "responseDate": "Response Date",
+    "responseAuthor": "Response Author",
+    "responseContent": "Response Content",
+    "addResponse": "Add Response",
+    "closeTicket": "Close Ticket",
+    "reopenTicket": "Reopen Ticket",
+    "assignTicket": "Assign Ticket",
+    "priorityHigh": "High",
+    "priorityMedium": "Medium",
+    "priorityLow": "Low",
+    "statusOpen": "Open",
+    "statusClosed": "Closed",
+    "statusInProgress": "In Progress",
+    "statusResolved": "Resolved",
+    "createTicketSuccess": "Ticket created successfully",
+    "createTicketFailed": "Failed to create ticket",
+    "updateTicketSuccess": "Ticket updated successfully",
+    "updateTicketFailed": "Failed to update ticket",
+    "responseAddedSuccess": "Response added successfully",
+    "responseAddedFailed": "Failed to add response",
+    "manageTickets": "Manage Tickets",
+    "manageAllTickets": "Manage all customer support tickets"
+  },
+  "navigation": {
+    "tooltips": {
+      "createNewShipment": "Create New Shipment",
+      "customsCalculator": "US Customs Calculator",
+      "calculateShippingPrice": "Calculate Shipping Price",
+      "uploadMultipleShipments": "Upload Multiple Shipments",
+      "trackExistingShipments": "Track Existing Shipments",
+      "viewBalanceDetails": "View Balance Details",
+      "startInteractiveTour": "Start Interactive Tour"
+    }
+  },
+  "dashboard": {
+    "welcomeUser": "Welcome, {{name}}",
+    "welcomeGuest": "Welcome to Moogship",
+    "summary": "Here's what's happening with your shipments today.",
+    "quickActions": {
+      "priceCalculator": "Price Calculator",
+      "newShipment": "New Shipment",
+      "customsCalculator": "US Customs Calculator",
+      "trackShipment": "Track Shipment"
+    },
+    "stats": {
+      "totalShipments": "Total Shipments",
+      "pendingApproval": "Pending Approval",
+      "inTransit": "In Transit",
+      "delivered": "Delivered"
+    },
+    "recentActivity": {
+      "title": "Recent Activity",
+      "description": "Your latest actions and updates"
+    },
+    "performance": {
+      "title": "Performance Metrics",
+      "description": "Shipment statistics and delivery performance",
+      "deliverySuccessRate": "Delivery Success Rate",
+      "statusBreakdown": "Shipment Status Breakdown",
+      "topDestinations": "Top Destination Countries",
+      "noShipments": "No shipments yet"
+    },
+    "status": {
+      "pending": "Pending",
+      "inTransit": "In Transit",
+      "delivered": "Delivered"
+    },
+    "recentShipments": {
+      "title": "Recent Shipments",
+      "description": "View your recent shipment requests and their current status."
+    }
+  },
+  "gettingStarted": {
+    "title": "Getting Started with Moogship",
+    "subtitle": "Learn how to use the Moogship platform to manage your global shipments.",
+    "tabs": {
+      "overview": "Overview",
+      "guides": "Quick Guides",
+      "faq": "FAQs"
+    },
+    "overview": {
+      "welcomeTitle": "Welcome to Moogship!",
+      "welcomeSubtitle": "Your global shipping logistics platform",
+      "description": "Moogship empowers international businesses with intelligent shipment management, advanced pricing tools, and seamless multi-currency support.",
+      "features": {
+        "createShipments": {
+          "title": "Create Shipments",
+          "description": "Create single shipments or upload multiple orders through our bulk upload feature."
+        },
+        "trackOrders": {
+          "title": "Track Orders",
+          "description": "Monitor your shipments in real-time and stay updated with the latest status."
+        },
+        "getSupport": {
+          "title": "Get Support",
+          "description": "Our customer support team is ready to assist you with any questions or issues."
+        },
+        "interactiveTour": {
+          "title": "Take the Interactive Tour",
+          "description": "New to Moogship? Try our interactive walkthrough to learn about the key features.",
+          "button": "Start Interactive Tour"
+        }
+      }
+    },
+    "guides": {
+      "title": "Quick Guides",
+      "subtitle": "Step-by-step guides to help you get started",
+      "sections": {
+        "firstShipment": {
+          "title": "Creating Your First Shipment",
+          "steps": [
+            "Navigate to \"New Shipment\" in the sidebar",
+            "Fill in the sender and recipient information",
+            "Enter package details including weight and dimensions",
+            "Choose your preferred shipping method",
+            "Review and submit your shipment"
+          ]
+        },
+        "balance": {
+          "title": "Managing Your Balance",
+          "steps": [
+            "Go to \"My Balance\" in the sidebar",
+            "View your current balance and transaction history",
+            "Use the banking information to make deposits",
+            "Track your expenses and payments"
+          ]
+        },
+        "tracking": {
+          "title": "Tracking Shipments",
+          "steps": [
+            "Find \"Track Shipments\" in the sidebar",
+            "View all your approved shipments",
+            "Click on any shipment to see detailed status",
+            "Use the tracking number to get real-time updates"
+          ]
+        },
+        "support": {
+          "title": "Getting Support",
+          "steps": [
+            "Click \"New Support Ticket\" in the sidebar",
+            "Select a category for your issue",
+            "Describe your problem in detail",
+            "Submit the ticket and wait for our response",
+            "Check \"My Tickets\" to view responses and updates"
+          ]
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Common questions about using Moogship",
+      "questions": [
+        {
+          "question": "How do I check my shipment status?",
+          "answer": "Go to \"Track Shipments\" in the sidebar and select the shipment you want to track. You'll see detailed information about its current status and location."
+        },
+        {
+          "question": "How can I add funds to my account?",
+          "answer": "Visit the \"My Balance\" page and use the banking information provided to make a bank transfer. Once your payment is processed, your balance will be updated."
+        },
+        {
+          "question": "What shipping methods are available?",
+          "answer": "We offer various shipping methods including express, standard, and economy options. The available methods depend on your origin and destination countries."
+        },
+        {
+          "question": "How long does shipping usually take?",
+          "answer": "Shipping times vary based on the method chosen and destination. Express shipments typically take 2-5 business days, while standard shipping can take 5-14 business days."
+        },
+        {
+          "question": "What should I do if my shipment is delayed?",
+          "answer": "If your shipment is delayed, first check its status in the \"Track Shipments\" section. If the delay continues, create a support ticket and our team will assist you."
+        },
+        {
+          "question": "Can I ship internationally?",
+          "answer": "Yes, Moogship specializes in international shipping. We support shipments to most countries worldwide with competitive rates and reliable delivery."
+        }
+      ]
+    }
+  },
+  "packageTemplates": {
+    "pageTitle": "Package Templates",
+    "pageDescription": "Create and manage your package templates for easier shipment creation",
+    "dimensions": "Dimensions",
+    "defaultTemplateBadge": "Default Template",
+    "actions": {
+      "newTemplate": "New Template",
+      "createTemplate": "Create Template",
+      "updateTemplate": "Update Template",
+      "editTemplate": "Edit Template",
+      "deleteTemplate": "Delete Template",
+      "setAsDefault": "Set as default template"
+    },
+    "empty": {
+      "title": "No Package Templates",
+      "description": "Create your first package template to get started"
+    },
+    "dialogs": {
+      "create": {
+        "title": "Create Package Template",
+        "description": "Create a new package template to use when creating shipments"
+      },
+      "edit": {
+        "title": "Edit Package Template",
+        "description": "Update your package template details"
+      },
+      "delete": {
+        "title": "Delete Package Template",
+        "description": "Are you sure you want to delete this template?",
+        "warning": "This action cannot be undone."
+      }
+    },
+    "table": {
+      "name": "Name",
+      "dimensions": "Dimensions",
+      "volume": "Volume",
+      "volumetricWeight": "Volumetric Weight",
+      "actions": "Actions"
+    },
+    "form": {
+      "name": "Template Name",
+      "description": "Description (Optional)",
+      "length": "Length (cm)",
+      "width": "Width (cm)",
+      "height": "Height (cm)",
+      "isDefault": "Set as default template",
+      "isDefaultDescription": "This template will be selected by default when creating new shipments",
+      "namePlaceholder": "e.g., Small Box",
+      "descriptionPlaceholder": "Description of the package"
+    },
+    "placeholders": {
+      "templateName": "e.g., Small Box",
+      "description": "Description of the package"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "save": "Save"
+    },
+    "alerts": {
+      "createSuccess": "Package template created successfully",
+      "updateSuccess": "Package template updated successfully",
+      "deleteSuccess": "Package template deleted successfully",
+      "defaultUpdated": "Default template updated",
+      "error": {
+        "create": "Failed to create template",
+        "update": "Failed to update template",
+        "delete": "Failed to delete template",
+        "setDefault": "Failed to set default template"
+      }
+    },
+    "selectTemplate": "Select a package template",
+    "defaultTemplates": "Default Templates",
+    "myDatabaseTemplates": "My Database Templates",
+    "mySavedTemplates": "My Saved Templates",
+    "saveCurrentDimensions": "Save Current Dimensions as Template",
+    "savePackageTemplate": "Save Package Template",
+    "saveTemplateDescription": "Save your current package dimensions as a reusable template.",
+    "currentDimensions": "Current Dimensions",
+    "templateName": "Template Name",
+    "description": "Description",
+    "optional": "Optional",
+    "templateNamePlaceholder": "e.g., My Custom Box",
+    "descriptionPlaceholder": "Brief description of this template",
+    "saveTemplate": "Save Template"
+  },
+  "recipientsData": {
+    "pageTitle": "Recipient Database",
+    "pageDescription": "Manage your frequently used recipient information for shipments",
+    "actions": {
+      "addRecipient": "Add Recipient",
+      "editRecipient": "Edit Recipient",
+      "deleteRecipient": "Delete Recipient",
+      "importRecipients": "Import Recipients",
+      "exportRecipients": "Export CSV",
+      "setAsDefault": "Set as Default"
+    },
+    "viewToggle": {
+      "grid": "Grid View",
+      "table": "Table View"
+    },
+    "defaultRecipientBadge": "Default",
+    "empty": {
+      "title": "No Recipients",
+      "description": "Add your first recipient to get started"
+    },
+    "dialogs": {
+      "add": {
+        "title": "Add New Recipient",
+        "description": "Enter recipient details to save for future shipments"
+      },
+      "edit": {
+        "title": "Edit Recipient",
+        "description": "Update your recipient information"
+      },
+      "delete": {
+        "title": "Delete Recipient",
+        "description": "Are you sure you want to delete this recipient?",
+        "warning": "This action cannot be undone."
+      }
+    },
+    "card": {
+      "phone": "Phone",
+      "email": "Email",
+      "address": "Address"
+    },
+    "table": {
+      "name": "Name",
+      "address": "Address",
+      "city": "City",
+      "state": "State/Province",
+      "postalCode": "Postal Code",
+      "country": "Country",
+      "phone": "Phone",
+      "email": "Email",
+      "contact": "Contact",
+      "actions": "Actions"
+    },
+    "form": {
+      "name": "Name",
+      "address": "Address",
+      "city": "City",
+      "state": "State/Province",
+      "postalCode": "Postal Code",
+      "country": "Country",
+      "phone": "Phone",
+      "email": "Email",
+      "isDefault": "Set as default recipient",
+      "isDefaultDescription": "This recipient will be automatically selected for new shipments"
+    },
+    "placeholders": {
+      "name": "Full recipient name",
+      "address": "Recipient's address",
+      "city": "City",
+      "state": "State/Province",
+      "postalCode": "Postal code",
+      "country": "Country",
+      "phone": "Phone number",
+      "email": "Email address"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "confirm": "Confirm",
+      "copyAddress": "Copy Address",
+      "saveRecipient": "Save Recipient",
+      "updateRecipient": "Update Recipient",
+      "setAsDefault": "Set as Default"
+    },
+    "notifications": {
+      "copied": {
+        "title": "Copied to clipboard",
+        "description": "Recipient details copied to clipboard"
+      }
+    },
+    "alerts": {
+      "createSuccess": "Recipient created successfully",
+      "updateSuccess": "Recipient updated successfully",
+      "deleteSuccess": "Recipient deleted successfully",
+      "defaultUpdated": "Default recipient updated",
+      "exportSuccess": "Recipients exported successfully",
+      "exportFailed": "Failed to export recipients",
+      "noExportData": "No recipients to export",
+      "error": {
+        "create": "Failed to create recipient",
+        "update": "Failed to update recipient",
+        "delete": "Failed to delete recipient",
+        "setDefault": "Failed to set default recipient"
+      }
+    }
+  },
+  "products": {
+    "tooltips": {
+      "productName": "Enter a descriptive name for your product (minimum 3 characters)",
+      "description": "Brief description of the product for identification purposes",
+      "price": "Product price in USD for customs declaration",
+      "quantity": "Number of units of this product in the package",
+      "gtin": "Global Trade Item Number (barcode) for product identification",
+      "hsCode": "Harmonized System Code for customs classification (minimum 6 digits, e.g., 123456)",
+      "translateAll": "Automatically detect and translate foreign product names to English for better customs processing",
+      "translateSingle": "Translate this product name to English for customs processing",
+      "countryOfOrigin": "Country where the product was manufactured or produced",
+      "manufacturer": "Name of the company that manufactured this product",
+      "packageName": "Choose a package template or enter custom dimensions for your shipment",
+      "packageLength": "Package length in centimeters (cm)",
+      "packageWidth": "Package width in centimeters (cm)",
+      "packageHeight": "Package height in centimeters (cm)",
+      "packageWeight": "Package weight in kilograms (kg)"
+    },
+    "toast": {
+      "noProductsSelected": "No products selected",
+      "noProductsSelectedDesc": "Please select at least one product to add",
+      "productsAdded": "Products added",
+      "productsAddedDesc": "Added {{count}} products to your items list",
+      "productAdded": "Product added successfully",
+      "productAddedDesc": "Your product has been added to the database",
+      "error": "Error",
+      "productSaved": "Product saved",
+      "productSavedDesc": "Product information has been saved successfully",
+      "productDeleted": "Product deleted",
+      "productDeletedDesc": "Product has been removed from your library",
+      "packageAdded": "Package added",
+      "packageAddedDesc": "Package has been added to your items list",
+      "missingFields": "Missing required fields",
+      "missingFieldsDesc": "Product Name, HS Code, Price, and Quantity are required",
+      "productNameTooShort": "Product Name Must Have Multiple Words",
+      "productNameTooShortDesc": "Product name must contain at least 2 words.",
+      "hsCodeTooShort": "HS Code Too Short",
+      "hsCodeTooShortDesc": "HS Code must be at least 6 characters long.",
+      "priceRequired": "Price Required for Customs",
+      "priceRequiredDesc": "Price must be greater than 0 for customs documentation."
+    }
+  },
+  "productsData": {
+    "pageTitle": "Products",
+    "pageDescription": "View and manage your product catalog",
+    "catalog": {
+      "title": "Product Catalog",
+      "subtitle": "Manage your product inventory for shipments"
+    },
+    "actions": {
+      "bulkUpload": "Bulk Upload",
+      "addProduct": "Add Product",
+      "editProduct": "Edit Product",
+      "deleteProduct": "Delete Product",
+      "addFirstProduct": "Add Your First Product",
+      "downloadTemplate": "Download Template",
+      "cancel": "Cancel",
+      "update": "Update Product"
+    },
+    "search": {
+      "placeholder": "Search products..."
+    },
+    "empty": {
+      "title": "No products yet",
+      "description": "You haven't added any products to your catalog yet."
+    },
+    "table": {
+      "productName": "Product Name",
+      "sku": "SKU",
+      "price": "Price",
+      "hsCode": "HS Code",
+      "countryOfOrigin": "Country of Origin",
+      "actions": "Actions",
+      "noSku": "No SKU",
+      "notSpecified": "Not specified"
+    },
+    "form": {
+      "addTitle": "Add New Product",
+      "addDescription": "Add a new product to your catalog for use in shipments.",
+      "editTitle": "Edit Product",
+      "editDescription": "Update product details for your catalog.",
+      "productName": "Product Name",
+      "productSku": "Product SKU",
+      "description": "Description",
+      "price": "Price ($)",
+      "quantity": "Quantity",
+      "hsCode": "HS Code",
+      "countryOfOrigin": "Country of Origin",
+      "placeholders": {
+        "productName": "Product Name",
+        "productSku": "Product SKU",
+        "description": "Product Description",
+        "price": "0.00",
+        "quantity": "0",
+        "hsCode": "Harmonized System Code",
+        "countryOfOrigin": "Country Code (e.g., US)"
+      },
+      "validation": {
+        "nameRequired": "Product name is required",
+        "hsCodeRequired": "HS Code is required",
+        "priceRequired": "Price is required",
+        "quantityRequired": "Quantity is required",
+        "countryRequired": "Country of origin is required"
+      }
+    },
+    "alerts": {
+      "createSuccess": "Product created successfully!",
+      "updateSuccess": "Product updated successfully!",
+      "deleteSuccess": "Product deleted successfully!",
+      "createError": "Failed to create product.",
+      "updateError": "Failed to update product.",
+      "deleteError": "Failed to delete product.",
+      "loadError": "Failed to load products. Please try again.",
+      "connectionError": "Failed to connect to the server.",
+      "templateDownloadSuccess": "Template downloaded successfully",
+      "templateDownloadError": "Failed to download template. Please try again."
+    },
+    "bulkUpload": {
+      "title": "Bulk Upload Products",
+      "description": "Upload multiple products at once using a spreadsheet file.",
+      "instructions": "Download the template, fill it with your product data, and upload it.",
+      "downloadTemplate": "Download Template",
+      "dragDrop": "Drag and drop your file here, or click to browse",
+      "fileTypes": "Supported file types: .xlsx, .xls, .csv",
+      "uploadingStatus": "Uploading file...",
+      "resultsTitle": "Upload Results",
+      "successCount": "Successfully processed",
+      "errorCount": "Failed to process",
+      "duplicatesCount": "Duplicates",
+      "productsAdded": "Products added",
+      "close": "Close"
+    },
+    "deleteConfirmation": {
+      "title": "Delete Product",
+      "description": "Are you sure you want to delete this product? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
+  },
+  "productsSection": {
+    "pageTitle": "Products",
+    "pageDescription": "View and manage your product catalog",
+    "catalog": {
+      "title": "Product Catalog",
+      "subtitle": "Manage your product inventory for shipments"
+    },
+    "actions": {
+      "bulkUpload": "Bulk Upload",
+      "addProduct": "Add Product",
+      "editProduct": "Edit Product",
+      "deleteProduct": "Delete Product",
+      "addFirstProduct": "Add Your First Product",
+      "downloadTemplate": "Download Template",
+      "cancel": "Cancel",
+      "update": "Update Product"
+    },
+    "search": {
+      "placeholder": "Search products..."
+    },
+    "empty": {
+      "title": "No products yet",
+      "description": "You haven't added any products to your catalog yet."
+    },
+    "table": {
+      "productName": "Product Name",
+      "sku": "SKU",
+      "price": "Price",
+      "hsCode": "HS Code",
+      "countryOfOrigin": "Country of Origin",
+      "actions": "Actions",
+      "noSku": "No SKU",
+      "notSpecified": "Not specified"
+    },
+    "form": {
+      "addTitle": "Add New Product",
+      "addDescription": "Add a new product to your catalog for use in shipments.",
+      "editTitle": "Edit Product",
+      "editDescription": "Update product details for your catalog.",
+      "productName": "Product Name",
+      "productSku": "Product SKU",
+      "description": "Description",
+      "price": "Price ($)",
+      "quantity": "Quantity",
+      "hsCode": "HS Code",
+      "countryOfOrigin": "Country of Origin",
+      "placeholders": {
+        "productName": "Product Name",
+        "productSku": "Product SKU",
+        "description": "Product Description",
+        "price": "0.00",
+        "quantity": "0",
+        "hsCode": "Harmonized System Code",
+        "countryOfOrigin": "Country Code (e.g., US)"
+      },
+      "validation": {
+        "nameRequired": "Product name is required",
+        "hsCodeRequired": "HS Code is required",
+        "priceRequired": "Price is required",
+        "quantityRequired": "Quantity is required",
+        "countryRequired": "Country of origin is required"
+      }
+    },
+    "alerts": {
+      "createSuccess": "Product created successfully!",
+      "updateSuccess": "Product updated successfully!",
+      "deleteSuccess": "Product deleted successfully!",
+      "createError": "Failed to create product.",
+      "updateError": "Failed to update product.",
+      "deleteError": "Failed to delete product.",
+      "loadError": "Failed to load products. Please try again.",
+      "connectionError": "Failed to connect to the server.",
+      "templateDownloadSuccess": "Template downloaded successfully",
+      "templateDownloadError": "Failed to download template. Please try again."
+    },
+    "bulkUpload": {
+      "title": "Bulk Upload Products",
+      "description": "Upload multiple products at once using a spreadsheet file.",
+      "instructions": "Download the template, fill it with your product data, and upload it.",
+      "downloadTemplate": "Download Template",
+      "dragDrop": "Drag and drop your file here, or click to browse",
+      "fileTypes": "Supported file types: .xlsx, .xls, .csv",
+      "uploadingStatus": "Uploading file...",
+      "resultsTitle": "Upload Results",
+      "successCount": "Successfully processed",
+      "errorCount": "Failed to process",
+      "duplicatesCount": "Duplicates",
+      "productsAdded": "Products added",
+      "close": "Close"
+    },
+    "deleteConfirmation": {
+      "title": "Delete Product",
+      "description": "Are you sure you want to delete this product? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
+  },
+  "products": {
+    "myProducts": "My Products",
+    "createProduct": "Create Product",
+    "editProduct": "Edit Product",
+    "deleteProduct": "Delete Product",
+    "productDetails": "Product Details",
+    "productName": "Product Name",
+    "productDescription": "Product Description",
+    "productSKU": "Product SKU",
+    "productCategory": "Product Category",
+    "productPrice": "Product Price",
+    "packageItems": "Package Items",
+    "packageItemsTitle": "Product Addition",
+    "packageItemsDescription": "Add the products you want to ship and define their details",
+    "translateAll": "Translate All",
+    "translating": "Translating...",
+    "packaging": {
+      "title": "Physical Packaging",
+      "description": "Define physical package dimensions and weight"
+    },
+    "addItem": "Add Item",
+    "addAsNewProduct": "Add \"{{productName}}\" as a new product",
+    "searchProducts": "Search product catalog or enter a new product name...",
+    "placeholders": {
+      "productName": "Enter product name...",
+      "price": "0.00",
+      "hsCode": "HS Code"
+    },
+    "noItems": {
+      "title": "No items added",
+      "description": "Click the search bar above to browse your product catalog"
+    },
+    "dialog": {
+      "productDetails": "Product Details",
+      "productContents": "Product Contents *",
+      "searchPlaceholder": "Search for an existing product or enter a new one...",
+      "quantity": "Quantity *",
+      "unitPrice": "Unit Price *",
+      "skuCode": "SKU Code",
+      "hsCode": "HS Code *",
+      "description": "Description",
+      "countryOfOrigin": "Country of Origin *",
+      "cancel": "Cancel",
+      "update": "Update Item",
+      "add": "Add Item"
+    },
+    "productsSelected": "{{count}} product(s) selected",
+    "addToShipment": "Add {{count}} to Shipment",
+    "selectInstructions": "Click items to select • Press ESC when done",
+    "packageDialog": {
+      "createPackage": "Create Package",
+      "editPackage": "Edit Package",
+      "description": "Assign items to this package for shipping",
+      "packageName": "Package Name",
+      "packageDescription": "Description (Optional)",
+      "length": "Length (cm)",
+      "width": "Width (cm)",
+      "height": "Height (cm)",
+      "weight": "Weight (kg)",
+      "selectItems": "Select Items for this Package",
+      "noItems": "No items available to add to this package",
+      "item": "Item",
+      "quantity": "Quantity",
+      "alreadyInPackage": "Already in another package",
+      "cancel": "Cancel",
+      "savePackage": "Save Package",
+      "noPackages": "No packages added yet. Use the form above to add a package.",
+      "createCustomPackage": "Create Custom Package",
+      "createCustomPackageTooltip": "Create a custom-sized package from your added products",
+      "customPackage": "Custom Package",
+      "selectTemplate": "Select a package template...",
+      "searchTemplates": "Search templates...",
+      "noTemplates": "No package templates found.",
+      "createTemplates": "Create templates in the Package Templates section.",
+      "default": "Default",
+      "dimensions": "Dimensions",
+      "toast": {
+        "packageSaved": "Package saved",
+        "packageSavedDescription": "{{name}} with {{count}} items has been saved.",
+        "templateApplied": "Template Applied",
+        "templateAppliedDescription": "Applied dimensions from \"{{name}}\" template"
+      },
+      "achievement": {
+        "title": "Great job!",
+        "description": "You've added multiple items to your package for more efficient shipping."
+      }
+    },
+    "productCost": "Product Cost",
+    "productWeight": "Product Weight",
+    "productDimensions": "Product Dimensions",
+    "productInventory": "Product Inventory",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "lowStock": "Low Stock",
+    "stockQuantity": "Stock Quantity",
+    "productImage": "Product Image",
+    "uploadProductImage": "Upload Product Image",
+    "removeProductImage": "Remove Product Image",
+    "addToShipment": "Add to Shipment",
+    "removeFromShipment": "Remove from Shipment",
+    "selectProducts": "Select Products",
+    "noProducts": "No products found",
+    "noProductsDescription": "You haven't added any products yet. Create your first product now!",
+    "productAddedSuccess": "Product added successfully",
+    "productAddedFailed": "Failed to add product",
+    "productUpdatedSuccess": "Product updated successfully",
+    "productUpdatedFailed": "Failed to update product",
+    "productDeletedSuccess": "Product deleted successfully",
+    "productDeletedFailed": "Failed to delete product",
+    "productImported": "Product imported successfully",
+    "productImportFailed": "Failed to import product",
+    "importProducts": "Import Products",
+    "exportProducts": "Export Products",
+    "bulkEditProducts": "Bulk Edit Products",
+    "productQuantity": "Quantity",
+    "addProduct": "Add Product",
+    "selectProduct": "Select Product",
+    "packaging": {
+      "title": "Packaging",
+      "description": "Define package dimensions for shipping"
+    }
+  },
+  "customs": {
+    "packageContents": "Package Contents",
+    "placeholder": {
+      "describeContents": "Describe the contents of your package",
+      "enterIossNumber": "Enter IOSS number",
+      "enterHmrcNumber": "Enter HMRC number",
+      "enterGtipCode": "Enter GTIP/HS code",
+      "value": "Value (e.g. 123.45)",
+      "selectCurrency": "Select currency"
+    },
+    "description": {
+      "contents": "Please provide a general description of what you're shipping.",
+      "iossNumber": "Import One-Stop Shop (IOSS) number is required for e-commerce goods valued up to €150 shipped to EU.",
+      "hmrcNumber": "HMRC number is required for e-commerce goods shipped to the {{country}}.",
+      "gtipCode": "Harmonized System code for customs classification",
+      "gtipCodeAuto": "Automatically combined from your package items",
+      "value": "Enter the declared value for customs purposes",
+      "valueAuto": "Automatically calculated from your package items",
+      "insurance": "Protect your products against loss or theft during shipping. The insurance cost will be calculated based on the declared customs value."
+    },
+    "iossNumber": "IOSS Number",
+    "hmrcNumber": "HMRC Number",
+    "gtipCode": "GTIP (HS) Code",
+    "customsValue": "Customs Value",
+    "currency": "Currency",
+    "addShippingInsurance": "Add Product Insurance",
+    "insuranceProtection": "Product Insurance Protection",
+    "insuranceValue": "Insurance Value",
+    "insuranceCoverage": "Insurance Coverage",
+    "declaredValue": "Declared Value",
+    "insuranceCost": "Insurance Cost",
+    "customsInformation": "Customs Information",
+    "importantReview": "(Important - Please review)",
+    "packageAdded": "Package details have been added. Please verify the customs information below for accurate customs declaration.",
+    "description": {
+      "contents": "Please provide a general description of what you're shipping.",
+      "iossNumber": "Import One-Stop Shop (IOSS) number is required for e-commerce goods valued up to €150 shipped to EU.",
+      "hmrcNumber": "HMRC number is required for e-commerce goods shipped to the {{country}}.",
+      "gtipCode": "Harmonized System code for customs classification",
+      "gtipCodeAuto": "Automatically combined from your package items",
+      "value": "Enter the declared value for customs purposes",
+      "valueAuto": "Automatically calculated from your package items",
+      "insurance": "Protect your products against loss or theft during shipping. The insurance cost will be calculated based on the declared customs value.",
+      "insuranceValue": "Enter the value you want to insure for this shipment",
+      "insuranceCostInfo": "Insurance cost is calculated based on the declared value and coverage limits",
+      "totalCost": "Total Shipment Cost",
+      "shippingCost": "Shipping Cost",
+      "breakdown": "Cost Breakdown",
+      "insuranceCoverageInfo": "Coverage: ${value} for lost or stolen packages",
+      "totalCostSummary": "Total Shipment Cost",
+      "dutyCost": "Estimated Duties",
+      "ddpProcessingFee": "DDP Processing Fee",
+      "informationOnly": "info only",
+      "baseDuty": "Base Duty",
+      "ongoingDuty": "Ongoing Duty",
+      "totalCost": "Total Cost",
+      "dutyInfo": {
+        "officialUSITC": "Official USITC duty rates",
+        "verified": "(verified)",
+        "fallback": "(fallback)",
+        "aiCalculated": "AI-calculated duties",
+        "confidence": "confidence",
+        "estimatedDuties": "Estimated duties and taxes for international shipment",
+        "hsCode": "HS Code",
+        "trumpTariffs": "Includes Trump economic tariffs (ongoing duty)"
+      }
+    }
+  },
+  "countries": {
+    "unitedKingdom": "United Kingdom",
+    "sweden": "Sweden"
+  },
+
+  "shipmentTable": {
+    "select": "Select",
+    "selectAll": "Select all",
+    "shipmentId": "Shipment Details",
+    "companyCustomer": "Company/Customer",
+    "recipient": "Recipient",
+    "trackingHeader": "Tracking",
+    "internalTracking": "Internal tracking number",
+    "carrier": "Carrier",
+    "shippingTerms": "Terms",
+    "externalTracking": "External carrier tracking",
+    "labelErrorsNote": "Label errors will be shown in red",
+    "price": "Customer Price",
+    "originalPrice": "Cost",
+    "createdDate": "Created Date",
+    "status": "Status",
+    "actions": "Actions",
+    "trackingCopied": "Tracking number copied to clipboard",
+    "carrierTracking": "Carrier Tracking",
+    "noTracking": "No tracking number",
+    "createPickupRequest": "Create Pickup Request",
+    "requestRefund": "Request Refund",
+    "processing": "Processing...",
+    "purchaseLabels": "Purchase Labels",
+    "packageContents": {
+      "name": "Name",
+      "quantity": "Quantity",
+      "price": "Price",
+      "actions": "Actions"
+    },
+    "tracking": {
+      "title": "Tracking Information",
+      "shipment": "Shipment",
+      "moogshipTracking": "MoogShip Tracking #",
+      "carrierTracking": "Carrier Tracking #"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "in_transit": "In Transit",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected",
+      "draft": "Draft"
+    }
+  },
+  "priceCalculator": {
+    "title": "Shipping Price Calculator",
+    "subtitle": "Get instant shipping quotes for your packages with our advanced pricing calculator",
+    "calculateShippingCost": "Calculate Shipping Cost",
+    "enterPackageDetails": "Enter package details to get an accurate shipping quote",
+    "packageDimensions": "Package Details",
+    "directBillableWeight": "Direct Billable Weight",
+    "useDirectWeight": "Enter weight directly",
+    "useDimensions": "Use dimensions",
+    "lengthCm": "Length (cm)",
+    "widthCm": "Width (cm)",
+    "heightCm": "Height (cm)",
+    "weightKg": "Weight (kg)",
+    "billableWeightKg": "Billable Weight (kg)",
+    "enterBillableWeight": "Enter billable weight",
+    "billableWeightDescription": "Enter the billable weight directly to override automatic calculations. This is useful when you already know the billable weight from your carrier.",
+    "weightCalculation": "Weight Calculation",
+    "actualWeight": "Actual Weight:",
+    "volumetricWeight": "Volumetric Weight:",
+    "billableWeight": "Billable Weight:",
+    "manual": "Manual",
+    "billableWeightNote": "Billable weight is the higher of actual weight and volumetric weight (L×W×H÷5000).",
+    "shippingDetails": "Shipping Details",
+    "destinationCountry": "Destination Country",
+    "selectCountry": "Select a country",
+    "searchCountry": "Search country...",
+    "noCountryFound": "No country found",
+    "validationErrorTitle": "Required fields missing",
+    "validationError": "Please enter all required fields",
+    "validationFields": {
+      "destinationCountry": "destination country",
+      "billableWeight": "billable weight",
+      "length": "length",
+      "width": "width", 
+      "height": "height",
+      "weight": "weight"
+    },
+    "shippingInfo": "Shipping Info",
+    "from": "From:",
+    "fromLocation": "Istanbul, Turkey",
+    "to": "To:",
+    "service": "Service:",
+    "serviceType": "Express",
+    "estimatedDelivery": "Estimated Delivery:",
+    "deliveryTime": "1-4 days",
+    "priceInformation": "Price Information",
+    "basePrice": "Base Price:",
+    "fuelSurcharge": "Fuel Surcharge:",
+    "taxes": "Taxes:",
+    "total": "Total:",
+    "calculating": "Calculating...",
+    "calculatePrice": "Calculate Price",
+    "importantNote": "Important Note",
+    "girthExceeding": "For shipments with a girth exceeding a certain measurement, carriers may apply additional charges. The calculation and applicable surcharges are as follows:",
+    "girthCalculation": "In international air shipping, girth is calculated as:",
+    "girthFormula": "[(sum of the two shorter sides) x 2] + the longest side",
+    "upsShipments": "For shipments sent via UPS:",
+    "upsRule1": "If the girth is between 295 cm and 400 cm, the shipment will be billed as 48 kg and an additional $150 surcharge will be applied.",
+    "upsRule2": "If any side of your shipment exceeds 98 cm, an additional $21 surcharge applies.",
+    "upsRule3": "If two sides of your shipment are longer than 75 cm, an additional $21 surcharge applies.",
+    "upsRule4": "If the actual weight of your shipment exceeds 25 kg, an additional $21 surcharge applies.",
+    "upsRule5": "If the package exceeds 70 volumetric weight (desi), an additional $380 surcharge applies.",
+    "upsRule6": "If any single side of your package is longer than 270 cm, or if the girth exceeds 400 cm, an additional $380 surcharge applies.",
+    "profitabilityCalculator": "You can calculate the profitability of a shipment for major marketplaces from",
+    "here": "here",
+    "additionalInformation": "Additional Information",
+    "ecoServiceNote": "Eco service is only valid for shipments to the USA weighing under 0.5 kg/desi.",
+    "ecoFallbackNote": "Shipments that do not qualify for Eco but are selected as Eco will be billed at standard rates by default.",
+    "customsNote": "Your shipments may not require customs clearance. Customs fees and duties are calculated based on the contents and value of your items, as well as the regulations of the destination country.",
+    "chooseService": "Choose Your MoogShip Service",
+    "selectBestOption": "Select the shipping option that best fits your needs",
+    "economy": "Economy",
+    "express": "Express",
+    "standard": "Standard",
+    "totalPrice": "Total Price",
+    "base": "Base",
+    "fuel": "Fuel",
+    "shippingRouteDetails": "Shipping Route Details",
+    "origin": "Origin",
+    "destination": "Destination",
+    "billableWeightLabel": "Billable Weight",
+    "selectedCountry": "Selected Country",
+    "calculateAnother": "Calculate Another",
+    "createShipment": "Create Shipment"
+  },
+  "approvedShipments": {
+    "title": "My Approved Shipments",
+    "description": "View and track your approved shipments",
+    "refresh": "Refresh",
+    "search": "Search by tracking number, recipient, or country...",
+    "tabs": {
+      "approved": "Approved",
+      "inTransit": "In Transit",
+      "delivered": "Delivered"
+    },
+    "tableHeaders": {
+      "approvedShipments": "Approved Shipments",
+      "shipmentsInTransit": "Shipments In Transit",
+      "deliveredShipments": "Delivered Shipments",
+      "noShipmentsFound": "No shipments found",
+      "noApproved": "You don't have any approved shipments yet.",
+      "noInTransit": "You don't have any shipments in transit.",
+      "noDelivered": "You don't have any delivered shipments."
+    },
+    "columns": {
+      "tracking": "Tracking #",
+      "recipient": "Recipient",
+      "destination": "Destination",
+      "date": "Date",
+      "status": "Status",
+      "trackingStatus": "Live Status",
+      "estimatedDelivery": "Est. Delivery",
+      "actions": "Actions"
+    },
+
+    "buttons": {
+      "track": "Track",
+      "label": "Label",
+      "downloadLabel": "Download Label"
+    },
+    "tracking": {
+      "dialogTitle": "Shipment Tracking",
+      "dialogDescription": "Tracking details for",
+      "currentStatus": "Current Status",
+      "trackingNumber": "Tracking Number",
+      "carrier": "Carrier",
+      "lastUpdated": "Last Updated",
+      "currentLocation": "Current Location",
+      "estimatedDelivery": "Estimated Delivery",
+      "trackingHistory": "Tracking History",
+      "noTrackingInfo": "No tracking information available for this shipment yet.",
+      "close": "Close",
+      "refresh": "Refresh",
+      "downloadLabel": "Download Label"
+    },
+    "hoverCards": {
+      "recipientDetails": "Recipient Details",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "destinationDetails": "Destination Details",
+      "from": "From",
+      "to": "To",
+      "postalCode": "Postal Code",
+      "serviceLevel": "Service Level"
+    },
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "approved": "Approved",
+      "in_transit": "In Transit",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "buttons": {
+      "track": "Track",
+      "label": "Label",
+      "downloadLabel": "Download Label"
+    }
+  },
+  "balance": {
+    "title": "My Balance",
+    "currentBalance": "Current Balance",
+    "availableFunds": "Your available funds",
+    "balanceManagement": "Balance Management",
+    "accountInfo": "Information about your account",
+    "creditLimit": "Credit Limit",
+    "availableCredit": "Available Credit",
+    "adminManaged": "Your account balance is managed by the administrator.",
+    "contactAdmin": "For balance inquiries or to add funds, please contact your administrator.",
+    "bankInformation": "Bank Information",
+    "bankInfoDescription": "Use this information to make deposits to your account",
+    "accountDetails": "Account Details",
+    "importantInformation": "Important Information",
+    "includeUsername": "Include your username in the payment description",
+    "contactSupport": "After making a payment, please contact support to confirm",
+    "creditAfterVerification": "Your account will be credited once the payment is verified"
+  },
+  "createShipment": {
+    "draft": {
+      "saveAsDraft": "",
+      "saving": "Saving...",
+      "error": "Error saving draft",
+      "successTitle": "Draft Saved",
+      "successDescription": "Your shipment has been saved as a draft",
+      "errorTitle": "Error Saving Draft",
+      "errorDescription": "There was a problem saving your draft"
+    },
+    "title": "Create New Shipment",
+    "subtitle": "Fill in the shipment details to create a new order.",
+    "backToDashboard": "Back to Dashboard",
+    "sections": {
+      "recipient": "Recipient Information",
+      "package": "Package Details", 
+      "price": "Price & Submit",
+      "priceAndShipping": "Price & Shipping"
+    },
+    "recipientInfo": {
+      "title": "Recipient Information",
+      "name": "Recipient Name",
+      "phone": "Phone Number",
+      "email": "Email (Optional)",
+      "address": "Address",
+      "city": "City",
+      "postalCode": "Postal Code",
+      "contents": "Package Contents Description",
+      "fields": {
+        "fullName": "Full Name",
+        "email": "Email",
+        "phone": "Phone Number",
+        "address": "Address",
+        "country": "Country",
+        "city": "City",
+        "state": "State/Province",
+        "postalCode": "Postal Code"
+      },
+      "placeholders": {
+        "fullName": "Receiver's full name",
+        "email": "Email address",
+        "phone": "Phone number",
+        "address": "Street address",
+        "country": "Select",
+        "city": "City",
+        "state": "Select",
+        "postalCode": "Postal/Zip code"
+      },
+      "descriptions": {
+        "email": "If not provided, will default to info@moogship.com"
+      }
+    },
+    "senderInfo": {
+      "title": "Sender Information",
+      "name": "Sender Name",
+      "phone": "Phone Number",
+      "email": "Email (Optional)",
+      "address": "Address",
+      "city": "City",
+      "postalCode": "Postal Code"
+    },
+    "packageDetails": {
+      "title": "Package Details",
+      "destinationCountry": "Destination Country",
+      "serviceLevel": "Service Level",
+      "length": "Length (cm)",
+      "width": "Width (cm)",
+      "height": "Height (cm)",
+      "weight": "Weight (kg)",
+      "pieces": "Number of Pieces",
+      "weightInfo": "Weight Information",
+      "packages": "packages",
+      "actualWeight": "Actual Weight",
+      "volumetricWeight": "Volumetric Weight",
+      "totalWeight": "Total Weight",
+      "billableWeight": "Billable Weight",
+      "sumOfAllPackages": "sum of all packages",
+      "sumOfAllPackageBillableWeights": "sum of all package billable weights",
+      "packageContents": "Package Contents",
+      "packageItems": "Package Items (Detailed)",
+      "packageDimensions": "Package Dimensions",
+      "totalItemsDescription": "Total number of items inside all packages"
+    },
+    "priceDetails": {
+      "title": "Price & Submit",
+      "shippingPriceDetails": "Shipping Price Details",
+      "basePrice": "Base Price",
+      "fuelCharge": "Fuel Charge",
+      "totalPrice": "Total Price",
+      "carrier": "Carrier",
+      "estimatedDelivery": "Estimated delivery in {{days}} business days",
+      "billableWeight": "Billable weight: {{weight}} kg",
+      "acceptTerms": "I accept the shipping price and agree to the terms and conditions",
+      "completePackageFirst": "Please fill in the package details and calculate the price first.",
+      "itemsInShipment": "Items in the Shipment",
+      "shippingAndDelivery": "Shipping & Delivery",
+      "serviceLevel": "Service Level",
+      "noProductsAdded": "No products added yet.",
+      "totalItems": "Total Items",
+      "totalValue": "Total Value",
+      "insuranceCost": "Insurance Cost",
+      "notAvailable": "Not available for this value",
+      "packages": "Packages",
+      "packagesWithWeight": "{{count}} packages with combined billable weight",
+      "creditLimitWarning": "Insufficient balance to create this shipment",
+      "creditCheckPassed": "Balance check passed - you can create this shipment",
+      "currentBalance": "Current balance",
+      "newBalanceAfterShipment": "New balance after shipment",
+      "minimumBalanceRequired": "Minimum balance required",
+      "exceedCreditLimitBy": "You'll exceed your credit limit by",
+      "creditLimit": "Credit limit",
+      "availableCredit": "Available credit",
+      "shipmentCost": "Shipment cost",
+      "needToAdd": "You need to add"
+    },
+    "successDialog": {
+      "title": "Shipment Created Successfully!",
+      "description": "Your shipment #{{id}} has been created and is pending approval.",
+      "recipient": "Recipient",
+      "destination": "Destination",
+      "serviceLevel": "Service Level",
+      "status": "Status",
+      "viewMyShipments": "View My Shipments",
+      "printLabel": "Print Label"
+    },
+    "toast": {
+      "success": {
+        "title": "Shipment created",
+        "description": "Your shipment has been successfully created and is pending approval."
+      },
+      "error": {
+        "title": "Failed to create shipment",
+        "description": "An error occurred while creating your shipment."
+      }
+    },
+    "actions": {
+      "continueToPackage": "Continue to Package Details",
+      "calculatePrice": "Calculate Shipping Price",
+      "createShipment": "",
+      "goToPackage": "Go to Package Details",
+      "backToRecipient": "Back to Recipient"
+    },
+    "validation": {
+      "recipientName": "Recipient name is required",
+      "phone": "Phone number is required",
+      "email": "Must be a valid email",
+      "address": "Address is required",
+      "city": "City is required",
+      "postalCode": "Postal code is required",
+      "contents": "Package contents are required",
+      "contentsMaxLength": "Maximum 100 characters",
+      "senderName": "Sender name is required",
+      "senderAddress": "Sender address is required",
+      "senderCity": "Sender city is required",
+      "senderPostalCode": "Sender postal code is required",
+      "destinationCountry": "Destination country is required",
+      "length": "Length must be at least 1 cm",
+      "width": "Width must be at least 1 cm",
+      "height": "Height must be at least 1 cm",
+      "weight": "Weight must be at least 0.1 kg",
+      "pieces": "Must have at least 1 piece",
+      "serviceLevel": "Service level is required",
+      "completeFields": "Please complete all required fields",
+      "ensureFieldsFilled": "Ensure all required fields in the recipient and package sections are filled in.",
+      "priceCalculationFailed": "Price calculation failed",
+      "tryAgain": "There was a problem calculating the shipping price. Please try again.",
+      "completeSections": "Please complete all sections before creating shipment"
+    },
+    "shippingTerms": {
+      "title": "Shipping Terms",
+      "description": "Choose who pays the customs duties:",
+      "dap": {
+        "title": "DAP (Delivered at Place)",
+        "description": "Receiver pays duties at delivery",
+        "note": "(paid by receiver)"
+      },
+      "ddp": {
+        "title": "DDP (Delivered Duty Paid)",
+        "description": "Sender pays duties + $4.50 processing fee",
+        "note": "(included in total)"
+      }
+    },
+    "tooltip": {
+      "packageContents": "Package contents",
+      "packageDimensions": "Package dimensions",
+      "destinationCountry": "Destination country",
+      "productItems": "Product items (with HTS codes)",
+      "ready": "Ready to calculate price",
+      "missing": "Missing information:"
+    }
+  },
+  "myPickups": {
+    "title": "My Pickup Requests",
+    "subtitle": "Manage pickup requests for your shipments",
+    "refresh": "Refresh",
+    "requestPickup": "Request Pickup",
+    "requestShipmentPickup": "Request Shipment Pickup",
+    "requestDescription": "Select the shipments you want to include in this pickup request. All selected shipments will be picked up on the same date.",
+    "pickupDate": "Pickup Date",
+    "selectDate": "Select a date",
+    "pickupNotes": "Pickup Notes (Optional)",
+    "notesPlaceholder": "Special instructions for pickup...",
+    "selectShipments": "Select Shipments",
+    "loadingShipments": "Loading shipments...",
+    "noEligibleShipments": "No eligible shipments found",
+    "eligibilityNote": "Only approved shipments without an existing pickup request can be selected.",
+    "selectColumn": "Select",
+    "id": "ID",
+    "recipient": "Recipient",
+    "destination": "Destination",
+    "service": "Service",
+    "shipmentsSelected": "shipment(s) selected",
+    "pendingWarning": "Warning: You're requesting pickup for pending shipment(s)",
+    "pendingDescription": "Package details and price may change before approval. The carrier will only pick up approved shipments.",
+    "cancel": "Cancel",
+    "requestPickupButton": "Request Pickup",
+    "myPickupRequests": "My Pickup Requests",
+    "myPickupDescription": "View and manage your pickup requests",
+    "failedToLoad": "Failed to load pickup requests",
+    "tryAgain": "Try Again",
+    "noPickupsYet": "No pickup requests yet",
+    "noPickupsDescription": "Use the \"Request Pickup\" button to schedule a pickup for your approved shipments.",
+    "newPickupRequest": "New Pickup Request",
+    "requestedOn": "Requested On",
+    "status": "Status",
+    "actions": "Actions",
+    "notScheduled": "Not scheduled",
+    "viewDetails": "View Details",
+    "pickupRequest": "Pickup Request",
+    "shipmentsInPickup": "shipment(s) in this pickup request",
+    "package": "Package",
+    "notes": "Notes",
+    "pieces": "pieces",
+    "billable": "Billable",
+    "scheduled": "Scheduled",
+    "close": "Close"
+  },
+  
+  "etsyImportGuide": {
+    "toggleGuide": "Toggle Etsy Import Guide",
+    "title": "Etsy Import Guide",
+    "description": "Follow these steps to import your Etsy orders",
+    "step1": {
+      "title": "Go to Etsy Downloads",
+      "description": "Visit the Etsy shop manager to download your orders",
+      "downloadUrl": "etsy.com/your/shops/me/download"
+    },
+    "step2": {
+      "title": "Select Orders for Download",
+      "description": "On the Etsy page, select the type of file you want to download labeled",
+      "ordersLabel": "Orders",
+      "timeSelection": "Choose the time period for the orders you want to import",
+      "imageAlt": "Etsy order download interface",
+      "tip": "Download orders for the last 30-90 days for best results"
+    },
+    "step3": {
+      "title": "Check Your Email",
+      "description": "Etsy will send a download link to your email",
+      "fromEmail": "From email",
+      "imageAlt": "Etsy download button in email",
+      "note": "The email may take a few minutes to arrive. Check your spam folder if you don't see it"
+    },
+    "step4": {
+      "title": "Import to Our System",
+      "description": "Upload the CSV file here. The system will automatically extract recipient information and order details."
+    },
+    "step5": {
+      "title": "Verify Dimensions",
+      "description": "After uploading, confirm or edit the package dimensions for proper shipping rate calculation."
+    },
+    "important": {
+      "title": "Important: Default Package Settings",
+      "defaultDimensions": "Default Etsy package dimensions",
+      "warning": "Be sure to edit these dimensions for each order if needed for accurate shipping rates!"
+    }
+  },
+  "bulkUpload": {
+    "title": "Bulk Upload Shipments",
+    "backButton": "Back",
+    "fileUpload": {
+      "title": "Upload your shipment data",
+      "dragAndDrop": "Drag and drop your file here, or click to browse",
+      "supportedFormats": "Supports Excel (.xlsx) and CSV (.csv) files",
+      "validate": "Validate",
+      "clear": "Clear",
+      "validatingFile": "Validating file...",
+      "upload": "Upload Shipments",
+      "uploading": "Uploading..."
+    },
+    "validation": {
+      "inProgress": "Validating file...",
+      "errorRow": "Error in row {{row}}"
+    },
+    "upload": {
+      "inProgress": "Uploading..."
+    },
+    "success": {
+      "title": "Bulk Upload Successful",
+      "message": "Successfully uploaded {{count}} shipments with labels",
+      "shipmentsCreated": "{{count}} shipments successfully created",
+      "viewShipments": "View Shipments"
+    },
+    "createShipments": {
+      "success": {
+        "title": "Shipments Created Successfully",
+        "description": "Successfully created {{count}} shipments"
+      },
+      "error": {
+        "title": "Shipment Creation Failed"
+      }
+    },
+    "printAllLabels": "Print All Labels",
+    "viewShipments": "View Shipments",
+    "preview": {
+      "title": "Shipment Preview",
+      "recalculatePrices": "Recalculate Prices",
+      "import": "Import",
+      "saleDate": "Sale Date",
+      "orderId": "Order ID",
+      "fullName": "Full Name",
+      "street1": "Street 1",
+      "street2": "Street 2",
+      "city": "City",
+      "state": "State",
+      "zipcode": "Zipcode",
+      "country": "Country",
+      "currency": "Currency",
+      "orderValue": "Order Value",
+      "sku": "SKU",
+      "recipient": "Recipient",
+      "destination": "Destination",
+      "dimensions": "Dimensions (cm)",
+      "weight": "Weight",
+      "totalPrice": "Total Price",
+      "actions": "Actions",
+      "billableWeight": "Billable Weight",
+      "actualWeight": "Actual: {{weight}} kg",
+      "volumetricWeight": "Vol: {{weight}} kg",
+      "volumetricFormula": "Volumetric weight: L×W×H÷5000",
+      "billableWeightTooltip": "Billable weight is the higher of actual and volumetric weight",
+      "priceTooltip": "Includes base price and fuel surcharge",
+      "calculating": "Calculating..."
+    },
+    "summary": {
+      "bulkShipmentSummary": "Bulk Shipment Summary",
+      "shipmentsCount": "shipments",
+      "totalShipments": "Total Shipments",
+      "totalWeight": "Total Weight",
+      "totalCustomsValue": "Total Customs Value",
+      "estShippingCost": "Est. Shipping Cost",
+      "destinationCountries": "Destination Countries"
+    },
+    "operations": {
+      "title": "Bulk Operations",
+      "selectedCount": "{{count}} of {{total}} selected",
+      "recalcAllPrices": "Recalc All Prices",
+      "insurance": {
+        "title": "INSURANCE",
+        "enable": "Enable",
+        "clear": "Clear",
+        "applied": "Insurance Applied",
+        "enabledFor": "Enabled insurance for {{count}} selected shipments.",
+        "cleared": "Insurance Cleared",
+        "removedFrom": "Removed insurance from {{count}} selected shipments."
+      },
+      "customs": {
+        "title": "CUSTOMS",
+        "placeholder": "$0.00",
+        "apply": "Apply",
+        "applied": "Customs Value Applied",
+        "setTo": "Set customs value to ${{value}} for {{count}} selected shipments."
+      },
+      "gtip": {
+        "title": "GTIP",
+        "placeholder": "1234.56",
+        "apply": "Apply",
+        "applied": "GTIP Code Applied",
+        "setTo": "Set GTIP code to {{value}} for {{count}} selected shipments."
+      },
+      "product": {
+        "title": "PRODUCT",
+        "placeholder": "Product name",
+        "apply": "Apply",
+        "applied": "Product Description Applied",
+        "setTo": "Set product description to \"{{description}}\" for {{count}} selected shipments."
+      },
+      "package": {
+        "title": "PACKAGE",
+        "templateApplied": "Template Applied",
+        "appliedTemplate": "Applied \"{{templateName}}\" template to {{count}} selected shipments."
+      }
+    },
+    "table": {
+      "headers": {
+        "receiver": "Receiver",
+        "shipmentDetails": "Shipment Details", 
+        "customsValue": "Customs Value",
+        "packageDetails": "Package Details",
+        "priceInsurance": "Price & Insurance"
+      },
+      "tooltips": {
+        "receiver": "Recipient details and country",
+        "shipmentDetails": "Product description and GTIP code", 
+        "customsValue": "Declared value for customs",
+        "packageDetails": "Dimensions and package templates",
+        "priceInsurance": "Shipping service and insurance options"
+      },
+      "labels": {
+        "productDescription": "Product Description",
+        "gtipCode": "GTIP Code",
+        "customsValue": "Customs Value ($)",
+        "taxId": "Tax ID",
+        "insure": "Insure",
+        "insurance": "Insurance",
+        "currency": "Currency",
+        "notRequired": "Not required"
+      }
+    },
+    "errors": {
+      "title": "Row {{row}}",
+      "validationError": "Validation Error"
+    },
+    "success": {
+      "title": "Success",
+      "message": "{{count}} shipments were created successfully.",
+      "viewMyShipments": "View My Shipments"
+    },
+    "editDimensions": {
+      "title": "Edit Package Dimensions",
+      "length": "Length (cm)",
+      "width": "Width (cm)",
+      "height": "Height (cm)",
+      "weight": "Weight (kg)",
+      "summary": {
+        "dimensions": "Dimensions",
+        "actualWeight": "Actual Weight",
+        "volumetricWeight": "Volumetric Weight",
+        "billableWeight": "Billable Weight"
+      },
+      "formula": {
+        "volumetricFormula": "Volumetric weight formula: Length × Width × Height ÷ 5000",
+        "billableWeightExplanation": "Billable weight is the higher of actual weight and volumetric weight"
+      },
+      "weightSummary": {
+        "title": "Weight Calculation",
+        "volumetric": "Volumetric Weight: {{weight}} kg",
+        "billable": "Billable Weight: {{weight}} kg",
+        "description": "Billable weight is the higher of actual and volumetric weight.",
+        "note": "Note: Volumetric weight is calculated as (Length × Width × Height) ÷ 5000"
+      },
+      "save": "Save Changes",
+      "close": "Close"
+    },
+    "pricing": {
+      "success": {
+        "title": "Pricing Options Loaded",
+        "description": "Successfully loaded pricing options for {{count}} shipments",
+        "descriptionWithFailures": "Successfully loaded pricing options for {{successCount}} shipments ({{failCount}} failed)"
+      },
+      "failed": {
+        "title": "Price Calculation Failed",
+        "description": "All {{count}} shipments failed to calculate pricing",
+        "genericError": "Failed to update prices. Please check package dimensions."
+      },
+      "clickRecalculate": "Click Recalculate Prices"
+    },
+    "templateApplied": "Template applied",
+    "createShipments": "Create Shipments",
+    "creatingShipments": "Creating shipments...",
+    "insurance": {
+      "description": "Protect your products during shipping against loss or theft.",
+      "calculationInfo": "Insurance cost will be calculated based on the declared value.",
+      "tooltip": "Insurance protects your shipment against loss, theft, or damage during transit. The cost is calculated as a percentage of the declared value with database-configured rates and minimum fees.",
+      "validation": {
+        "amountRequired": "Insurance amount must be greater than $0.00"
+      }
+    }
+  },
+  "cms": {
+    "title": "Content Management System",
+    "description": "Manage multilingual content for your website",
+    "success": "Success",
+    "error": "Error",
+    "pageCreated": "Page created successfully",
+    "pageUpdated": "Page updated successfully",
+    "pageDeleted": "Page deleted successfully",
+    "translationSaved": "Translation saved successfully",
+    "failedToSaveTranslation": "Failed to save translation",
+    "failedToFetchPages": "Failed to fetch pages",
+    "failedToFetchTranslations": "Failed to fetch translations"
+  },
+  "shipmentTable": {
+    "selectAll": "Select All",
+    "shipmentId": "Shipment Details",
+    "recipient": "Recipient",
+    "trackingHeader": "Tracking",
+    "internalTracking": "Internal Tracking",
+    "carrier": "Carrier",
+    "externalTracking": "External Tracking",
+    "labelErrorsNote": "Label errors may prevent tracking",
+    "price": "Customer Price",
+    "originalPrice": "Cost",
+    "companyCustomer": "Company/Customer",
+    "createdDate": "Created Date",
+    "status": "Status",
+    "actions": "Actions",
+    "noTracking": "No tracking number",
+    "tracking": {
+      "title": "Tracking Information"
+    },
+    "pickupDialog": {
+      "title": "Schedule Pickup",
+      "description": "Schedule a pickup for selected shipments",
+      "pickupDate": "Pickup Date",
+      "selectDate": "Select pickup date",
+      "sameDayNote": "Same-day pickup requests must be made before 2 PM",
+      "notes": "Special Instructions",
+      "notesPlaceholder": "Any special pickup instructions...",
+      "alternativeAddressNote": "For alternative pickup addresses, please contact support",
+      "cancel": "Cancel",
+      "submitRequest": "Submit Pickup Request"
+    },
+    "requestTracking": "Request Tracking Number",
+    "onlyApprovedTracking": "Tracking numbers can only be requested for approved shipments"
+  },
+  "trackingRequestDialog": {
+    "title": "Priority Tracking Request",
+    "description": "Are you sure you want to request a priority tracking number for this shipment? This will send a notification to administrators for faster tracking number generation.",
+    "confirm": "Request Tracking Number"
+  },
+  "tour": {
+    "steps": {
+      "intro": "Welcome to MoogShip! Let's take a comprehensive tour to help you navigate our global shipping platform efficiently.",
+      "navigation": "This is your main navigation menu. You can access all features of the platform from here, including shipment creation, tracking, and account management.",
+      "dashboard": "This is your personalized dashboard that provides a real-time overview of your shipping activities, recent transactions, and important announcements.",
+      "createShipment": "Click here to create a new shipment. You'll be able to enter sender and recipient information, package details, and choose shipping options.",
+      "priceCalculator": "Use our price calculator to estimate shipping costs before creating shipments. Enter package details and destinations to get accurate quotes.",
+      "bulkUpload": "For multiple shipments, use our bulk upload feature. You can import Excel files with multiple orders to create shipments in batch.",
+      "trackShipments": "Track all your approved shipments here. You can monitor their status, view detailed information, and download shipping labels and documentation.",
+      "balance": "Here you can view your current account balance. This shows the funds available for creating new shipments and managing your logistics needs.",
+      "products": "Manage your product catalog here. Creating product templates helps you quickly select accurate item details when creating shipments.",
+      "supportTicket": "Need help? Our support system allows you to create tickets, track responses, and get assistance from our customer service team.",
+      "myTickets": "View and manage your existing support tickets here. You can track the status of your inquiries and continue conversations with our support team.",
+      "gettingStarted": "Visit our Getting Started page anytime to access comprehensive guides, FAQs, and detailed instructions for using MoogShip's features.",
+      "completion": "That's it! You're now ready to use MoogShip's global shipping platform. Remember that you can restart this tutorial anytime from the Help section in the sidebar."
+    },
+    "controls": {
+      "back": "Previous",
+      "close": "Close",
+      "last": "Finish",
+      "next": "Next",
+      "skip": "Skip Tour"
+    }
+  },
+  "assistant": {
+    "openAssistant": "Open shipping assistant"
+  },
+  "invoiceManagement": {
+    "title": "Invoice Management",
+    "description": "Create invoices for shipments with carrier tracking numbers",
+    "eligibleShipments": "Eligible Shipments",
+    "loading": "Loading eligible shipments...",
+    "overview": {
+      "totalEligible": "Total Eligible",
+      "selected": "Selected",
+      "totalValue": "Total Value",
+      "shipmentsWithTracking": "Shipments with carrier tracking",
+      "readyForBulk": "Ready for bulk invoice creation",
+      "combinedValue": "Combined shipment value"
+    },
+    "singleInvoice": {
+      "title": "Create Single Invoice",
+      "description": "Create an invoice for a specific shipment by ID",
+      "shipmentIdLabel": "Shipment ID",
+      "shipmentIdPlaceholder": "Enter shipment ID",
+      "forceCreate": "Force create (override existing invoice)",
+      "createButton": "Create Invoice",
+      "creating": "Creating..."
+    },
+    "bulkInvoice": {
+      "title": "Bulk Invoice Creation",
+      "description": "Create invoices for multiple selected shipments",
+      "selectedShipments": "Selected Shipments",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "selectedCount": "{{count}} of {{total}} shipments selected",
+      "forceCreate": "Force create (override existing invoices)",
+      "createButton": "Create {{count}} Invoices"
+    },
+    "shipmentsList": {
+      "title": "Eligible Shipments",
+      "description": "Shipments with carrier tracking numbers that can have invoices created",
+      "noShipments": {
+        "title": "No Eligible Shipments",
+        "description": "There are currently no shipments with carrier tracking numbers that can have invoices created."
+      }
+    },
+    "messages": {
+      "success": "Success",
+      "error": "Error",
+      "invoiceCreated": "Invoice created successfully: {{invoiceId}}",
+      "invoiceIdNotAvailable": "Invoice ID not available",
+      "bulkCreated": "Created {{count}} invoices successfully",
+      "createFailed": "Failed to create invoice",
+      "bulkCreateFailed": "Failed to create invoices"
+    }
+  },
+  "marketing": {
+    "navigation": {
+      "features": "Features",
+      "benefits": "Benefits", 
+      "testimonials": "Testimonials",
+      "pricing": "Pricing",
+      "priceCalculator": "Price Calculator"
+    },
+    "hero": {
+      "title": "Lowest Cost <span class=\"text-blue-600\">Global Shipping</span>",
+      "subtitle": "We help US and European e-commerce sellers get the best shipping rates, saving money on every package. No subscriptions, just the lowest fees in the industry.",
+      "startShipping": "Start Shipping",
+      "learnMore": "Learn More",
+      "signup": "Sign Up",
+      "trustedBy": "Trusted by <span>1000+</span> businesses worldwide"
+    },
+    "tracking": {
+      "title": "Track Your Package",
+      "subtitle": "Enter your tracking number below to get real-time updates on your package location and delivery status."
+    },
+    "calculator": {
+      "benefits": {
+        "title": "Why Choose MoogShip?",
+        "subtitle": "See what makes us different",
+        "exclusiveRates": {
+          "title": "Exclusive Rates",
+          "description": "Save up to 40% with our carrier partnerships"
+        },
+        "globalCoverage": {
+          "title": "Global Coverage",
+          "description": "Ship to 190+ countries with trusted carriers"
+        },
+        "instant": {
+          "title": "Instant Quotes",
+          "description": "Get accurate pricing in seconds"
+        },
+        "pricing": {
+          "title": "Pricing Notice",
+          "description": "Prices shown include a marketing premium. Register to access our actual member rates!"
+        },
+        "signupButton": "Sign Up for Member Rates"
+      },
+      "note": {
+        "title": "Marketing Note:",
+        "description": "This is a preliminary estimate. Actual shipping prices may be lower when you register. Sign up to access our exclusive member rates!"
+      },
+      "price": {
+        "marketingNoteTitle": "Marketing Note:",
+        "marketingNoteText": "This is a preliminary estimate with marketing pricing (1.5x multiplier). Actual shipping prices are significantly lower when you register. Sign up to access our exclusive member rates!"
+      }
+    },
+    "features": {
+      "title": "Why Thousands Choose MoogShip",
+      "subtitle": "Everything you need for seamless international shipping",
+      "globalReach": {
+        "title": "Global Reach",
+        "description": "Ship to over 190 countries with our network of trusted carrier partners"
+      },
+      "competitivePricing": {
+        "title": "Competitive Pricing",
+        "description": "Save up to 40% on shipping costs with our negotiated rates"
+      },
+      "realTimeTracking": {
+        "title": "Real-time Tracking",
+        "description": "Track your packages from pickup to delivery with detailed updates"
+      },
+      "reliableService": {
+        "title": "Reliable Service",
+        "description": "99.9% on-time delivery rate with our premium carrier network"
+      },
+      "customsSupport": {
+        "title": "Customs Support",
+        "description": "Expert assistance with international customs and documentation"
+      },
+      "dedicatedSupport": {
+        "title": "Dedicated Support",
+        "description": "24/7 customer support to help with all your shipping needs"
+      }
+    },
+    "benefits": {
+      "title": "Shipping Made Simple",
+      "subtitle": "Focus on growing your business while we handle the logistics",
+      "noHiddenFees": {
+        "title": "No Hidden Fees",
+        "description": "Transparent pricing with no surprise charges or monthly subscriptions"
+      },
+      "easyIntegration": {
+        "title": "Easy Integration",
+        "description": "Seamlessly integrate with your existing e-commerce platforms"
+      },
+      "scalableService": {
+        "title": "Scalable Service",
+        "description": "From single packages to bulk shipments, we grow with your business"
+      }
+    },
+    "testimonials": {
+      "title": "What Our Customers Say",
+      "subtitle": "Join thousands of satisfied businesses shipping worldwide",
+      "customer1": {
+        "name": "Sarah Johnson",
+        "company": "Artisan Crafts Co.",
+        "text": "MoogShip has transformed our international shipping. We've saved over 30% on costs while improving delivery times."
+      },
+      "customer2": {
+        "name": "Michael Chen",
+        "company": "Tech Accessories Plus",
+        "text": "The platform is incredibly user-friendly, and their customer support is outstanding. Highly recommended!"
+      },
+      "customer3": {
+        "name": "Emma Rodriguez",
+        "company": "Fashion Forward",
+        "text": "Finally, a shipping solution that understands e-commerce. The integration was seamless and the savings are real."
+      }
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "No monthly fees, no hidden charges - pay only for what you ship",
+      "payPerShipment": "Pay per shipment",
+      "noMonthlyFees": "No monthly fees",
+      "transparentPricing": "Transparent pricing",
+      "volumeDiscounts": "Volume discounts available"
+    },
+    "cta": {
+      "title": "Ready to Start Shipping?",
+      "subtitle": "Join thousands of businesses saving money on international shipping",
+      "getStarted": "Get Started Free",
+      "contactSales": "Contact Sales"
+    },
+    "footer": {
+      "description": "Your trusted partner for global shipping and logistics solutions",
+      "companyTitle": "Company",
+      "servicesTitle": "Services",
+      "contactOffice": "Contact & Offices",
+      "contactOffices": "Contact & Offices",
+      "about": "About",
+      "team": "Team",
+      "careers": "Careers",
+      "support": "Support",
+      "contact": "Contact",
+      "allRightsReserved": "All rights reserved",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "cookies": "Cookies",
+      "company": {
+        "about": "About",
+        "team": "Team",
+        "career": "Careers"
+      },
+      "services": {
+        "title": "Services",
+        "global": "Global Shipping",
+        "tracking": "Tracking",
+        "support": "Support"
+      }
+    },
+    "etsy": {
+      "heroBanner": "NEW: Etsy Integration - Automate your entire shipping workflow!",
+      "badge": "NEW INTEGRATION",
+      "title": "Supercharge Your Etsy Store with MoogShip",
+      "subtitle": "Connect your Etsy store and automate your entire shipping workflow. Save time, reduce costs, and delight your customers with our powerful Etsy Integration.",
+      "feature1Title": "Seamless Order Import",
+      "feature1Desc": "Automatically import all your Etsy orders with a single click. No manual data entry, no copy-paste errors.",
+      "feature2Title": "Bulk Shipping Actions",
+      "feature2Desc": "Process multiple orders at once. Set customs values, GTIP codes, and package dimensions in seconds.",
+      "feature3Title": "Instant Price Calculation",
+      "feature3Desc": "Get real-time shipping quotes for all your Etsy orders. Compare carriers and choose the best option.",
+      "cta": "Connect Your Etsy Store Now"
+    }
+  },
+  "priceCalculator": {
+    "title": "Shipping Price Calculator",
+    "subtitle": "Get instant shipping quotes for your packages with our advanced price calculator",
+    "description": "Get instant shipping rates for your international packages",
+    "calculateShippingCost": "Calculate Shipping Cost",
+    "enterPackageDetails": "Enter package details to get accurate shipping rates",
+    "packageDimensions": "Package Dimensions",
+    "packageDetails": "Package Details",
+    "directBillableWeight": "I know the billable weight (kg)",
+    "useDirectWeight": "Enter weight directly",
+    "useDimensions": "Use dimensions",
+    "lengthCm": "Length (cm)",
+    "widthCm": "Width (cm)",
+    "heightCm": "Height (cm)",
+    "weightKg": "Weight (kg)",
+    "billableWeightKg": "Billable Weight (kg)",
+    "billableWeight": "Billable Weight",
+    "enterBillableWeight": "Enter billable weight",
+    "billableWeightDescription": "Enter billable weight directly to override automatic calculations. This is useful when you already know the billable weight from the carrier.",
+    "weightCalculation": "Weight Calculation",
+    "actualWeight": "Actual Weight:",
+    "volumetricWeight": "Volumetric Weight:",
+    "manual": "Manual",
+    "billableWeightNote": "Billable weight is the higher of actual weight and volumetric weight (L×W×H÷5000).",
+    "shippingDetails": "Shipping Details",
+    "destinationCountry": "Destination Country",
+    "receiverCountry": "Destination Country",
+    "selectCountry": "Select a country",
+    "searchCountry": "Search country...",
+    "noCountryFound": "No country found",
+    "length": "Length",
+    "width": "Width",
+    "height": "Height",
+    "weight": "Weight",
+    "validationErrorTitle": "Required fields missing",
+    "validationError": "Please fill in all required fields",
+    "validationFields": {
+      "destinationCountry": "destination country",
+      "billableWeight": "billable weight",
+      "length": "length",
+      "width": "width",
+      "height": "height",
+      "weight": "weight"
+    },
+    "shippingInfo": "Shipping Information",
+    "from": "From:",
+    "fromLocation": "Istanbul, Turkey",
+    "to": "To:",
+    "service": "Service:",
+    "serviceType": "Express",
+    "estimatedDelivery": "Estimated Delivery:",
+    "deliveryTime": "1-4 days",
+    "priceInformation": "Price Information",
+    "basePrice": "Base Price:",
+    "fuelSurcharge": "Fuel Surcharge:",
+    "taxes": "Taxes:",
+    "total": "Total:",
+    "calculating": "Calculating...",
+    "calculatePrice": "Calculate Price",
+    "calculateAnother": "Calculate Another",
+    "createShipment": "Create Shipment",
+    "importantNote": "Important Note",
+    "girthExceeding": "Shipments exceeding certain girth measurements may incur additional charges from carriers. Current calculations and applicable surcharges are:",
+    "girthCalculation": "For international air freight, girth is calculated as:",
+    "girthFormula": "[(sum of two short edges) x 2] + longest edge",
+    "upsShipments": "For shipments via UPS:",
+    "upsRule1": "If girth is between 295 cm and 400 cm, shipment is billed as 48 kg with an additional $150 surcharge.",
+    "upsRule2": "If any dimension exceeds 98 cm, an additional $21 surcharge applies.",
+    "upsRule3": "If two dimensions exceed 75 cm, an additional $21 surcharge applies.",
+    "upsRule4": "If actual weight exceeds 25 kg, an additional $21 surcharge applies.",
+    "upsRule5": "If package exceeds 70 volumetric weight (desi), an additional $380 surcharge applies.",
+    "upsRule6": "If any dimension exceeds 270 cm or girth exceeds 400 cm, an additional $380 surcharge applies.",
+    "profitabilityCalculator": "Check shipment profitability for major marketplaces",
+    "here": "here",
+    "additionalInformation": "Additional Information",
+    "ecoServiceNote": "Eco service is only valid for shipments under 0.5 kg/desi to the US.",
+    "ecoFallbackNote": "Shipments not eligible for Eco but selected as Eco will be billed at standard rates by default.",
+    "customsNote": "Your shipments may not be subject to customs procedures. Customs fees and taxes are calculated based on your items' content and value, and the destination country's regulations.",
+    "chooseService": "Choose Your MoogShip Service",
+    "selectBestOption": "Select the shipping option that best fits your needs",
+    "economy": "Economy",
+    "express": "Express",
+    "standard": "Standard",
+    "totalPrice": "Total Price",
+    "base": "Base",
+    "fuel": "Fuel",
+    "shippingRouteDetails": "Shipping Route Details",
+    "origin": "Origin",
+    "destination": "Destination",
+    "billableWeightLabel": "Billable Weight",
+    "selectedCountry": "Selected Country",
+    "weightInfo": {
+      "actualWeight": "Actual Weight",
+      "volumetricWeight": "Volumetric Weight",
+      "billableWeight": "Billable Weight",
+      "calculationDetails": "Calculation Details",
+      "actualWeightExplanation": "Package weight as entered",
+      "billableWeightExplanation": "Higher of actual or volumetric weight"
+    },
+    "help": {
+      "title": "Shipping Guidelines:",
+      "ups": "UPS: Max 150 lbs, 165\" length + girth",
+      "girth": "Girth = 2×(Width + Height)",
+      "volumetric": "Volumetric Weight = L×W×H÷5000",
+      "customs": "Customs forms required for international",
+      "service": "Express = 1-3 days, Standard = 3-7 days"
+    },
+    "options": {
+      "title": "Choose Your MoogShip Service",
+      "subtitle": "Select the shipping option that best fits your needs"
+    },
+    "pricing": {
+      "basePrice": "Base Price",
+      "fuelCost": "Fuel Cost"
+    },
+    "route": {
+      "from": "Turkey"
+    },
+    "actions": {
+      "calculateAnother": "Calculate Another"
+    }
+  },
+  "customsCalculator": {
+    "title": "US Customs Calculator",
+    "subtitle": "Calculate accurate US customs duties and taxes for your shipments",
+    "description": "This calculator uses official US government duty rates from the USITC database and includes current tariff rates. Calculations are for US destinations only.",
+    "form": {
+      "hsCode": "HS Code",
+      "hsCodePlaceholder": "e.g., 8708.10.30",
+      "hsCodeHelp": "Enter the 6-10 digit Harmonized System code for your product",
+      "customsValue": "Customs Value (USD)",
+      "customsValuePlaceholder": "100",
+      "customsValueHelp": "The declared value of your goods for customs purposes",
+      "shippingMethod": "Shipping Method",
+      "shippingMethodPlaceholder": "Select shipping method",
+      "standard": "Standard Shipping",
+      "standardDescription": "Regular delivery service - $4.50 DDP fee",
+      "eco": "ECO Shipping",
+      "ecoDescription": "Economy delivery service - $0.45 DDP fee",
+      "shippingTerms": "Shipping Terms",
+      "shippingTermsPlaceholder": "Select shipping terms",
+      "dap": "DAP - Delivered at Place",
+      "dapDescription": "Receiver pays duties",
+      "ddp": "DDP - Delivered Duty Paid", 
+      "ddpDescription": "Sender pays duties + processing fee",
+      "calculate": "Calculate Customs Duties",
+      "calculating": "Calculating..."
+    },
+    "results": {
+      "title": "Calculation Results",
+      "productInfo": "Product Information",
+      "hsCode": "HS Code",
+      "description": "Description",
+      "dutyRate": "Duty Rate",
+      "shippingTerms": "Shipping Terms",
+      "breakdown": "Duty Calculation Breakdown",
+      "customsValue": "Customs Value",
+      "baseDuty": "Base Duty",
+      "trumpTariff": "Trump Tariff (15%)",
+      "totalDuties": "Total Duties",
+      "ddpProcessingFee": "DDP Processing Fee",
+      "totalWithFee": "Total with DDP Fee",
+      "note": "Note: These are estimates based on official US government rates. Final amounts may vary depending on customs valuation and other factors.",
+      "placeholder": "Enter your product details to calculate customs duties"
+    },
+    "breadcrumb": {
+      "dashboard": "Dashboard"
+    }
+  },
+  "pagination": {
+    "itemsPerPage": {
+      "label": "Show:",
+      "25": "25",
+      "50": "50", 
+      "100": "100"
+    }
+  },
+  "countries": {
+    "popular": "Popular Countries",
+    "all": "All Countries"
+  }
+}

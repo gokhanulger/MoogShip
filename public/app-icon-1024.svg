@@ -1,0 +1,24 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#ffffff" rx="180"/>
+  
+  <!-- MoogShip Arrow Icon -->
+  <g transform="translate(200, 300)">
+    <!-- Arrow Shape -->
+    <path d="M100 150 L500 50 L400 200 L300 180 L200 300 L100 250 Z" 
+          fill="#2563eb" 
+          stroke="#1e40af" 
+          stroke-width="4"/>
+    
+    <!-- Arrow Tip -->
+    <path d="M500 50 L450 100 L500 150 Z" 
+          fill="#1e40af"/>
+    
+    <!-- Text: moogship -->
+    <text x="50" y="380" 
+          font-family="Arial, sans-serif" 
+          font-size="80" 
+          font-weight="bold" 
+          fill="#2563eb">moogship</text>
+  </g>
+</svg>

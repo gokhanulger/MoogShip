@@ -1,0 +1,2 @@
+orderNumber,recipientName,address,city,state,zip,country,sku,productName,quantity,value
+TEST123,John Doe,123 Main St,Miami,FL,33101,US,SKU001,Test Product,1,25.50

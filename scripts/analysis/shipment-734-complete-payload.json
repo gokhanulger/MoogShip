@@ -1,0 +1,39 @@
+{
+  "orderId": 734,
+  "packageQuantity": 1,
+  "reference1": "SH-000734",
+  "description": "Crib hanger",
+  "currency": "USD",
+  "weight": 0.43,
+  "width": 8,
+  "height": 4,
+  "length": 56,
+  "shipFrom": {
+    "name": "Naturalbabaygift",
+    "address1": "Beylikdüzü Mahallesi, Marmara Caddesi",
+    "city": "İstanbul",
+    "country": "TR",
+    "zipCode": "18340",
+    "phone": "+905365799575",
+    "email": "etsyhesap18@gmail.com"
+  },
+  "shippingAddress": {
+    "name": "Courtney Pingel",
+    "address": "3457 N Hamlin Ave",
+    "city": "Chicago",
+    "country": "US",
+    "state": "IL",
+    "postalCode": "60618",
+    "phone": "(Not provided)",
+    "email": "(Not provided)"
+  },
+  "items": [
+    {
+      "name": "Crib hanger",
+      "quantity": 1,
+      "unitPrice": 10.00,
+      "sku": "SKU-734",
+      "gtip": 442199
+    }
+  ]
+}

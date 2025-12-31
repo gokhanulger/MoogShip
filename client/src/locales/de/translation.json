@@ -1,0 +1,1150 @@
+{
+  "common": {
+    "yes": "Ja",
+    "no": "Nein",
+    "dashboard": "Dashboard",
+    "shipments": "Sendungen",
+    "createShipment": "Sendung erstellen",
+    "bulkUpload": "Massenupload",
+    "approvedShipments": "Genehmigte Sendungen",
+    "myShipments": "Meine Sendungen",
+    "myBalance": "Mein Guthaben",
+    "myPickups": "Meine Abholungen",
+    "buildTemplates": "Vorlagen erstellen",
+    "transactions": "Transaktionen",
+    "products": "Produkte",
+    "packageTemplates": "Paketvorlagen",
+    "recipients": "Empfänger",
+    "importRecipients": "Empfänger importieren",
+    "myTickets": "Meine Tickets",
+    "createTicket": "Ticket erstellen",
+    "priceCalculator": "Preisrechner",
+    "settings": "Einstellungen",
+    "admin": "Administrator",
+    "manageUsers": "Benutzer verwalten",
+    "manageShipments": "Sendungen verwalten",
+    "announcements": "Ankündigungen",
+    "managePickups": "Abholungen verwalten",
+    "adminTickets": "Admin-Tickets",
+    "logout": "Abmelden",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "view": "Anzeigen",
+    "submit": "Absenden",
+    "close": "Schließen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "refresh": "Aktualisieren",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "print": "Drucken",
+    "download": "Herunterladen",
+    "upload": "Hochladen",
+    "loading": "Wird geladen...",
+    "creating": "Wird erstellt...",
+    "updating": "Wird aktualisiert...",
+    "deleting": "Wird gelöscht...",
+    "noData": "Keine Daten gefunden",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "warning": "Warnung",
+    "info": "Info",
+    "newShipment": "Neue Sendung",
+    "trackShipments": "Sendungen verfolgen",
+    "calculatePrice": "Preis berechnen",
+    "uploadShipments": "Sendungen hochladen",
+    "viewBalanceDetails": "Guthaben-Details anzeigen",
+    "startInteractiveTour": "Interaktive Tour starten",
+    "languageSettings": "Spracheinstellungen",
+    "supportTicket": "Support-Ticket",
+    "gettingStarted": "Erste Schritte",
+    "cards": "Karten",
+    "table": "Tabelle",
+    "marketingSite": "Marketing-Seite",
+    "support": "Support",
+    "adminPanel": "Admin-Panel",
+    "viewAll": "Alle anzeigen",
+    "all": "Alle",
+    "backToDashboard": "Zurück zum Dashboard",
+    "continue": "Fortfahren",
+    "next": "Weiter",
+    "back": "Zurück",
+    "create": "Erstellen"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "forgotPassword": "Passwort vergessen",
+    "resetPassword": "Passwort zurücksetzen",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "email": "E-Mail",
+    "name": "Name",
+    "confirmPassword": "Passwort bestätigen",
+    "loginSuccess": "Anmeldung erfolgreich",
+    "loginFailed": "Anmeldung fehlgeschlagen",
+    "logoutSuccess": "Abmeldung erfolgreich",
+    "registerSuccess": "Registrierung erfolgreich",
+    "passwordResetSuccess": "Passwort erfolgreich zurückgesetzt",
+    "passwordResetFailed": "Passwort zurücksetzen fehlgeschlagen"
+  },
+  "shipping": {
+    "senderInfo": "Absender-Informationen",
+    "receiverInfo": "Empfänger-Informationen",
+    "packageInfo": "Paket-Informationen",
+    "customsInfo": "Zoll-Informationen",
+    "trackingNumber": "Tracking-Nummer",
+    "shipmentStatus": "Sendungsstatus",
+    "shipmentDate": "Sendungsdatum",
+    "deliveryDate": "Lieferdatum",
+    "estimatedDelivery": "Voraussichtliche Lieferung",
+    "origin": "Ursprung",
+    "destination": "Ziel",
+    "weight": "Gewicht",
+    "dimensions": "Abmessungen",
+    "product": "Produktinhalt",
+    "gtipCode": "GTIP-Code",
+    "customsValue": "Zollwert",
+    "currency": "Währung",
+    "insurance": "Versicherung",
+    "length": "Länge",
+    "width": "Breite",
+    "height": "Höhe",
+    "shippingMethod": "Versandart",
+    "shippingCost": "Versandkosten",
+    "shippingLabel": "Versandetikett",
+    "trackingLink": "Tracking-Link",
+    "createShipmentSuccess": "Sendung erfolgreich erstellt",
+    "createShipmentFailed": "Sendung konnte nicht erstellt werden",
+    "updateShipmentSuccess": "Sendung erfolgreich aktualisiert",
+    "updateShipmentFailed": "Sendung konnte nicht aktualisiert werden",
+    "deleteShipmentSuccess": "Sendung erfolgreich gelöscht",
+    "deleteShipmentFailed": "Sendung konnte nicht gelöscht werden",
+    "bulkUploadSuccess": "Massenupload erfolgreich",
+    "bulkUploadFailed": "Massenupload fehlgeschlagen",
+    "pickupScheduled": "Abholung geplant",
+    "delivered": "Zugestellt",
+    "inTransit": "In Zustellung",
+    "pending": "Ausstehend",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "cancelled": "Storniert",
+    "completed": "Abgeschlossen",
+    "onHold": "Auf Eis gelegt",
+    "allShipments": "Alle Sendungen",
+    "pendingApprovals": "Ausstehende Genehmigungen",
+    "managePickups": "Abholungen verwalten"
+  },
+  "financial": {
+    "balance": "Guthaben",
+    "credits": "Gutschriften",
+    "debits": "Belastungen",
+    "transactions": "Transaktionen",
+    "addFunds": "Geld hinzufügen",
+    "withdrawFunds": "Geld abheben",
+    "paymentMethod": "Zahlungsmethode",
+    "paymentAmount": "Zahlungsbetrag",
+    "paymentDate": "Zahlungsdatum",
+    "paymentStatus": "Zahlungsstatus",
+    "transactionType": "Transaktionstyp",
+    "transactionDetails": "Transaktionsdetails",
+    "transactionDate": "Transaktionsdatum",
+    "transactionAmount": "Transaktionsbetrag",
+    "transactionSuccess": "Transaktion erfolgreich",
+    "transactionFailed": "Transaktion fehlgeschlagen",
+    "fundingSuccess": "Finanzierung erfolgreich",
+    "fundingFailed": "Finanzierung fehlgeschlagen",
+    "withdrawalSuccess": "Abhebung erfolgreich",
+    "withdrawalFailed": "Abhebung fehlgeschlagen",
+    "minBalance": "Minimales Guthaben",
+    "creditLimit": "Kreditlimit",
+    "currentBalance": "Aktuelles Guthaben",
+    "availableBalance": "Verfügbares Guthaben",
+    "pendingBalance": "Ausstehende Bilanz",
+    "transactionHistory": "Transaktionsverlauf",
+    "recentTransactions": "Neueste Transaktionen",
+    "noTransactions": "Keine Transaktionen gefunden",
+    "balanceDetails": "Guthabendetails",
+    "credit": "Gutschrift",
+    "debit": "Belastung",
+    "newestFirst": "Neueste zuerst",
+    "oldestFirst": "Älteste zuerst"
+  },
+  "tables": {
+    "search": "Suchen...",
+    "noResults": "Keine passenden Ergebnisse gefunden",
+    "date": "Datum",
+    "description": "Beschreibung",
+    "amount": "Betrag",
+    "status": "Status",
+    "actions": "Aktionen",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Alle abwählen",
+    "selected": "ausgewählt",
+    "bulkActions": "Massenaktionen",
+    "loadingData": "Daten werden geladen..."
+  },
+  "support": {
+    "tickets": "Tickets",
+    "newTicket": "Neues Ticket",
+    "ticketDetails": "Ticket-Details",
+    "ticketStatus": "Ticket-Status",
+    "ticketPriority": "Ticket-Priorität",
+    "ticketCategory": "Ticket-Kategorie",
+    "ticketSubject": "Ticket-Betreff",
+    "ticketDescription": "Ticket-Beschreibung",
+    "ticketAttachments": "Ticket-Anhänge",
+    "ticketResponses": "Ticket-Antworten",
+    "responseDate": "Antwortdatum",
+    "responseAuthor": "Antwortautor",
+    "responseContent": "Antwortinhalt",
+    "addResponse": "Antwort hinzufügen",
+    "closeTicket": "Ticket schließen",
+    "reopenTicket": "Ticket wieder öffnen",
+    "assignTicket": "Ticket zuweisen",
+    "priorityHigh": "Hoch",
+    "priorityMedium": "Mittel",
+    "priorityLow": "Niedrig",
+    "statusOpen": "Offen",
+    "statusClosed": "Geschlossen",
+    "statusInProgress": "In Bearbeitung",
+    "statusResolved": "Gelöst",
+    "createTicketSuccess": "Ticket erfolgreich erstellt",
+    "createTicketFailed": "Ticket konnte nicht erstellt werden",
+    "updateTicketSuccess": "Ticket erfolgreich aktualisiert",
+    "updateTicketFailed": "Ticket konnte nicht aktualisiert werden",
+    "responseAddedSuccess": "Antwort erfolgreich hinzugefügt",
+    "responseAddedFailed": "Antwort konnte nicht hinzugefügt werden",
+    "manageTickets": "Tickets verwalten"
+  },
+  "packageTemplates": {
+    "pageTitle": "Paketvorlagen",
+    "pageDescription": "Erstellen und verwalten Sie Ihre Paketvorlagen für einfachere Sendungserstellung",
+    "dimensions": "Abmessungen",
+    "defaultTemplateBadge": "Standardvorlage",
+    "actions": {
+      "newTemplate": "Neue Vorlage",
+      "createTemplate": "Vorlage erstellen",
+      "updateTemplate": "Vorlage aktualisieren",
+      "editTemplate": "Vorlage bearbeiten",
+      "deleteTemplate": "Vorlage löschen",
+      "setAsDefault": "Als Standardvorlage festlegen"
+    },
+    "empty": {
+      "title": "Keine Paketvorlagen",
+      "description": "Erstellen Sie Ihre erste Paketvorlage, um zu beginnen"
+    },
+    "dialogs": {
+      "create": {
+        "title": "Paketvorlage erstellen",
+        "description": "Erstellen Sie eine neue Paketvorlage für die Verwendung bei der Erstellung von Sendungen"
+      },
+      "edit": {
+        "title": "Paketvorlage bearbeiten",
+        "description": "Aktualisieren Sie die Details Ihrer Paketvorlage"
+      },
+      "delete": {
+        "title": "Paketvorlage löschen",
+        "description": "Sind Sie sicher, dass Sie diese Vorlage löschen möchten?",
+        "warning": "Diese Aktion kann nicht rückgängig gemacht werden."
+      }
+    },
+    "table": {
+      "name": "Name",
+      "dimensions": "Abmessungen",
+      "volume": "Volumen",
+      "volumetricWeight": "Volumetrisches Gewicht",
+      "actions": "Aktionen"
+    },
+    "form": {
+      "name": "Vorlagenname",
+      "description": "Beschreibung (Optional)",
+      "length": "Länge (cm)",
+      "width": "Breite (cm)",
+      "height": "Höhe (cm)",
+      "isDefault": "Als Standardvorlage festlegen",
+      "isDefaultDescription": "Diese Vorlage wird standardmäßig bei der Erstellung neuer Sendungen ausgewählt",
+      "namePlaceholder": "z.B., Kleine Box",
+      "descriptionPlaceholder": "Beschreibung des Pakets"
+    },
+    "placeholders": {
+      "templateName": "z.B., Kleine Box",
+      "description": "Beschreibung des Pakets"
+    },
+    "buttons": {
+      "cancel": "Abbrechen",
+      "confirm": "Bestätigen",
+      "save": "Speichern"
+    },
+    "alerts": {
+      "createSuccess": "Paketvorlage erfolgreich erstellt",
+      "updateSuccess": "Paketvorlage erfolgreich aktualisiert",
+      "deleteSuccess": "Paketvorlage erfolgreich gelöscht",
+      "defaultUpdated": "Standardvorlage aktualisiert",
+      "error": {
+        "create": "Vorlage konnte nicht erstellt werden",
+        "update": "Vorlage konnte nicht aktualisiert werden",
+        "delete": "Vorlage konnte nicht gelöscht werden",
+        "setDefault": "Standardvorlage konnte nicht festgelegt werden"
+      }
+    }
+  },
+  "dashboard": {
+    "welcomeUser": "Willkommen, {{name}}",
+    "welcomeGuest": "Willkommen bei Moogship",
+    "summary": "Hier ist, was heute mit Ihren Sendungen passiert.",
+    "stats": {
+      "totalShipments": "Gesamte Sendungen",
+      "pendingApproval": "Ausstehende Genehmigung",
+      "inTransit": "In Zustellung",
+      "delivered": "Zugestellt"
+    },
+    "recentActivity": {
+      "title": "Aktuelle Aktivität",
+      "description": "Ihre neuesten Aktionen und Updates"
+    },
+    "performance": {
+      "title": "Leistungsmetriken",
+      "description": "Sendungsstatistiken und Lieferleistung",
+      "deliverySuccessRate": "Zustellerfolgsrate",
+      "statusBreakdown": "Aufschlüsselung nach Status",
+      "topDestinations": "Top-Zielländer",
+      "noShipments": "Noch keine Sendungen"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "inTransit": "In Zustellung",
+      "delivered": "Zugestellt"
+    },
+    "recentShipments": {
+      "title": "Aktuelle Sendungen",
+      "description": "Sehen Sie Ihre neuesten Sendungsanfragen und deren aktuellen Status."
+    }
+  },
+  "productsData": {
+    "pageTitle": "Produkte",
+    "pageDescription": "Anzeigen und Verwalten Ihres Produktkatalogs",
+    "catalog": {
+      "title": "Produktkatalog",
+      "subtitle": "Verwalten Sie Ihr Produktinventar für Sendungen"
+    },
+    "actions": {
+      "bulkUpload": "Massenupload",
+      "addProduct": "Produkt hinzufügen",
+      "editProduct": "Produkt bearbeiten",
+      "deleteProduct": "Produkt löschen",
+      "addFirstProduct": "Fügen Sie Ihr erstes Produkt hinzu",
+      "downloadTemplate": "Vorlage herunterladen",
+      "cancel": "Abbrechen",
+      "update": "Produkt aktualisieren"
+    },
+    "search": {
+      "placeholder": "Produkte suchen..."
+    },
+    "empty": {
+      "title": "Noch keine Produkte",
+      "description": "Sie haben noch keine Produkte zu Ihrem Katalog hinzugefügt."
+    },
+    "table": {
+      "productName": "Produktname",
+      "sku": "Artikelnummer",
+      "price": "Preis",
+      "hsCode": "HS-Code",
+      "countryOfOrigin": "Herkunftsland",
+      "actions": "Aktionen",
+      "noSku": "Keine Artikelnummer",
+      "notSpecified": "Nicht angegeben"
+    },
+    "form": {
+      "addTitle": "Neues Produkt hinzufügen",
+      "addDescription": "Fügen Sie ein neues Produkt zu Ihrem Katalog für Sendungen hinzu.",
+      "editTitle": "Produkt bearbeiten",
+      "editDescription": "Aktualisieren Sie Produktdetails für Ihren Katalog.",
+      "productName": "Produktname",
+      "productSku": "Artikelnummer",
+      "description": "Beschreibung",
+      "price": "Preis ($)",
+      "quantity": "Menge",
+      "hsCode": "HS-Code",
+      "countryOfOrigin": "Herkunftsland",
+      "placeholders": {
+        "productName": "Produktname",
+        "productSku": "Artikelnummer",
+        "description": "Produktbeschreibung",
+        "price": "0.00",
+        "quantity": "0",
+        "hsCode": "Harmonisierter System-Code",
+        "countryOfOrigin": "Ländercode (z.B., DE)"
+      },
+      "validation": {
+        "nameRequired": "Produktname ist erforderlich",
+        "hsCodeRequired": "HS-Code ist erforderlich",
+        "priceRequired": "Preis ist erforderlich",
+        "quantityRequired": "Menge ist erforderlich",
+        "countryRequired": "Herkunftsland ist erforderlich"
+      }
+    },
+    "alerts": {
+      "createSuccess": "Produkt erfolgreich erstellt!",
+      "updateSuccess": "Produkt erfolgreich aktualisiert!",
+      "deleteSuccess": "Produkt erfolgreich gelöscht!",
+      "createError": "Produkt konnte nicht erstellt werden.",
+      "updateError": "Produkt konnte nicht aktualisiert werden.",
+      "deleteError": "Produkt konnte nicht gelöscht werden.",
+      "loadError": "Produkte konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "connectionError": "Verbindung zum Server fehlgeschlagen.",
+      "templateDownloadSuccess": "Vorlage erfolgreich heruntergeladen",
+      "templateDownloadError": "Vorlage konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut."
+    },
+    "bulkUpload": {
+      "title": "Massenupload von Produkten",
+      "description": "Laden Sie mehrere Produkte gleichzeitig mit einer Tabellenkalkulation hoch.",
+      "instructions": "Laden Sie die Vorlage herunter, füllen Sie sie mit Ihren Produktdaten aus und laden Sie sie hoch.",
+      "downloadTemplate": "Vorlage herunterladen",
+      "dragDrop": "Ziehen Sie Ihre Datei hierher oder klicken Sie zum Durchsuchen",
+      "fileTypes": "Unterstützte Dateitypen: .xlsx, .xls, .csv",
+      "uploadingStatus": "Datei wird hochgeladen...",
+      "resultsTitle": "Upload-Ergebnisse",
+      "successCount": "Erfolgreich verarbeitet",
+      "errorCount": "Fehler bei der Verarbeitung",
+      "duplicatesCount": "Duplikate",
+      "productsAdded": "Produkte hinzugefügt",
+      "close": "Schließen"
+    },
+    "deleteConfirmation": {
+      "title": "Produkt löschen",
+      "description": "Sind Sie sicher, dass Sie dieses Produkt löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "cancel": "Abbrechen",
+      "confirm": "Löschen"
+    }
+  },
+  "shipments": {
+    "title": "Meine Sendungen",
+    "filters": {
+      "searchPlaceholder": "Sendungen suchen...",
+      "statusPlaceholder": "Nach Status filtern",
+      "datePlaceholder": "Nach Datum filtern",
+      "allStatuses": "Alle Status",
+      "last7Days": "Letzte 7 Tage",
+      "last30Days": "Letzte 30 Tage",
+      "last90Days": "Letzte 90 Tage",
+      "thisYear": "Dieses Jahr"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "approved": "Genehmigt",
+      "inTransit": "In Zustellung",
+      "delivered": "Zugestellt",
+      "rejected": "Abgelehnt"
+    },
+    "actions": {
+      "refresh": "Aktualisieren",
+      "createNew": "Neu erstellen"
+    }
+  },
+  "approvedShipments": {
+    "title": "Meine genehmigten Sendungen",
+    "description": "Ansicht und Verfolgung genehmigter Sendungen",
+    "refresh": "Aktualisieren",
+    "search": "Nach Trackingnummer, Empfänger oder Land suchen...",
+    "tabs": {
+      "approved": "Genehmigt",
+      "inTransit": "In Zustellung",
+      "delivered": "Zugestellt"
+    },
+    "tableHeaders": {
+      "approvedShipments": "Genehmigte Sendungen",
+      "shipmentsInTransit": "Sendungen in Zustellung",
+      "deliveredShipments": "Zugestellte Sendungen",
+      "noShipmentsFound": "Keine Sendungen gefunden",
+      "noApproved": "Sie haben noch keine genehmigten Sendungen.",
+      "noInTransit": "Sie haben keine Sendungen in Zustellung.",
+      "noDelivered": "Sie haben keine zugestellten Sendungen."
+    },
+    "columns": {
+      "tracking": "Trackingnummer",
+      "recipient": "Empfänger",
+      "destination": "Zielort",
+      "date": "Datum",
+      "status": "Status",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "processing": "In Bearbeitung",
+      "approved": "Genehmigt",
+      "in_transit": "In Zustellung",
+      "delivered": "Zugestellt",
+      "cancelled": "Storniert",
+      "rejected": "Abgelehnt"
+    },
+    "buttons": {
+      "track": "Verfolgen",
+      "label": "Etikett",
+      "downloadLabel": "Etikett herunterladen"
+    },
+    "tracking": {
+      "dialogTitle": "Sendungsverfolgung",
+      "dialogDescription": "Verfolgungsdetails für",
+      "currentStatus": "Aktueller Status",
+      "lastUpdated": "Zuletzt aktualisiert",
+      "currentLocation": "Aktueller Standort",
+      "estimatedDelivery": "Voraussichtliche Lieferung",
+      "trackingHistory": "Versandverlauf",
+      "noTrackingInfo": "Für diese Sendung sind noch keine Verfolgungsinformationen verfügbar.",
+      "eventStatus": {
+        "picked_up": "Abgeholt",
+        "in_transit": "In Zustellung",
+        "out_for_delivery": "Wird zugestellt",
+        "delivered": "Zugestellt",
+        "exception": "Problem",
+        "attempted_delivery": "Zustellversuch",
+        "package_accepted": "Paket angenommen"
+      },
+      "eventDescription": {
+        "picked_up": "Paket wurde abgeholt",
+        "in_transit": "Paket ist in Zustellung",
+        "out_for_delivery": "Paket wird zugestellt",
+        "delivered": "Paket wurde zugestellt",
+        "exception": "Es gab ein Problem bei der Zustellung",
+        "attempted_delivery": "Zustellversuch wurde unternommen, aber war nicht erfolgreich",
+        "package_accepted": "Paket wurde im Verteilzentrum angenommen"
+      }
+    },
+    "hoverCards": {
+      "recipientDetails": "Empfängerinformationen",
+      "name": "Name",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "address": "Adresse",
+      "destinationDetails": "Zielortdetails",
+      "from": "Von",
+      "to": "Nach",
+      "postalCode": "Postleitzahl",
+      "serviceLevel": "Servicelevel"
+    }
+  },
+  "balance": {
+    "title": "Mein Guthaben",
+    "currentBalance": "Aktuelles Guthaben",
+    "availableFunds": "Ihre verfügbaren Mittel",
+    "balanceManagement": "Guthabenverwaltung",
+    "accountInfo": "Informationen zu Ihrem Konto",
+    "creditLimit": "Kreditlimit",
+    "availableCredit": "Verfügbarer Kredit",
+    "adminManaged": "Ihr Kontoguthaben wird vom Administrator verwaltet.",
+    "contactAdmin": "Für Guthaben-Anfragen oder zum Hinzufügen von Guthaben kontaktieren Sie bitte Ihren Administrator.",
+    "bankInformation": "Bankinformationen",
+    "bankInfoDescription": "Verwenden Sie diese Informationen, um Einzahlungen auf Ihr Konto vorzunehmen",
+    "accountDetails": "Kontodetails",
+    "importantInformation": "Wichtige Informationen",
+    "includeUsername": "Geben Sie Ihren Benutzernamen im Zahlungsbetreff an",
+    "contactSupport": "Kontaktieren Sie nach der Zahlung bitte den Support zur Bestätigung",
+    "creditAfterVerification": "Ihr Konto wird gutgeschrieben, sobald die Zahlung verifiziert wurde"
+  },
+  "createShipment": {
+    "title": "Neue Sendung erstellen",
+    "subtitle": "Füllen Sie die Sendungsdetails aus, um eine neue Bestellung zu erstellen.",
+    "backToDashboard": "Zurück zum Dashboard",
+    "sections": {
+      "recipient": "Empfängerinformationen",
+      "package": "Paketdetails", 
+      "price": "Preis & Absenden"
+    },
+    "recipientInfo": {
+      "title": "Empfängerinformationen",
+      "name": "Empfängername",
+      "phone": "Telefonnummer",
+      "email": "E-Mail (Optional)",
+      "address": "Adresse",
+      "city": "Stadt",
+      "postalCode": "Postleitzahl",
+      "contents": "Beschreibung des Paketinhalts"
+    },
+    "senderInfo": {
+      "title": "Absenderinformationen",
+      "name": "Absendername",
+      "phone": "Telefonnummer",
+      "email": "E-Mail (Optional)",
+      "address": "Adresse",
+      "city": "Stadt",
+      "postalCode": "Postleitzahl"
+    },
+    "packageDetails": {
+      "title": "Paketdetails",
+      "destinationCountry": "Zielland",
+      "serviceLevel": "Service-Level",
+      "length": "Länge (cm)",
+      "width": "Breite (cm)",
+      "height": "Höhe (cm)",
+      "weight": "Gewicht (kg)",
+      "pieces": "Anzahl der Stücke"
+    },
+    "priceDetails": {
+      "title": "Preis & Absenden",
+      "basePrice": "Grundpreis",
+      "fuelCharge": "Kraftstoffzuschlag",
+      "totalPrice": "Gesamtpreis",
+      "carrier": "Spediteur",
+      "estimatedDelivery": "Voraussichtliche Lieferung in {{days}} Werktagen",
+      "billableWeight": "Abrechenbares Gewicht: {{weight}} kg",
+      "acceptTerms": "Ich akzeptiere den Versandpreis und stimme den Geschäftsbedingungen zu",
+      "completePackageFirst": "Bitte füllen Sie zuerst die Paketdetails aus und berechnen Sie den Preis."
+    },
+    "actions": {
+      "continueToPackage": "Weiter zu Paketdetails",
+      "calculatePrice": "Versandpreis berechnen",
+      "createShipment": "Sendung erstellen",
+      "goToPackage": "Zu Paketdetails gehen"
+    },
+    "validation": {
+      "recipientName": "Empfängername ist erforderlich",
+      "phone": "Telefonnummer ist erforderlich",
+      "email": "Muss eine gültige E-Mail sein",
+      "address": "Adresse ist erforderlich",
+      "city": "Stadt ist erforderlich",
+      "postalCode": "Postleitzahl ist erforderlich",
+      "contents": "Paketinhalt ist erforderlich",
+      "contentsMaxLength": "Maximal 100 Zeichen",
+      "senderName": "Absendername ist erforderlich",
+      "senderAddress": "Absenderadresse ist erforderlich",
+      "senderCity": "Absenderstadt ist erforderlich",
+      "senderPostalCode": "Absender-Postleitzahl ist erforderlich",
+      "destinationCountry": "Zielland ist erforderlich",
+      "length": "Länge muss mindestens 1 cm sein",
+      "width": "Breite muss mindestens 1 cm sein",
+      "height": "Höhe muss mindestens 1 cm sein",
+      "weight": "Gewicht muss mindestens 0,1 kg sein",
+      "pieces": "Muss mindestens 1 Stück haben",
+      "serviceLevel": "Service-Level ist erforderlich",
+      "completeFields": "Bitte füllen Sie alle erforderlichen Felder aus",
+      "ensureFieldsFilled": "Stellen Sie sicher, dass alle erforderlichen Felder in den Empfänger- und Paketabschnitten ausgefüllt sind.",
+      "priceCalculationFailed": "Preisberechnung fehlgeschlagen",
+      "tryAgain": "Bei der Berechnung des Versandpreises ist ein Problem aufgetreten. Bitte versuchen Sie es erneut.",
+      "completeSections": "Bitte füllen Sie alle Abschnitte aus, bevor Sie die Sendung erstellen"
+    }
+  },
+  "myPickups": {
+    "title": "Meine Abholungsanfragen",
+    "subtitle": "Verwalten Sie Abholungsanfragen für Ihre Sendungen",
+    "refresh": "Aktualisieren",
+    "requestPickup": "Abholung anfragen",
+    "requestShipmentPickup": "Sendungsabholung anfragen",
+    "requestDescription": "Wählen Sie die Sendungen aus, die Sie in diese Abholungsanfrage einbeziehen möchten. Alle ausgewählten Sendungen werden am selben Datum abgeholt.",
+    "pickupDate": "Abholdatum",
+    "selectDate": "Datum auswählen",
+    "pickupNotes": "Abholungshinweise (Optional)",
+    "notesPlaceholder": "Besondere Anweisungen für die Abholung...",
+    "selectShipments": "Sendungen auswählen",
+    "loadingShipments": "Sendungen werden geladen...",
+    "noEligibleShipments": "Keine geeigneten Sendungen gefunden",
+    "eligibilityNote": "Es können nur genehmigte Sendungen ohne bestehende Abholungsanfrage ausgewählt werden.",
+    "selectColumn": "Auswählen",
+    "id": "ID",
+    "recipient": "Empfänger",
+    "destination": "Zielort",
+    "service": "Service",
+    "shipmentsSelected": "Sendung(en) ausgewählt",
+    "pendingWarning": "Warnung: Sie fordern die Abholung für ausstehende Sendung(en) an",
+    "pendingDescription": "Paketdetails und Preis können sich vor der Genehmigung ändern. Der Spediteur wird nur genehmigte Sendungen abholen.",
+    "cancel": "Abbrechen",
+    "requestPickupButton": "Abholung anfragen",
+    "myPickupRequests": "Meine Abholungsanfragen",
+    "myPickupDescription": "Sehen und verwalten Sie Ihre Abholungsanfragen",
+    "failedToLoad": "Abholungsanfragen konnten nicht geladen werden",
+    "tryAgain": "Erneut versuchen",
+    "noPickupsYet": "Noch keine Abholungsanfragen",
+    "noPickupsDescription": "Verwenden Sie die Schaltfläche \"Abholung anfragen\", um eine Abholung für Ihre genehmigten Sendungen zu planen.",
+    "newPickupRequest": "Neue Abholungsanfrage",
+    "requestedOn": "Angefragt am",
+    "status": "Status",
+    "actions": "Aktionen",
+    "notScheduled": "Nicht geplant",
+    "viewDetails": "Details anzeigen",
+    "pickupRequest": "Abholungsanfrage",
+    "shipmentsInPickup": "Sendung(en) in dieser Abholungsanfrage",
+    "package": "Paket",
+    "notes": "Hinweise",
+    "pieces": "Stück",
+    "billable": "Abrechenbar",
+    "scheduled": "Geplant",
+    "close": "Schließen"
+  },
+  
+  "etsyImportGuide": {
+    "toggleGuide": "Etsy-Import-Anleitung ein-/ausblenden",
+    "title": "Etsy-Import-Anleitung",
+    "description": "Folgen Sie diesen Schritten, um Ihre Etsy-Bestellungen zu importieren",
+    "step1": {
+      "title": "Gehen Sie zu Etsy-Downloads",
+      "description": "Besuchen Sie den Etsy-Shop-Manager, um Ihre Bestellungen herunterzuladen",
+      "downloadUrl": "etsy.com/your/shops/me/download"
+    },
+    "step2": {
+      "title": "Wählen Sie Bestellungen zum Herunterladen",
+      "description": "Wählen Sie auf der Etsy-Seite den Dateityp aus, den Sie herunterladen möchten, bezeichnet als",
+      "ordersLabel": "Bestellungen",
+      "timeSelection": "Wählen Sie den Zeitraum für die Bestellungen, die Sie importieren möchten",
+      "imageAlt": "Etsy-Bestellungen-Download-Interface",
+      "tip": "Laden Sie Bestellungen der letzten 30-90 Tage für beste Ergebnisse herunter"
+    },
+    "step3": {
+      "title": "Überprüfen Sie Ihre E-Mail",
+      "description": "Etsy sendet einen Download-Link an Ihre E-Mail",
+      "fromEmail": "Von E-Mail",
+      "imageAlt": "Etsy-Download-Button in der E-Mail",
+      "note": "Die E-Mail kann einige Minuten brauchen, um anzukommen. Überprüfen Sie Ihren Spam-Ordner, wenn Sie sie nicht sehen"
+    },
+    "step4": {
+      "title": "In unser System importieren",
+      "description": "Laden Sie die CSV-Datei hier hoch. Das System extrahiert automatisch Empfängerinformationen und Bestelldetails."
+    },
+    "step5": {
+      "title": "Abmessungen überprüfen",
+      "description": "Bestätigen oder bearbeiten Sie nach dem Hochladen die Paketabmessungen für eine korrekte Versandkostenberechnung."
+    },
+    "important": {
+      "title": "Wichtig: Standard-Paketeinstellungen",
+      "defaultDimensions": "Standard-Etsy-Paketabmessungen",
+      "warning": "Achten Sie darauf, diese Abmessungen für jede Bestellung zu bearbeiten, falls nötig, für genaue Versandkosten!"
+    }
+  },
+  "recipientsData": {
+    "pageTitle": "Empfängerdatenbank",
+    "pageDescription": "Verwalten Sie Ihre häufig verwendeten Empfängerinformationen für Sendungen",
+    "actions": {
+      "addRecipient": "Empfänger hinzufügen",
+      "editRecipient": "Empfänger bearbeiten",
+      "deleteRecipient": "Empfänger löschen",
+      "importRecipients": "Empfänger importieren",
+      "exportRecipients": "CSV exportieren",
+      "setAsDefault": "Als Standard festlegen"
+    },
+    "viewToggle": {
+      "grid": "Rasteransicht",
+      "table": "Tabellenansicht"
+    },
+    "defaultRecipientBadge": "Standard",
+    "empty": {
+      "title": "Keine Empfänger",
+      "description": "Fügen Sie Ihren ersten Empfänger hinzu, um zu beginnen"
+    },
+    "dialogs": {
+      "add": {
+        "title": "Neuen Empfänger hinzufügen",
+        "description": "Geben Sie Empfängerdetails ein, um sie für zukünftige Sendungen zu speichern"
+      },
+      "edit": {
+        "title": "Empfänger bearbeiten",
+        "description": "Aktualisieren Sie Ihre Empfängerinformationen"
+      },
+      "delete": {
+        "title": "Empfänger löschen",
+        "description": "Sind Sie sicher, dass Sie diesen Empfänger löschen möchten?",
+        "warning": "Diese Aktion kann nicht rückgängig gemacht werden."
+      }
+    },
+    "card": {
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "address": "Adresse"
+    },
+    "table": {
+      "name": "Name",
+      "address": "Adresse",
+      "city": "Stadt",
+      "state": "Bundesland/Provinz",
+      "postalCode": "Postleitzahl",
+      "country": "Land",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "contact": "Kontakt",
+      "actions": "Aktionen"
+    },
+    "form": {
+      "name": "Name",
+      "address": "Adresse",
+      "city": "Stadt",
+      "state": "Bundesland/Provinz",
+      "postalCode": "Postleitzahl",
+      "country": "Land",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "defaultRecipient": "Als Standardempfänger festlegen",
+      "defaultRecipientDescription": "Dieser Empfänger wird automatisch für neue Sendungen ausgewählt"
+    },
+    "placeholders": {
+      "name": "Vollständiger Empfängername",
+      "address": "Adresse des Empfängers",
+      "city": "Stadt",
+      "state": "Bundesland/Provinz",
+      "postalCode": "Postleitzahl",
+      "country": "Land",
+      "phone": "Telefonnummer",
+      "email": "E-Mail-Adresse"
+    },
+    "buttons": {
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "confirm": "Bestätigen",
+      "copyAddress": "Adresse kopieren",
+      "saveRecipient": "Empfänger speichern",
+      "updateRecipient": "Empfänger aktualisieren",
+      "setAsDefault": "Als Standard festlegen"
+    },
+    "notifications": {
+      "copied": {
+        "title": "In die Zwischenablage kopiert",
+        "description": "Empfängerdetails in die Zwischenablage kopiert"
+      }
+    },
+    "alerts": {
+      "createSuccess": "Empfänger erfolgreich erstellt",
+      "updateSuccess": "Empfänger erfolgreich aktualisiert",
+      "deleteSuccess": "Empfänger erfolgreich gelöscht",
+      "defaultUpdated": "Standardempfänger aktualisiert",
+      "exportSuccess": "Empfänger erfolgreich exportiert",
+      "exportFailed": "Fehler beim Exportieren der Empfänger",
+      "noExportData": "Keine Empfänger zum Exportieren",
+      "error": {
+        "create": "Fehler beim Erstellen des Empfängers",
+        "update": "Fehler beim Aktualisieren des Empfängers",
+        "delete": "Fehler beim Löschen des Empfängers",
+        "setDefault": "Fehler beim Festlegen des Standardempfängers"
+      }
+    }
+  },
+  "shipmentTable": {
+    "selectAll": "Alle auswählen",
+    "shipmentId": "Sendungs-ID",
+    "companyCustomer": "Firma/Kunde",
+    "destinationAddress": "Zieladresse",
+    "trackingHeader": "Tracking",
+    "internalTracking": "Interne Tracking-Nummer",
+    "carrier": "Spediteur",
+    "externalTracking": "Externe Tracking-Nummer",
+    "labelErrorsNote": "Etikettenfehler werden rot angezeigt",
+    "price": "Preis",
+    "originalPrice": "Originalpreis",
+    "createdDate": "Erstellungsdatum",
+    "status": "Status",
+    "actions": "Aktionen",
+    "packageContents": {
+      "name": "Name",
+      "quantity": "Menge",
+      "price": "Preis",
+      "actions": "Aktionen"
+    },
+    "tracking": {
+      "title": "Tracking-Informationen",
+      "shipment": "Sendung",
+      "moogshipTracking": "MoogShip Tracking-Nr.",
+      "carrierTracking": "Spediteur Tracking-Nr.",
+      "status": "Status"
+    }
+  },
+  "marketing": {
+    "navigation": {
+      "features": "Funktionen",
+      "benefits": "Vorteile",
+      "testimonials": "Erfahrungsberichte",
+      "pricing": "Preise"
+    },
+    "hero": {
+      "title": "Der <span>preiswerteste internationale</span> Versand",
+      "subtitle": "Wir helfen Verkäufern aus den USA und Europa, die besten Versandtarife zu erhalten und bei jedem Paket zu sparen. Keine Abonnements, nur die niedrigsten Gebühren der Branche.",
+      "startShipping": "Versand starten",
+      "learnMore": "Mehr erfahren",
+      "signup": "Anmelden",
+      "trustedBy": "Vertraut von <span>1.000+</span> Unternehmen weltweit"
+    },
+    "tracking": {
+      "title": "Sendung verfolgen",
+      "subtitle": "Geben Sie Ihre Tracking-Nummer unten ein, um Echtzeit-Updates zum Standort Ihres Pakets und zum Lieferstatus zu erhalten."
+    },
+    "dashboard": {
+      "preview": "MoogShip Dashboard",
+      "shipments": "Sendungen",
+      "savings": "Einsparungen",
+      "countries": "Länder",
+      "monthlyShipments": "Monatliche Sendungen",
+      "recentShipments": "Aktuelle Sendungen"
+    },
+    "partners": {
+      "title": "VON BRANCHENFÜHRERN VERTRAUT"
+    },
+    "features": {
+      "title": "Leistungsstarke Funktionen für den internationalen Versand",
+      "subtitle": "Unsere Plattform kombiniert fortschrittliche Technologie mit Logistik-Expertise, um Ihre internationalen Versandoperationen zu optimieren.",
+      "feature1": {
+        "title": "Globales Versandmanagement",
+        "description": "Verfolgen und verwalten Sie internationale Sendungen in über 190 Ländern mit Echtzeit-Updates und vollständiger Transparenz während des gesamten Lieferprozesses."
+      },
+      "feature2": {
+        "title": "Multi-Carrier-Integration",
+        "description": "Vergleichen Sie Tarife und Dienstleistungen führender globaler Versandanbieter, um die kostengünstigste Option für Ihre internationalen Pakete zu finden."
+      },
+      "feature3": {
+        "title": "Automatische Etikettengenerierung",
+        "description": "Erstellen und drucken Sie konforme Versandetiketten mit einem Klick. Unser System generiert automatisch alle erforderlichen Dokumente für die Zollabfertigung."
+      },
+      "feature4": {
+        "title": "Empfängerverwaltung",
+        "description": "Speichern und verwalten Sie eine unbegrenzte Anzahl von Empfängern mit detaillierter Adressüberprüfung und intelligenten Vorschlägen für eine schnellere Dateneingabe."
+      },
+      "feature5": {
+        "title": "Produktkatalog-Management",
+        "description": "Erstellen und verwalten Sie Ihren Produktkatalog mit umfassenden Details einschließlich SKUs, Abmessungen, Gewichten und Zollinformationen für einen schnelleren Versand."
+      },
+      "feature6": {
+        "title": "Mehrsprachige Unterstützung",
+        "description": "Nutzen Sie die Plattform in Ihrer bevorzugten Sprache mit Unterstützung für Englisch, Russisch, Türkisch, Ukrainisch, Deutsch, Französisch, Arabisch und Spanisch."
+      },
+      "highlight": {
+        "tag": "Hervorgehobene Funktion",
+        "title": "Umfassendes Dashboard",
+        "description": "Erhalten Sie einen Überblick über alle Ihre Versandoperationen mit unserem intuitiven Dashboard. Überwachen Sie den Sendungsstatus, verfolgen Sie Ausgaben und identifizieren Sie Möglichkeiten zur Optimierung Ihrer Logistikoperationen.",
+        "point1": "Echtzeit-Updates zum Sendungsstatus",
+        "point2": "Detaillierte Kostenanalyse und Einsparungsberichte",
+        "point3": "Interaktive Analysen mit exportierbaren Berichten",
+        "cta": "Dashboard ausprobieren"
+      }
+    },
+    "benefits": {
+      "title": "Warum MoogShip wählen?",
+      "subtitle": "Unsere Plattform wurde entwickelt, um die komplexen Herausforderungen des internationalen Versands und der Logistikmanagement zu lösen.",
+      "qualityTitle": "Qualität und Zuverlässigkeit",
+      "qualitySubtitle": "Ein geprüftes Carrier-Netzwerk mit Leistungsüberwachung gewährleistet einen konsistenten, hochwertigen Service für jede Sendung.",
+      "qualityPoints": [
+        "99,7% pünktliche Lieferung",
+        "Echtzeit-Tracking-Updates",
+        "Proaktive Problemlösung"
+      ],
+      "costTitle": "Kosteneffizienz",
+      "costSubtitle": "Sparen Sie bei jeder Sendung mit unseren volumenbasierten Rabatten und intelligenten Routing-Algorithmen.",
+      "costPoints": [
+        "Bis zu 30% Einsparung bei Versandkosten",
+        "Transparente Preisgestaltung ohne versteckte Gebühren",
+        "Volumenbasierte Rabatte"
+      ],
+      "supportTitle": "Unvergleichliche Unterstützung",
+      "supportSubtitle": "Unsere Logistikexperten bieten personalisierte Anleitung und Unterstützung für alle Ihre Versandbedürfnisse.",
+      "supportPoints": [
+        "24/7 Kundendienst",
+        "Dedizierte Account-Manager",
+        "Fachkundige Zollberatung"
+      ],
+      "benefit1": {
+        "title": "Bei jedem Paket sparen",
+        "description": "Erhalten Sie Zugang zu den besten Versandtarifen durch unsere Tarifvergleichstechnologie und Partnerschaften mit großen Carriern.",
+        "item1": "Vorverhandelte Rabatte mit großen Carriern",
+        "item2": "Keine monatlichen Abonnementgebühren oder Mindestbeträge",
+        "item3": "Transparente Preisgestaltung ohne versteckte Gebühren"
+      },
+      "benefit2": {
+        "title": "Versand in 190+ Länder",
+        "description": "Erweitern Sie Ihr Geschäft global mit unserem umfangreichen Carrier-Netzwerk und optimierten internationalen Versandprozess.",
+        "item1": "Automatisierte Zolldokumentation",
+        "item2": "Integrierte Einhaltung internationaler Vorschriften",
+        "item3": "Lokale Abholoptionen in wichtigen Ländern"
+      },
+      "benefit3": {
+        "title": "Vereinfachen Sie Ihren Workflow",
+        "description": "Sparen Sie Zeit mit unserer intuitiven Plattform, die entwickelt wurde, um internationalen Versand so einfach wie inländischen zu machen.",
+        "item1": "Ein-Klick-Etikettenerstellung und -druck",
+        "item2": "Massen-Sendungserstellung und -verfolgung",
+        "item3": "Nahtlose Integration mit großen E-Commerce-Plattformen"
+      }
+    },
+    "testimonials": {
+      "title": "Was unsere Kunden sagen",
+      "subtitle": "Unternehmen weltweit vertrauen MoogShip für ihre globalen Versandbedürfnisse.",
+      "testimonial1": {
+        "quote": "MoogShip hat unseren Versandprozess komplett transformiert. Wir haben unsere internationalen Versandkosten um 40% reduziert und liefern Pakete schneller als je zuvor. Ihre Plattform ist intuitiv und das Support-Team ist immer hilfsbereit.",
+        "name": "Sarah Johnson",
+        "position": "Online-Shop-Besitzerin, USA"
+      },
+      "testimonial2": {
+        "quote": "Allein die automatisierte Zolldokumentationsfunktion ist die Registrierung wert. Was früher Stunden dauerte, passiert jetzt mit wenigen Klicks. Wir versenden täglich Waren in über 30 Länder, und MoogShip hat all unsere Papierkram-Kopfschmerzen beseitigt.",
+        "name": "Marcus Hendricks",
+        "position": "Internationaler Verkäufer, Deutschland"
+      },
+      "testimonial3": {
+        "quote": "Als kleines Unternehmen zählt jeder Cent. MoogShip hat uns im letzten Jahr Tausende von Dollar an Versandkosten gespart. Ihre Massendruckfunktionen für Etiketten und Paketverwaltungstools sind perfekt für unsere hochvolumigen Versandbedürfnisse. Sehr empfehlenswert!",
+        "name": "Elena Rodriguez",
+        "position": "Kleinunternehmerin, Spanien"
+      }
+    },
+    "ecommerce": {
+      "title": "Optimiert für E-Commerce-Verkäufer",
+      "subtitle": "Nahtlose Integration mit Ihren bevorzugten Marktplätzen, um Versandoperationen zu optimieren und Kosten zu senken.",
+      "amazonTitle": "Amazon-Verkäufer",
+      "amazonSubtitle": "Optimieren Sie Ihre FBA-Sendungen und direkten Kundenaufträge mit unseren spezialisierten Amazon-Verkäuferlösungen.",
+      "amazonPoints": [
+        "FBA-Vorbereitungsdienste",
+        "Amazon-konforme Etikettierung"
+      ],
+      "etsyTitle": "Etsy-Verkäufer",
+      "etsySubtitle": "Liefern Sie handgefertigte Waren weltweit mit erschwinglichen Versandoptionen, die für Etsy-Unternehmer konzipiert sind.",
+      "etsyPoints": [
+        "Spezialisierte Handwerksverpackung",
+        "Einfache Etsy-Shop-Integration"
+      ],
+      "walmartTitle": "Walmart-Verkäufer",
+      "walmartSubtitle": "Erfüllen Sie Walmarts Lieferanforderungen mit unseren spezialisierten Lösungen für Marktplatzverkäufer.",
+      "walmartPoints": [
+        "Walmart-Fulfillment-Unterstützung",
+        "Wettbewerbsfähige Lieferzeiten"
+      ],
+      "wayfairTitle": "Wayfair-Verkäufer",
+      "wayfairSubtitle": "Versenden Sie Möbel und Heimartikel effizient mit unseren spezialisierten Großartikel-Versandlösungen.",
+      "wayfairPoints": [
+        "Großartikel-Expertise",
+        "White-Glove-Lieferoptionen"
+      ]
+    },
+    "screenshots": {
+      "title": "Leistungsstarke Versandplattform",
+      "subtitle": "Unser benutzerfreundliches Dashboard bietet alles, was Sie benötigen, um Ihre globalen Sendungen effizient zu verwalten.",
+      "dashboardTitle": "Intuitives Dashboard",
+      "dashboardSubtitle": "Erhalten Sie einen vollständigen Überblick über alle Ihre Sendungen, Guthaben und Kontoinformationen an einem Ort.",
+      "shipmentTitle": "Sendungsverwaltung",
+      "shipmentSubtitle": "Erstellen, verfolgen und verwalten Sie alle Ihre Sendungen mit unseren umfassenden Versandtools.",
+      "pricingTitle": "Echtzeit-Preisgestaltung",
+      "pricingSubtitle": "Erhalten Sie sofortige Preisangebote basierend auf Dimensionen, Gewicht und Bestimmungsort, um fundierte Entscheidungen zu treffen."
+    },
+    "cta": {
+      "title": "Bereit, Ihre Versandkosten zu senken?",
+      "subtitle": "Schließen Sie sich Amazon-, Etsy-, Walmart- und Wayfair-Verkäufern an, die bei jeder Sendung mit MoogShips exklusiven Tarifen sparen.",
+      "getStarted": "Jetzt starten",
+      "getQuote": "Angebot anfordern"
+    },
+    "footer": {
+      "description": "Die globale Versandlogistikplattform für Unternehmen jeder Größe.",
+      "company": "Unternehmen",
+      "companyLinks": ["Über uns", "Karriere", "Presse", "Neuigkeiten", "Kontakt"],
+      "services": "Dienstleistungen",
+      "serviceLinks": ["Globaler Versand", "Zollabfertigung", "Spedition", "Lagerung", "Lieferkette"],
+      "legal": "Rechtliches",
+      "legalLinks": ["Nutzungsbedingungen", "Datenschutzrichtlinie", "Cookie-Richtlinie", "DSGVO", "Versandbestimmungen"],
+      "contactOffices": "Kontakt & Büros",
+      "allRightsReserved": "Alle Rechte vorbehalten.",
+      "terms": "AGB",
+      "privacy": "Datenschutz",
+      "cookies": "Cookies"
+    }
+  },
+  "bulkUpload": {
+    "title": "Massen-Sendungsupload",
+    "backButton": "Zurück",
+    "fileUpload": {
+      "title": "Laden Sie Ihre Sendungsdaten hoch",
+      "dragAndDrop": "Ziehen Sie Ihre Datei hierher oder klicken Sie zum Durchsuchen",
+      "supportedFormats": "Unterstützt Excel (.xlsx) und CSV (.csv) Dateien",
+      "validate": "Validieren",
+      "clear": "Löschen",
+      "validatingFile": "Datei wird validiert...",
+      "upload": "Sendungen hochladen",
+      "uploading": "Wird hochgeladen..."
+    },
+    "validation": {
+      "inProgress": "Datei wird validiert...",
+      "errorRow": "Fehler in Zeile {{row}}"
+    },
+    "upload": {
+      "inProgress": "Wird hochgeladen..."
+    },
+    "success": {
+      "title": "Massenupload Erfolgreich",
+      "message": "{{count}} Sendungen erfolgreich mit Etiketten hochgeladen",
+      "shipmentsCreated": "{{count}} Sendungen erfolgreich erstellt",
+      "viewShipments": "Sendungen anzeigen"
+    },
+    "createShipments": {
+      "success": {
+        "title": "Sendungen Erfolgreich Erstellt",
+        "description": "{{count}} Sendungen erfolgreich erstellt"
+      },
+      "error": {
+        "title": "Sendungserstellung Fehlgeschlagen"
+      }
+    },
+    "printAllLabels": "Alle Etiketten drucken",
+    "viewShipments": "Sendungen anzeigen",
+    "preview": {
+      "title": "Sendungsvorschau",
+      "recalculatePrices": "Preise neu berechnen",
+      "import": "Importieren",
+      "saleDate": "Verkaufsdatum",
+      "orderId": "Bestell-ID",
+      "fullName": "Vollständiger Name",
+      "street1": "Straße 1",
+      "street2": "Straße 2",
+      "city": "Stadt",
+      "state": "Bundesland",
+      "zipcode": "Postleitzahl",
+      "country": "Land",
+      "currency": "Währung",
+      "orderValue": "Bestellwert",
+      "sku": "SKU",
+      "recipient": "Empfänger",
+      "destination": "Zielort",
+      "dimensions": "Abmessungen (cm)",
+      "weight": "Gewicht",
+      "totalPrice": "Gesamtpreis",
+      "actions": "Aktionen",
+      "billableWeight": "Abrechnungsgewicht",
+      "actualWeight": "Tatsächlich: {{weight}} kg",
+      "volumetricWeight": "Vol: {{weight}} kg",
+      "volumetricFormula": "Volumengewicht: L×B×H÷5000",
+      "billableWeightTooltip": "Abrechnungsgewicht ist das höhere von tatsächlichem und Volumengewicht",
+      "priceTooltip": "Beinhaltet Grundpreis und Treibstoffzuschlag",
+      "calculating": "Wird berechnet..."
+    },
+    "errors": {
+      "title": "Zeile {{row}}",
+      "validationError": "Validierungsfehler"
+    },
+    "success": {
+      "title": "Erfolg",
+      "message": "{{count}} Sendungen wurden erfolgreich erstellt.",
+      "viewMyShipments": "Meine Sendungen anzeigen"
+    },
+    "editDimensions": {
+      "title": "Paketabmessungen bearbeiten",
+      "length": "Länge (cm)",
+      "width": "Breite (cm)",
+      "height": "Höhe (cm)",
+      "weight": "Gewicht (kg)",
+      "summary": {
+        "dimensions": "Abmessungen",
+        "actualWeight": "Tatsächliches Gewicht",
+        "volumetricWeight": "Volumengewicht",
+        "billableWeight": "Abrechnungsgewicht"
+      },
+      "formula": {
+        "volumetricFormula": "Volumengewicht-Formel: Länge × Breite × Höhe ÷ 5000",
+        "billableWeightExplanation": "Abrechnungsgewicht ist das höhere von tatsächlichem Gewicht und Volumengewicht"
+      },
+      "weightSummary": {
+        "title": "Gewichtsberechnung",
+        "volumetric": "Volumengewicht: {{weight}} kg",
+        "billable": "Abrechnungsgewicht: {{weight}} kg",
+        "description": "Abrechnungsgewicht ist das höhere von tatsächlichem und Volumengewicht.",
+        "note": "Hinweis: Volumengewicht wird als (Länge × Breite × Höhe) ÷ 5000 berechnet"
+      },
+      "save": "Änderungen speichern",
+      "close": "Schließen"
+    },
+    "insurance": {
+      "description": "Schützen Sie Ihre Produkte während des Versands vor Verlust oder Diebstahl.",
+      "calculationInfo": "Die Versicherungskosten werden basierend auf dem angegebenen Wert berechnet.",
+      "tooltip": "Die Versicherung schützt Ihre Sendung während des Transports vor Verlust, Diebstahl oder Beschädigung. Die Kosten werden als Prozentsatz des angegebenen Werts mit datenbankbasierten Tarifen und Mindestgebühren berechnet.",
+      "validation": {
+        "amountRequired": "Versicherungsbetrag muss größer als $0,00 sein"
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background circle (optional, for better visibility in tabs) -->
+  <circle cx="32" cy="32" r="30" fill="#ffffff"/>
+  
+  <!-- Paper airplane shape optimized for favicon -->
+  <path 
+    d="M12,30 L52,12 L32,52 Z" 
+    fill="#fca311" 
+    stroke="#e85d04" 
+    stroke-width="1"
+  />
+  <path 
+    d="M32,52 L20,32 L52,12 Z" 
+    fill="#ffb703" 
+    stroke="#e85d04" 
+    stroke-width="0.5" 
+  />
+</svg>

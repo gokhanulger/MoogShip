@@ -1,0 +1,49 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+
+# System
+.DS_Store
+*.log
+
+# Server generated
+server/public
+vite.config.ts.*
+
+# Archives
+*.tar.gz
+
+# SECURITY - Never commit these!
+.env
+.env.local
+.env.production
+.env.*.local
+*.pem
+*.key
+*.crt
+credentials.json
+service-account.json
+secrets/
+
+# User data
+logs
+uploads
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Temp
+temp
+temp_*
+*.tmp
+
+# Large assets (keep in cloud storage)
+attached_assets/
+*.mp4
+*.mov
+*.avi

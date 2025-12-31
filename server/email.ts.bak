@@ -1,0 +1,415 @@
+import { MailService } from '@sendgrid/mail';
+import { User } from "@shared/schema";
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import nodemailer from 'nodemailer';
+
+// Set up SendGrid if API key is available
+let mailService: MailService | null = null;
+if (process.env.SENDGRID_API_KEY) {
+  mailService = new MailService();
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('SendGrid service initialized with API key');
+} else {
+  console.warn('SENDGRID_API_KEY not found, email sending may fail');
+}
+
+interface EmailParams {
+  to: string;
+  from: string;
+  subject: string;
+  text?: string;
+  html?: string;
+}
+
+// Create a NodeMailer SMTP transport as a fallback
+let smtpTransport: nodemailer.Transporter | null = null;
+
+// Try to initialize SMTP transport if credentials are provided
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  try {
+    smtpTransport = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+    console.log('SMTP transport initialized as fallback');
+  } catch (error) {
+    console.error('Failed to initialize SMTP transport:', error);
+  }
+}
+
+export async function sendEmail(params: EmailParams): Promise<{success: boolean, error?: any}> {
+  try {
+    // Check if we're in a development or testing environment
+    const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+    
+    // Validate email addresses
+    if (!params.to || !params.from) {
+      console.error('Invalid email parameters: missing to or from address');
+      return {
+        success: false,
+        error: 'Invalid email parameters'
+      };
+    }
+    
+    // Build email data using proper types that the SendGrid API expects
+    // Add sender name to improve deliverability
+    const fromWithName = params.from.includes('<') 
+      ? params.from 
+      : `MoogShip <${params.from}>`;
+    
+    // Email settings that improve deliverability and avoid spam filters
+    const msg = {
+      to: params.to,
+      from: fromWithName,  // Use the formatted sender with name
+      subject: params.subject,
+      text: params.text || '', // Always include text content (required by SendGrid)
+      html: params.html || '',  // Include HTML if available
+      // Add tracking settings to disable click and open tracking (improves deliverability)
+      trackingSettings: {
+        clickTracking: { enable: false },
+        openTracking: { enable: false },
+        subscriptionTracking: { enable: false },
+        ganalytics: { enable: false }
+      },
+      // Add mail settings to bypass spam filters
+      mailSettings: {
+        bypassListManagement: { enable: true },
+        sandboxMode: { enable: false }
+      },
+      // Add custom headers to improve deliverability
+      headers: {
+        'X-Priority': '1',
+        'Importance': 'high',
+        'X-MSMail-Priority': 'High'
+      }
+    };
+    
+    // In development mode, we can log the email instead of sending it
+    if (isDevelopment && process.env.EMAIL_DEBUG === 'true') {
+      console.log('====== EMAIL DEBUG MODE ======');
+      console.log('To:', params.to);
+      console.log('From:', params.from);
+      console.log('Subject:', params.subject);
+      console.log('Text:', params.text);
+      console.log('HTML:', params.html?.substring(0, 200) + '...');
+      console.log('===============================');
+      return { success: true };
+    }
+    
+    // Save email details to logs directory for debugging
+    if (isDevelopment || process.env.SAVE_EMAIL_LOGS === 'true') {
+      try {
+        const timestamp = new Date().toISOString().replace(/:/g, '-');
+        const recipientSafe = params.to.replace(/[^\w\s]/g, '_');
+        const logDir = path.join(process.cwd(), 'logs');
+        
+        // Create logs directory if it doesn't exist
+        if (!fs.existsSync(logDir)) {
+          fs.mkdirSync(logDir, { recursive: true });
+        }
+        
+        const logFile = path.join(logDir, `email_${timestamp}_${recipientSafe}.json`);
+        const logData = {
+          timestamp: new Date().toISOString(),
+          to: params.to,
+          from: params.from,
+          subject: params.subject,
+          text: params.text,
+          html: params.html,
+        };
+        
+        fs.writeFileSync(logFile, JSON.stringify(logData, null, 2));
+        console.log(`Email debug log saved to ${logFile}`);
+      } catch (error) {
+        console.warn('Failed to save email log:', error);
+      }
+    }
+    
+    // Try to send using SendGrid
+    if (mailService) {
+      try {
+        const response = await mailService.send(msg as any);
+        console.log(`Email sent successfully via SendGrid to ${params.to}`);
+        // Log SendGrid response metadata for debugging
+        const [sgResponse] = response;
+        console.log('SendGrid Response Status Code:', sgResponse.statusCode);
+        console.log('SendGrid Response Headers:', sgResponse.headers);
+        
+        return { success: true };
+      } catch (error: any) {
+        // If this is a test mode or we have a fallback, continue to try SMTP
+        console.error(`SendGrid email sending failed:`, error?.response?.body || error);
+        
+        // If no fallback and not development, report the error
+        if (!smtpTransport && !isDevelopment) {
+          return { 
+            success: false, 
+            error: error?.response?.body || error 
+          };
+        }
+      }
+    }
+    
+    // If SendGrid failed or wasn't configured, try SMTP fallback
+    if (smtpTransport) {
+      try {
+        // Convert SendGrid parameters to Nodemailer format
+        const smtpMsg = {
+          to: params.to,
+          from: params.from,
+          subject: params.subject,
+          text: params.text,
+          html: params.html,
+          // Add priority headers for better delivery
+          priority: 'high',
+          headers: {
+            'X-Priority': '1',
+            'Importance': 'high',
+            'X-MSMail-Priority': 'High'
+          }
+        };
+        
+        const result = await smtpTransport.sendMail(smtpMsg);
+        console.log(`Email sent successfully via SMTP to ${params.to}`);
+        console.log('SMTP Message ID:', result.messageId);
+        
+        return { success: true };
+      } catch (error) {
+        console.error('SMTP email sending failed:', error);
+        return { success: false, error };
+      }
+    }
+    
+    // If we're in development mode and all sending methods failed
+    if (isDevelopment) {
+      console.warn('Development mode: Email would be sent here but all sending methods failed');
+      // In development, we'll still consider it a success to avoid blocking testing
+      return { success: true };
+    }
+    
+    // Both SendGrid and SMTP failed, and we're not in development mode
+    return { 
+      success: false, 
+      error: 'No email transport method available' 
+    };
+  } catch (error) {
+    console.error('Unexpected error sending email:', error);
+    return { success: false, error };
+  }
+}
+
+// Generate a verification token 
+export function generateVerificationToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Send verification email to newly registered user
+export async function sendVerificationEmail(user: User, token: string): Promise<{success: boolean, error?: any}> {
+  // Validate user and token
+  if (!user || !user.email || !token) {
+    console.error('Invalid user data or token for verification email:', { 
+      userId: user?.id, 
+      hasEmail: !!user?.email, 
+      hasToken: !!token 
+    });
+    return { 
+      success: false, 
+      error: 'Invalid user data or token' 
+    };
+  }
+  
+  // Get domain from environment variable or use default
+  const domain = process.env.PUBLIC_DOMAIN || 'app.moogship.com';
+  const fallbackDomain = process.env.REPLIT_URL ? process.env.REPLIT_URL : '';
+  
+  // Primary domain for production
+  const primaryDomain = `https://${domain}`;
+  
+  // Use direct API verification endpoints
+  // Use full path to ensure it works with any domain
+  const verificationUrl = `${primaryDomain}/api/verify-email/${token}`;
+  
+  // Fallback verification URL (for testing and when primary domain has DNS issues)
+  const fallbackVerificationUrl = `${fallbackDomain}/api/verify-email/${token}`;
+  
+  // Log actual verification URLs for debugging
+  console.log(`Primary verification URL for email: ${verificationUrl}`);
+  console.log(`Fallback verification URL for email: ${fallbackVerificationUrl}`);
+  
+  console.log(`IMPORTANT - Primary verification URL: ${verificationUrl}`);
+  console.log(`IMPORTANT - Fallback verification URL: ${fallbackVerificationUrl}`);
+  
+  // Use custom sender email if specified in environment, defaulting to cs@moogship.com
+  // Note: This email must be verified in SendGrid as a Sender Identity
+  const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || 'cs@moogship.com';
+  
+  const emailSubject = 'MoogShip: Verify Your Email Address';
+  
+  // Branded HTML template with embedded logo (data URL) for better email compatibility
+  const emailHtml = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoogShip Email Verification</title>
+  </head>
+  <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f9f9f9;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f9f9f9">
+      <tr>
+        <td align="center" style="padding: 40px 0;">
+          <table width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+            <!-- Header with Logo -->
+            <tr>
+              <td align="center" style="padding: 30px 0; background-color: #ffffff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                <!-- MoogShip Official Logo -->
+                <img src="data:image/jpeg;base64,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" style="max-width: 300px; height: auto;" alt="MoogShip Logo">
+              </td>
+            </tr>
+            
+            <!-- Main Content -->
+            <tr>
+              <td style="padding: 0 40px 40px 40px;">
+                <!-- Content Container -->
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <!-- Headline -->
+                  <tr>
+                    <td style="padding: 0 0 30px 0; border-bottom: 1px solid #eeeeee;">
+                      <h1 style="font-size: 24px; color: #1170c9; margin: 0; font-weight: 600;">Verify Your Email Address</h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Greeting -->
+                  <tr>
+                    <td style="padding: 30px 0 10px 0;">
+                      <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #505050;">
+                        <strong>Hello ${user.name || user.username},</strong>
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Message -->
+                  <tr>
+                    <td style="padding: 0 0 30px 0;">
+                      <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.5; color: #505050;">
+                        Thanks for creating a MoogShip account. Please verify your email address by clicking the button below:
+                      </p>
+                      
+                      <!-- Action Button -->
+                      <table border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px;">
+                        <tr>
+                          <td bgcolor="#2E6FC1" style="border-radius: 4px;">
+                            <a href="${verificationUrl}" target="_blank" style="font-size: 16px; font-family: Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 4px; padding: 12px 25px; display: inline-block; font-weight: bold;">Verify Email Address</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Link Fallback -->
+                  <tr>
+                    <td style="padding: 0 0 20px 0;">
+                      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #505050;">
+                        If the button doesn't work, please copy and paste this link into your browser:
+                      </p>
+                      <p style="margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: #1170c9; word-break: break-all;">
+                        ${verificationUrl}
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <tr>
+                    <td style="padding: 0 0 5px 0;">
+                      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #505050;">
+                        <strong>Alternative link</strong> (if the above link doesn't work):
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <tr>
+                    <td style="padding: 0 0 20px 0;">
+                      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #1170c9; word-break: break-all;">
+                        ${fallbackVerificationUrl}
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Note -->
+                  <tr>
+                    <td style="padding: 20px 0; border-top: 1px solid #eeeeee;">
+                      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #777777;">
+                        This verification link will expire in 24 hours. If you did not create an account, please disregard this email.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Closing -->
+                  <tr>
+                    <td style="padding: 30px 0 0 0; border-top: 1px solid #eeeeee;">
+                      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #505050;">
+                        Thank you,<br>
+                        <strong>The MoogShip Team</strong>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            
+            <!-- Footer -->
+            <tr>
+              <td style="padding: 20px 40px; background-color: #f7f7f7; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; border-top: 1px solid #eeeeee;">
+                <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #777777; text-align: center;">
+                  © 2025 MoogShip Global Shipping Solutions. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
+  `;
+  
+  // Plaintext version for email clients that don't display HTML
+  const emailText = `
+Hello ${user.name || user.username},
+
+Thanks for creating a MoogShip account. Please verify your email address using the link below:
+
+${verificationUrl}
+
+If the above link doesn't work, please try this alternative link:
+${fallbackVerificationUrl}
+
+This verification link will expire in 24 hours.
+
+If you did not create an account, you can safely ignore this email.
+
+This is an automated message, please do not reply to this email.
+  `;
+  
+  console.log(`Attempting to send verification email to: ${user.email} (from: ${senderEmail})`);
+  
+  const result = await sendEmail({
+    to: user.email,
+    from: senderEmail,
+    subject: emailSubject,
+    text: emailText,
+    html: emailHtml
+  });
+  
+  if (!result.success) {
+    console.error(`Failed to send verification email to ${user.email}:`, result.error);
+  }
+  
+  return result;
+}

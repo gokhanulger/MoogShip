@@ -1,0 +1,66 @@
+{
+  "api_endpoint": "https://panel.afstransport.com/apiv2.php",
+  "request_format": {
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "PRODUCTION_API_KEY"
+    },
+    "body": {
+      "islem": "etiket_olustur",
+      "barkod": "00344891594245"
+    }
+  },
+  "expected_successful_response": {
+    "hata": false,
+    "mesaj": "Etiket başarıyla oluşturuldu",
+    "barkod": "00344891594245",
+    "etiket_url": "https://panel.afstransport.com/get_label.php?barkod=00344891594245&key=PRODUCTION_API_KEY",
+    "etiket_pdf": "https://panel.afstransport.com/label_pdf.php?barkod=00344891594245&format=pdf",
+    "etiket_boyut": "10x15cm",
+    "olusturma_tarihi": "2025-01-26 09:46:15",
+    "durum": "label_created",
+    "etiket_tipi": "shipping_label",
+    "carrier_info": {
+      "service_name": "EcoAFS",
+      "service_type": "economy",
+      "estimated_delivery": "7-14 business days"
+    },
+    "shipment_details": {
+      "weight": "1.28kg",
+      "dimensions": "25x20x8cm",
+      "destination": "DE",
+      "service_level": "eco"
+    },
+    "label_data": {
+      "format": "PDF",
+      "size_bytes": 1024000,
+      "base64_available": true,
+      "print_format": "thermal_printer_compatible"
+    }
+  },
+  "current_demo_response": {
+    "hata": true,
+    "mesaj": "Gönderi bulunamadı!",
+    "durum": "0",
+    "note": "Demo API key cannot access production shipment data"
+  },
+  "integration_workflow": {
+    "step_1": "Create waybill using waybill_olustur operation",
+    "step_2": "Extract barkod (tracking number) from waybill response",
+    "step_3": "Create label using etiket_olustur with the barkod",
+    "step_4": "Download label PDF from etiket_url or etiket_pdf",
+    "step_5": "Store label PDF in database carrier_label_pdf field",
+    "step_6": "Update shipment status and tracking information"
+  },
+  "database_operations": {
+    "update_shipment": "UPDATE shipments SET carrier_label_pdf = '[BASE64_PDF]', carrier_label_url = '[LABEL_URL]' WHERE carrier_tracking_number = '[BARKOD]'",
+    "store_tracking": "INSERT INTO tracking_events (shipment_id, status, message, created_at) VALUES ([ID], 'label_created', 'Shipping label generated', NOW())"
+  },
+  "production_requirements": {
+    "api_key": "Production AFS Transport API key required",
+    "authentication": "Valid x-api-key header with production credentials",
+    "waybill_dependency": "Label creation requires valid waybill barkod from previous waybill_olustur call",
+    "rate_limits": "Check AFS Transport documentation for API rate limits"
+  }
+}

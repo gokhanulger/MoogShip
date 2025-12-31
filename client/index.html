@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    
+    <!-- Cache Control: Force browsers to always fetch latest version -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
+    <title>MoogShip Global Shipping</title>
+    
+    <!-- Comprehensive favicon setup for all devices and browsers -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    
+    <!-- Theme and browser meta -->
+    <meta name="theme-color" content="#1e40af" />
+    <meta name="description" content="MoogShip Global Shipping - Professional worldwide shipping management platform" />
+    
+    <!-- Redirect non-www to www for moogship.com -->
+    <script>
+      (function() {
+        var host = window.location.hostname;
+        var protocol = window.location.protocol;
+        var pathname = window.location.pathname;
+        var search = window.location.search;
+        var hash = window.location.hash;
+        
+        // Only redirect if on moogship.com without www
+        if (host === 'moogship.com') {
+          var newUrl = protocol + '//www.moogship.com' + pathname + search + hash;
+          window.location.replace(newUrl);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Video loading screen with MoogShip logo -->
+      <div id="initial-loader" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      ">
+        <div style="
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          background: white;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 20px;
+          overflow: hidden;
+        ">
+          <video 
+            autoplay 
+            loop 
+            muted 
+            playsinline 
+            style="
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              border-radius: 50%;
+            "
+          >
+            <source src="/moogship-logo-video.mp4" type="video/mp4">
+            <!-- Fallback for when video doesn't load -->
+            <div style="
+              width: 100%;
+              height: 100%;
+              background: linear-gradient(135deg, #3b82f6, #f97316);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 24px;
+              font-weight: bold;
+            ">M</div>
+          </video>
+        </div>
+        <div style="
+          color: #374151;
+          font-size: 18px;
+          font-weight: 600;
+          text-align: center;
+        ">Loading MoogShip...</div>
+        <div style="
+          color: #6b7280;
+          font-size: 14px;
+          margin-top: 8px;
+          text-align: center;
+        ">Global Shipping Made Simple</div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
+    
+    <!-- DNS prefetch and preconnect for external resources -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//wa.me" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Remove loader after React app loads - optimized -->
+    <script>
+      // Remove loader as soon as React renders
+      window.addEventListener('DOMContentLoaded', function() {
+        // Check if React has mounted
+        const checkMount = setInterval(function() {
+          if (document.querySelector('[data-reactroot], [data-reactid]') || document.getElementById('root').children.length > 1) {
+            const loader = document.getElementById('initial-loader');
+            if (loader) {
+              loader.style.opacity = '0';
+              setTimeout(function() {
+                loader.remove();
+              }, 200);
+            }
+            clearInterval(checkMount);
+          }
+        }, 50); // Check every 50ms
+        
+        // Fallback: remove after 2 seconds max
+        setTimeout(function() {
+          clearInterval(checkMount);
+          const loader = document.getElementById('initial-loader');
+          if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(function() {
+              loader.remove();
+            }, 200);
+          }
+        }, 2000);
+      });
+    </script>
+    
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

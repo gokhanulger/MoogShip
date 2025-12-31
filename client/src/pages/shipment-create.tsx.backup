@@ -1,0 +1,2653 @@
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation, Link } from "wouter";
+import Layout from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { 
+  ArrowLeftIcon, Package, Calculator, TruckIcon, 
+  Loader2, ChevronDown, ChevronUp, Check, MapPin, Box, Truck, User, Edit, Save,
+  Printer, ExternalLink, CheckCircle, BoxSelect, AlertTriangle, UserPlus, Search,
+  Sparkles
+} from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { ServiceLevel, ShipmentStatus } from "@shared/schema";
+import PackageItemSelector from "@/components/package-item-selector-redesigned";
+import { PackageCustomsForm } from "@/components/package-customs-form";
+import { useShippingAssistant } from "@/components/shipping-assistant-provider";
+import useAchievements from "@/hooks/use-achievements";
+import { PopIn, FadeIn, SlideUp } from "@/components/animated-elements";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/use-auth";
+
+// Interface for custom address fields
+interface CustomAddress {
+  name: string;
+  address: string;  // Legacy field
+  address1?: string; // Primary address line (max 35 chars)
+  address2?: string; // Additional address line (optional, max 35 chars)
+  city: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+}
+
+// Interface for recipient data
+interface Recipient {
+  id: number;
+  userId: number;
+  name: string;
+  address: string;
+  city: string;
+  state?: string;
+  postalCode?: string;
+  country: string;
+  phone?: string;
+  email?: string;
+  isDefault?: boolean;
+}
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { COUNTRIES, hasStates, getStatesByCountryCode, getCountryCodeByName, isEUCountry, isHMRCCountry } from "@/lib/countries";
+
+// Common currencies for customs value
+const CURRENCIES = [
+  { code: "USD", name: "US Dollar", symbol: "$" },
+  { code: "EUR", name: "Euro", symbol: "€" },
+  { code: "GBP", name: "British Pound", symbol: "£" },
+  { code: "TRY", name: "Turkish Lira", symbol: "₺" },
+  { code: "JPY", name: "Japanese Yen", symbol: "¥" },
+  { code: "CAD", name: "Canadian Dollar", symbol: "C$" },
+  { code: "AUD", name: "Australian Dollar", symbol: "A$" },
+  { code: "CNY", name: "Chinese Yuan", symbol: "¥" },
+  { code: "INR", name: "Indian Rupee", symbol: "₹" },
+  { code: "CHF", name: "Swiss Franc", symbol: "CHF" },
+];
+import { Label } from "@/components/ui/label";
+
+// Create form schema with proper translations
+function createReceiverFormSchema(t: any) {
+  return z.object({
+    receiverName: z.string().min(1, "Receiver name is required"),
+    receiverEmail: z.string().email().optional().or(z.literal('')),
+    receiverPhone: z.string().min(1, "Receiver phone is required"),
+    receiverAddress: z.string().min(1, "Receiver address is required"),
+    receiverState: z.string().optional().or(z.literal('')),      // State/province field
+    receiverCity: z.string().min(1, "Receiver city is required"),
+    receiverPostalCode: z.string().min(1, "Receiver postal code is required"),
+    packageContents: z.string().min(1, t("validations.contentsRequired")).max(100, "Maximum 100 characters"),
+    
+    // Sender details - make some fields optional to accommodate pre-filled info
+    senderName: z.string().min(1, "Sender name is required"),
+    senderAddress: z.string().min(1, "Sender address is required"),
+    // Support for structured address fields (optional)
+    senderAddress1: z.string().max(35, "Maximum 35 characters").optional().or(z.literal('')),
+    senderAddress2: z.string().max(35, "Maximum 35 characters").optional().or(z.literal('')),
+    senderCity: z.string().optional().or(z.literal('')),         // Make city optional
+    senderPostalCode: z.string().optional().or(z.literal('')),   // Make postal code optional
+    senderPhone: z.string().optional().or(z.literal('')),
+    senderEmail: z.string().email().optional().or(z.literal('')),
+  });
+}
+
+// Define a function to create the form schema with translations
+function createPackageFormSchema(t: any) {
+  return z.object({
+    receiverCountry: z.string().min(1, t("validations.countryRequired")),
+    packageLength: z.coerce.number().min(1, t("validations.lengthTooSmall")),
+    packageWidth: z.coerce.number().min(1, t("validations.widthTooSmall")),
+    packageHeight: z.coerce.number().min(1, t("validations.heightTooSmall")),
+    packageWeight: z.coerce.number().min(0.1, t("validations.weightTooSmall")),
+    pieceCount: z.coerce.number().min(1, t("validations.atLeastOnePackage")),
+    itemCount: z.coerce.number().min(1, t("validations.atLeastOneItem")),
+    customsValue: z.coerce.number().min(0, t("validations.customsValueNotNegative")),
+    currency: z.string().default("USD"),
+    gtipCode: z.string().optional().or(z.literal('')),
+    iossNumber: z.string().optional(),
+    serviceLevel: z.string().min(1, t("validations.serviceLevelRequired")),
+    // Insurance options
+    includeInsurance: z.boolean().default(false),
+  });
+}
+
+export default function ShipmentCreate() {
+  const [location, navigate] = useLocation();
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [expandedSections, setExpandedSections] = useState(["recipient"]);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
+  const [filteredRecipients, setFilteredRecipients] = useState<Recipient[]>([]);
+  const [showRecipientSuggestions, setShowRecipientSuggestions] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+  const [customAddress, setCustomAddress] = useState<CustomAddress>({
+    name: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    phone: "",
+    email: ""
+  });
+  const [billableWeight, setBillableWeight] = useState<number | null>(null);
+  const [priceDetails, setPriceDetails] = useState<any>(null);
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  // Price acceptance is now combined with label creation
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [createdShipment, setCreatedShipment] = useState<any>(null);
+  const { toast } = useToast();
+  
+  // Fetch saved recipients
+  const { data: recipients, isLoading: isLoadingRecipients } = useQuery<Recipient[]>({
+    queryKey: ['/api/recipients'],
+    queryFn: async () => {
+      const response = await fetch('/api/recipients', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch recipients');
+      }
+      return response.json();
+    }
+  });
+  
+  // State to track if package details have been modified since last price calculation
+  const [packageDetailsChanged, setPackageDetailsChanged] = useState(false);
+  
+  // State for managing multiple package items
+  const [packageItems, setPackageItems] = useState<any[]>([]);
+  
+  // State for managing packages
+  const [packages, setPackages] = useState<any[]>([]);
+  
+  // State to store the current user ID
+  const [currentUserId, setCurrentUserId] = useState<number>(0);
+  
+  // No need for selected country/state state variables - we'll rely on form values
+
+  // State for credit limit information
+  const [creditLimitInfo, setCreditLimitInfo] = useState<{
+    userBalance: number;
+    formattedUserBalance: string;
+    minBalance: number;
+    formattedMinBalance: string;
+    newBalance: number;
+    formattedNewBalance: string;
+    hasWarning: boolean;
+    exceededAmount: number;
+    formattedExceededAmount: string;
+    availableCredit: number;
+    formattedAvailableCredit: string;
+  } | null>(null);
+  
+  // Function to check credit limit
+  const checkCreditLimit = async (shipmentPrice: number) => {
+    try {
+      // Get both user data and balance
+      const userResponse = await apiRequest("GET", "/api/user");
+      const balanceResponse = await apiRequest("GET", "/api/balance");
+      
+      if (userResponse.ok && balanceResponse.ok) {
+        const userData = await userResponse.json();
+        const balanceData = await balanceResponse.json();
+        
+        // Calculate new balance after this shipment
+        const currentBalance = balanceData.balance;
+        const newBalance = currentBalance - shipmentPrice;
+        
+        // Use the minimum balance directly from the API
+        // This will reflect the latest value from the database
+        const minBalance = balanceData.minimumBalance || 0;
+        console.log(`Using minimum balance from API: ${minBalance} cents for user ${userData.username}`);
+        
+        // Calculate if we've exceeded the minimum balance
+        const hasWarning = newBalance < minBalance;
+        const exceededAmount = hasWarning ? Math.abs(newBalance - minBalance) : 0;
+        
+        // Format currency values for display
+        const formatCurrency = (amount: number) => {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+          }).format(amount / 100);
+        };
+        
+        // Calculate available credit (credit limit - current balance)
+        const availableCredit = minBalance - currentBalance;
+        
+        // Update credit limit info state
+        setCreditLimitInfo({
+          userBalance: currentBalance,
+          formattedUserBalance: formatCurrency(currentBalance),
+          minBalance: minBalance,
+          formattedMinBalance: formatCurrency(minBalance),
+          newBalance: newBalance,
+          formattedNewBalance: formatCurrency(newBalance),
+          hasWarning: hasWarning,
+          exceededAmount: exceededAmount,
+          formattedExceededAmount: formatCurrency(exceededAmount),
+          availableCredit: availableCredit, // Add this for clarity
+          formattedAvailableCredit: formatCurrency(availableCredit)
+        });
+      }
+    } catch (error) {
+      console.error("Error checking credit limit:", error);
+    }
+  };
+  
+  // Create the receiver schema with translations
+  const receiverSchema = createReceiverFormSchema(t);
+  
+  // Initialize forms with default values
+  const receiverForm = useForm<z.infer<typeof receiverSchema>>({
+    resolver: zodResolver(receiverSchema),
+    defaultValues: {
+      receiverName: "",
+      receiverEmail: "",
+      receiverPhone: "",
+      receiverAddress: "",
+      receiverState: "",
+      receiverCity: "",
+      receiverPostalCode: "",
+      packageContents: "",
+      senderName: "",
+      senderAddress: "",
+      senderAddress1: "",
+      senderAddress2: "",
+      senderCity: "",
+      senderPostalCode: "",
+      senderPhone: "",
+      senderEmail: "",
+    },
+  });
+  
+  // Create the schema with translations
+  const packageFormSchema = createPackageFormSchema(t);
+
+  const packageForm = useForm<z.infer<typeof packageFormSchema>>({
+    resolver: zodResolver(packageFormSchema),
+    defaultValues: {
+      receiverCountry: "",
+      packageLength: 0,
+      packageWidth: 0,
+      packageHeight: 0,
+      packageWeight: 0,
+      pieceCount: 1,
+      itemCount: 1,
+      // Store customs value in cents (integer) in the database
+      customsValue: 0,
+      currency: "USD",
+      gtipCode: "",
+      serviceLevel: ServiceLevel.STANDARD,
+      // Insurance option
+      includeInsurance: false,
+    }
+  });
+  
+  // Load draft data when the page loads
+  useEffect(() => {
+    const loadDraftData = async () => {
+      try {
+        // Extract draftId from URL query parameters
+        const searchParams = new URLSearchParams(location);
+        const draftIdParam = searchParams.get('draftId');
+        
+        if (draftIdParam) {
+          const draftId = parseInt(draftIdParam);
+          if (!isNaN(draftId)) {
+            console.log(`Loading draft with ID: ${draftId}`);
+            setCurrentDraftId(draftId);
+            
+            // Fetch draft data
+            const response = await apiRequest("GET", `/api/drafts/${draftId}`);
+            
+            if (response.ok) {
+              const draftData = await response.json();
+              console.log("Loaded draft data:", draftData);
+              
+              // Populate receiver form with draft data
+              receiverForm.reset({
+                receiverName: draftData.receiverName || "",
+                receiverEmail: draftData.receiverEmail || "",
+                receiverPhone: draftData.receiverPhone || "",
+                receiverAddress: draftData.receiverAddress || "",
+                receiverCity: draftData.receiverCity || "",
+                receiverState: draftData.receiverState || "",
+                receiverPostalCode: draftData.receiverPostalCode || "",
+                packageContents: draftData.packageContents || "",
+                
+                // Sender information
+                senderName: draftData.senderName || "",
+                senderAddress: draftData.senderAddress1 || "", // Map to legacy field
+                senderAddress1: draftData.senderAddress1 || "",
+                senderAddress2: draftData.senderAddress2 || "",
+                senderCity: draftData.senderCity || "",
+                senderPostalCode: draftData.senderPostalCode || "",
+                senderPhone: draftData.senderPhone || "",
+                senderEmail: draftData.senderEmail || "",
+              });
+              
+              // Populate package form with draft data
+              packageForm.reset({
+                receiverCountry: draftData.receiverCountry || "",
+                packageLength: draftData.packageLength || 0,
+                packageWidth: draftData.packageWidth || 0,
+                packageHeight: draftData.packageHeight || 0,
+                packageWeight: draftData.packageWeight || 0,
+                pieceCount: draftData.pieceCount || 1,
+                itemCount: 1, // Default to 1 if not specified
+                customsValue: draftData.customsValue || 0,
+                currency: draftData.currency || "USD",
+                gtipCode: draftData.gtipCode || "",
+                serviceLevel: draftData.serviceLevel || "standard",
+                includeInsurance: draftData.isInsured || false,
+              });
+              
+              // Expand all sections to show the loaded data
+              setExpandedSections(["recipient", "package", "services"]);
+              
+              toast({
+                title: t('draftLoaded', 'Draft Loaded'),
+                description: t('draftLoadedDesc', 'Your draft has been loaded successfully'),
+              });
+            } else {
+              console.error("Failed to load draft:", await response.text());
+              toast({
+                variant: "destructive",
+                title: t('draftLoadError', 'Error Loading Draft'),
+                description: t('draftLoadErrorDesc', 'Failed to load the draft. Please try again.'),
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading draft:", error);
+        toast({
+          variant: "destructive",
+          title: t('draftLoadError', 'Error Loading Draft'),
+          description: t('draftLoadErrorDesc', 'Failed to load the draft. Please try again.'),
+        });
+      }
+    };
+    
+    loadDraftData();
+  }, [location, t, toast]);
+  
+  // Calculate total package dimensions from all packages
+  const calculateTotalPackageDimensions = (packages: any[]) => {
+    if (!packages.length) return null;
+    
+    // For a single package, use its dimensions directly
+    if (packages.length === 1) {
+      const pkg = packages[0];
+      let itemCount = 0;
+      
+      // Safely calculate items - handle case where pkg.items might be undefined
+      if (pkg.items && Array.isArray(pkg.items)) {
+        itemCount = pkg.items.reduce((sum: number, item: any) => sum + parseInt(item.quantity || 1), 0);
+      }
+      
+      // Ensure itemCount is at least 1 if we have a package
+      itemCount = Math.max(1, itemCount);
+      
+      return {
+        length: pkg.length || 0,
+        width: pkg.width || 0,
+        height: pkg.height || 0,
+        weight: pkg.weight || 0,
+        itemCount: itemCount
+      };
+    }
+    
+    // For multiple packages, calculate combined dimensions
+    // Note: This is a simplified approach. In real shipping, package dimensions
+    // aren't simply added together.
+    
+    let totalWeight = 0;
+    let totalVolume = 0;
+    let totalItems = 0;
+    
+    packages.forEach(pkg => {
+      // Calculate weight
+      totalWeight += parseFloat(pkg.weight || 0);
+      
+      // Calculate volume and add to total
+      const volume = parseFloat(pkg.length || 0) * 
+                     parseFloat(pkg.width || 0) * 
+                     parseFloat(pkg.height || 0);
+      totalVolume += volume;
+      
+      // Count items safely
+      if (pkg.items && Array.isArray(pkg.items)) {
+        totalItems += pkg.items.reduce((sum: number, item: any) => sum + parseInt(item.quantity || 1), 0);
+      }
+    });
+    
+    // Ensure we have at least one item (packages count as items if no explicit items)
+    totalItems = Math.max(packages.length, totalItems);
+    
+    // For multiple packages, determine "virtual" dimensions that represent the equivalent volume
+    // This is an approximation for ease of calculation
+    const cubeRoot = Math.cbrt(totalVolume);
+    
+    return {
+      length: Math.round(cubeRoot * 10) / 10, // Round to 1 decimal place
+      width: Math.round(cubeRoot * 10) / 10,
+      height: Math.round(cubeRoot * 10) / 10,
+      weight: Math.round(totalWeight * 100) / 100, // Round to 2 decimal places
+      itemCount: totalItems
+    };
+  };
+  
+  // Create the receiver schema with translations
+  const receiverSchema = createReceiverFormSchema(t);
+  
+  // Initialize forms with default values
+  const receiverForm = useForm<z.infer<typeof receiverSchema>>({
+    resolver: zodResolver(receiverSchema),
+    defaultValues: {
+      receiverName: "",
+      receiverEmail: "",
+      receiverPhone: "",
+      receiverAddress: "",
+      receiverState: "",
+      receiverCity: "",
+      receiverPostalCode: "",
+      packageContents: "",
+      senderName: "",
+      senderAddress: "",
+      senderAddress1: "",
+      senderAddress2: "",
+      senderCity: "",
+      senderPostalCode: "",
+      senderPhone: "",
+      senderEmail: "",
+    },
+  });
+  
+  // Create the schema with translations
+  const packageFormSchema = createPackageFormSchema(t);
+
+  const packageForm = useForm<z.infer<typeof packageFormSchema>>({
+    resolver: zodResolver(packageFormSchema),
+    defaultValues: {
+      receiverCountry: "",
+      packageLength: 0,
+      packageWidth: 0,
+      packageHeight: 0,
+      packageWeight: 0,
+      pieceCount: 1,
+      itemCount: 1,
+      // Store customs value in cents (integer) in the database
+      customsValue: 0,
+      currency: "USD",
+      gtipCode: "",
+      serviceLevel: ServiceLevel.STANDARD,
+      // Insurance option
+      includeInsurance: false,
+    }
+  });
+
+  // Watch for package form changes to detect when details are modified
+  useEffect(() => {
+    // Subscribe to form changes
+    const subscription = packageForm.watch(() => {
+      if (priceDetails) {
+        setPackageDetailsChanged(true);
+      }
+    });
+    
+    // Cleanup subscription
+    return () => subscription.unsubscribe();
+  }, [packageForm, priceDetails]);
+  
+  // Watch for changes in packages array and update form fields
+  useEffect(() => {
+    if (packages.length > 0) {
+      // Calculate total dimensions and weight from all packages
+      const totalDimensions = calculateTotalPackageDimensions(packages);
+      
+      if (totalDimensions) {
+        // Update package form with the calculated values
+        packageForm.setValue('packageLength', totalDimensions.length);
+        packageForm.setValue('packageWidth', totalDimensions.width);
+        packageForm.setValue('packageHeight', totalDimensions.height);
+        packageForm.setValue('packageWeight', totalDimensions.weight);
+        packageForm.setValue('pieceCount', packages.length);
+        
+        // IMPORTANT: Always ensure itemCount is at least equal to packages.length
+        // This fixes the "itemCount must be at least 1" validation error
+        const itemCount = Math.max(packages.length, totalDimensions.itemCount);
+        packageForm.setValue('itemCount', itemCount);
+        
+        // Also update the billable weight
+        const volumetricWeight = calculateVolumetricWeight(
+          totalDimensions.length,
+          totalDimensions.width,
+          totalDimensions.height
+        );
+        setBillableWeight(Math.max(volumetricWeight, totalDimensions.weight));
+        
+        // Mark the package details as changed to require price recalculation
+        if (priceDetails) {
+          setPackageDetailsChanged(true);
+        }
+        
+        console.log("Updated package form with dimensions from packages:", {
+          ...totalDimensions,
+          adjustedItemCount: itemCount
+        });
+      }
+    }
+  }, [packages]);
+  
+  // Load user data for sender information and initialize from localStorage
+  useEffect(() => {
+    // Load user data for sender information with Turkish to English conversion
+    loadUserData();
+    
+    // Check if values from the calculator are available in localStorage
+    const length = localStorage.getItem('calculator_length');
+    const width = localStorage.getItem('calculator_width');
+    const height = localStorage.getItem('calculator_height');
+    const weight = localStorage.getItem('calculator_weight');
+    const pieceCount = localStorage.getItem('calculator_piece_count');
+    const country = localStorage.getItem('calculator_country');
+    const service = localStorage.getItem('calculator_service');
+    const contents = localStorage.getItem('calculator_contents');
+    
+    // If we have any values from the calculator
+    if (length || width || height || weight || country) {
+      console.log("Found calculator values in localStorage", { 
+        length, width, height, weight, pieceCount, country, service, contents 
+      });
+      
+      // Update form values if they exist
+      if (length) packageForm.setValue('packageLength', parseFloat(length));
+      if (width) packageForm.setValue('packageWidth', parseFloat(width));
+      if (height) packageForm.setValue('packageHeight', parseFloat(height));
+      if (weight) packageForm.setValue('packageWeight', parseFloat(weight));
+      if (pieceCount) packageForm.setValue('pieceCount', parseInt(pieceCount));
+      if (country) packageForm.setValue('receiverCountry', country);
+      if (service) packageForm.setValue('serviceLevel', service);
+      if (contents) receiverForm.setValue('packageContents', contents);
+      
+      // Clear stored values after using them
+      localStorage.removeItem('calculator_length');
+      localStorage.removeItem('calculator_width');
+      localStorage.removeItem('calculator_height');
+      localStorage.removeItem('calculator_weight');
+      localStorage.removeItem('calculator_piece_count');
+      localStorage.removeItem('calculator_country');
+      localStorage.removeItem('calculator_service');
+      localStorage.removeItem('calculator_contents');
+      
+      // Set up the billable weight
+      if (length && width && height && weight) {
+        const volumetricWeight = calculateVolumetricWeight(
+          parseFloat(length), 
+          parseFloat(width), 
+          parseFloat(height)
+        );
+        
+        setBillableWeight(Math.max(volumetricWeight, parseFloat(weight)));
+        
+        // If we have enough info, trigger price calculation automatically
+        if (country) {
+          setTimeout(() => {
+            calculatePrice();
+            // Auto-expand the package details section
+            setExpandedSections(prev => 
+              prev.includes("package") ? prev : [...prev, "package"]
+            );
+          }, 500);
+        }
+      }
+    }
+  }, []);
+  
+  // Helper to check if a section is complete
+  const isSectionComplete = (section: string): boolean => {
+    if (section === "recipient") {
+      const values = receiverForm.getValues();
+      return Boolean(
+        values.receiverName && 
+        values.receiverPhone && 
+        values.receiverAddress && 
+        values.receiverCity && 
+        values.receiverPostalCode &&
+        values.packageContents &&
+        packageForm.getValues().receiverCountry &&
+        // For sender, only check the required fields (name, address)
+        values.senderName && 
+        values.senderAddress
+      );
+    } else if (section === "package") {
+      const values = packageForm.getValues();
+      return Boolean(
+        values.packageLength > 0 && 
+        values.packageWidth > 0 && 
+        values.packageHeight > 0 && 
+        values.packageWeight > 0 &&
+        values.serviceLevel
+      );
+    } else if (section === "price") {
+      return Boolean(priceDetails);
+    }
+    return false;
+  };
+  
+  // Toggle section expansion
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section) 
+        : [...prev, section]
+    );
+  };
+  
+  function calculateVolumetricWeight(length: number, width: number, height: number): number {
+    // Volumetric weight formula: Length × Width × Height (cm) ÷ 5000 = Volumetric Weight (kg)
+    return (length * width * height) / 5000;
+  }
+  
+  // Function to use selected recipient data in the form
+  // Function to filter recipients based on search query
+  const filterRecipients = (searchQuery: string) => {
+    if (!recipients || !searchQuery || searchQuery.length < 2) {
+      setFilteredRecipients([]);
+      setShowRecipientSuggestions(false);
+      return;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const filtered = recipients.filter((recipient: any) => {
+      return recipient.name.toLowerCase().includes(query) ||
+             recipient.address.toLowerCase().includes(query) ||
+             recipient.city.toLowerCase().includes(query);
+    });
+    
+    setFilteredRecipients(filtered);
+    setShowRecipientSuggestions(filtered.length > 0);
+  };
+
+  const useRecipientData = (recipient: Recipient) => {
+    if (!recipient) return;
+    
+    console.log("Filling form with recipient data:", recipient);
+    
+    try {
+      // Fill in recipient form fields
+      receiverForm.setValue('receiverName', recipient.name);
+      receiverForm.setValue('receiverAddress', recipient.address);
+      receiverForm.setValue('receiverCity', recipient.city);
+      receiverForm.setValue('receiverPostalCode', recipient.postalCode || '');
+      receiverForm.setValue('receiverPhone', recipient.phone || '');
+      
+      // Only set email if it exists
+      if (recipient.email) {
+        receiverForm.setValue('receiverEmail', recipient.email);
+      }
+      
+      // Get the country code from the country name
+      const countryCode = getCountryCodeByName(recipient.country);
+      console.log("Setting country value - Name:", recipient.country, "Code:", countryCode);
+      
+      if (countryCode) {
+        // Set the country value directly using the country CODE
+        packageForm.setValue('receiverCountry', countryCode, { 
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true
+        });
+        
+        // If country has states and recipient has state info, set it
+        if (hasStates(countryCode) && recipient.state) {
+          // Get the list of states for the country
+          const states = getStatesByCountryCode(countryCode);
+          
+          // Try to find a state by name first
+          const stateByName = states.find(state => 
+            state.name.toLowerCase() === recipient.state?.toLowerCase()
+          );
+          
+          // If found by name, use state code; otherwise use the state name directly
+          const stateValue = stateByName ? stateByName.code : recipient.state;
+          
+          console.log("Setting state to:", recipient.state, "- Using value:", stateValue);
+          
+          receiverForm.setValue('receiverState', stateValue, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true
+          });
+        }
+      } else {
+        console.error("Could not find country code for:", recipient.country);
+        toast({
+          title: t('general.errorTitle'),
+          description: `${t('shipping.countryCodeNotFound')} ${recipient.country}`,
+          variant: "destructive"
+        });
+      }
+        
+      // Clear filtered recipients and hide suggestions
+      setFilteredRecipients([]);
+      setShowRecipientSuggestions(false);
+      
+      // Set the selected recipient for display in the UI
+      setSelectedRecipient(recipient);
+      
+      // Force a re-render of the form
+      setTimeout(() => {
+        // Check if the values are set correctly
+        console.log("After update - Country code:", packageForm.getValues().receiverCountry);
+        console.log("After update - State:", receiverForm.getValues().receiverState);
+      }, 0);
+      
+      toast({
+        title: t('shipping.recipientSelected'),
+        description: t('shipping.formFilledWith', { name: recipient.name }),
+      });
+    } catch (error) {
+      console.error("Error setting recipient data:", error);
+      toast({
+        title: t('general.errorTitle'),
+        description: t('shipping.recipientDataError'),
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to convert Turkish characters to English
+  const convertTurkishToEnglish = (text: string): string => {
+    if (!text) return text;
+    
+    return text
+      .replace(/ç/g, 'c').replace(/Ç/g, 'C')
+      .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+      .replace(/ı/g, 'i').replace(/İ/g, 'I')
+      .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+      .replace(/ş/g, 's').replace(/Ş/g, 'S')
+      .replace(/ü/g, 'u').replace(/Ü/g, 'U');
+  };
+  
+  // Load user data for sender information
+  const loadUserData = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/user");
+      if (response.ok) {
+        const userData = await response.json();
+        if (userData) {
+          // Store the user ID for package templates
+          setCurrentUserId(userData.id);
+
+          // If user has address information, use it for sender details
+          if (userData.companyName) {
+            receiverForm.setValue("senderName", convertTurkishToEnglish(userData.companyName));
+          }
+          
+          // Use structured address fields if available, fall back to legacy address field
+          if (userData.address1) {
+            receiverForm.setValue("senderAddress", convertTurkishToEnglish(userData.address1));
+            // Also set the structured fields if they exist in the form
+            if (receiverForm.getValues().hasOwnProperty("senderAddress1")) {
+              receiverForm.setValue("senderAddress1", convertTurkishToEnglish(userData.address1));
+            }
+          } else if (userData.address) {
+            // Fall back to legacy address field if needed
+            receiverForm.setValue("senderAddress", convertTurkishToEnglish(userData.address));
+          }
+          
+          // Set address2 if available in the user profile and the form
+          if (userData.address2 && receiverForm.getValues().hasOwnProperty("senderAddress2")) {
+            receiverForm.setValue("senderAddress2", convertTurkishToEnglish(userData.address2));
+          }
+          
+          if (userData.city) {
+            receiverForm.setValue("senderCity", convertTurkishToEnglish(userData.city));
+          }
+          if (userData.postalCode) {
+            receiverForm.setValue("senderPostalCode", userData.postalCode);
+          }
+          if (userData.phone) {
+            receiverForm.setValue("senderPhone", userData.phone);
+          }
+          if (userData.email) {
+            receiverForm.setValue("senderEmail", userData.email);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
+  
+  // Save current form values to custom address before editing
+  const saveCurrentAddressForEditing = () => {
+    const formValues = receiverForm.getValues();
+    setCustomAddress({
+      name: formValues.senderName || "",
+      // Use structured address fields if present in the form, otherwise use the legacy field
+      address: formValues.senderAddress || "",
+      address1: formValues.senderAddress1 || formValues.senderAddress || "",
+      address2: formValues.senderAddress2 || "",
+      city: formValues.senderCity || "",
+      postalCode: formValues.senderPostalCode || "",
+      phone: formValues.senderPhone || "",
+      email: formValues.senderEmail || ""
+    });
+    setIsEditingAddress(true);
+  };
+  
+  // Reset to default address from user profile
+  const resetToDefaultAddress = () => {
+    loadUserData();
+    setIsEditingAddress(false);
+  };
+  
+  // Calculate price from the API
+  const calculatePrice = async () => {
+    // Force set serviceLevel to standard since that's our default
+    packageForm.setValue("serviceLevel", ServiceLevel.STANDARD);
+    
+    const packageFormData = packageForm.getValues();
+    const receiverFormData = receiverForm.getValues();
+    
+    // Validate required fields
+    if (!packageFormData.receiverCountry) {
+      toast({
+        title: t('shipping.missingInformation'),
+        description: t('shipping.selectDestinationCountry'),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Ensure we have packages data to use
+    if (packages.length === 0) {
+      toast({
+        title: t('shipping.missingPackages'),
+        description: t('shipping.addPackageWithDimensions'),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Calculate total billable weight from all packages
+    let totalBillableWeight = 0;
+    
+    // For each package, calculate its billable weight and add to the total
+    packages.forEach(pkg => {
+      const pkgVolumetricWeight = calculateVolumetricWeight(
+        parseFloat(pkg.length || "0"),
+        parseFloat(pkg.width || "0"),
+        parseFloat(pkg.height || "0")
+      );
+      
+      const pkgBillableWeight = Math.max(pkgVolumetricWeight, parseFloat(pkg.weight || "0"));
+      totalBillableWeight += pkgBillableWeight;
+    });
+    
+    // Update the billable weight state for display
+    setBillableWeight(totalBillableWeight);
+    
+    setIsCalculatingPrice(true);
+    
+    try {
+      // Get the latest form values after setting service level
+      const updatedPackageFormData = packageForm.getValues();
+      
+      // Log what we're sending
+      console.log("Form data being sent:", {
+        ...updatedPackageFormData,
+        serviceLevel: updatedPackageFormData.serviceLevel,
+        pieceCount: packages.length,
+        totalBillableWeight
+      });
+      
+      // Always use the calculated billable weight from packages - this is critical
+      // as it represents the true shipping weight that ShipEntegra will charge for
+      const requestPayload = {
+        // Use dimensions from the form (which are updated from the packages array)
+        packageLength: updatedPackageFormData.packageLength,
+        packageWidth: updatedPackageFormData.packageWidth,
+        packageHeight: updatedPackageFormData.packageHeight,
+        
+        // IMPORTANT: Use the billable weight for accurate pricing from ShipEntegra API
+        // This is the sum of all package billable weights (max of actual or volumetric)
+        packageWeight: totalBillableWeight,
+        
+        // Use the actual count of packages
+        pieceCount: packages.length,
+        serviceLevel: updatedPackageFormData.serviceLevel || ServiceLevel.STANDARD,
+        receiverCountry: updatedPackageFormData.receiverCountry,
+        senderPostalCode: receiverFormData.senderPostalCode,
+        senderCity: receiverFormData.senderCity,
+        receiverPostalCode: receiverFormData.receiverPostalCode,
+        receiverCity: receiverFormData.receiverCity,
+        
+        // Include insurance option if checked
+        includeInsurance: updatedPackageFormData.includeInsurance,
+        // Include customs value for insurance calculation (value in cents)
+        customsValue: updatedPackageFormData.customsValue,
+      };
+      
+      console.log("Sending to ShipEntegra with billable weight:", totalBillableWeight);
+      
+      const response = await apiRequest("POST", "/api/calculate-price", requestPayload);
+      
+      if (!response.ok) {
+        throw new Error("Failed to calculate price");
+      }
+      
+      const data = await response.json();
+      setPriceDetails(data);
+      
+      // Reset the changed state after recalculating
+      setPackageDetailsChanged(false);
+      
+      // Check credit limit
+      checkCreditLimit(data.totalPrice);
+      
+      // Expand the price section automatically and scroll to it
+      setExpandedSections(prev => 
+        prev.includes("price") ? prev : [...prev, "price"]
+      );
+      
+      // Scroll to the price section after a short delay to ensure it's visible
+      setTimeout(() => {
+        const priceSection = document.getElementById("price-section");
+        if (priceSection) {
+          priceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    } catch (error) {
+      toast({
+        title: t('shipping.priceCalculationFailed'),
+        description: t('shipping.priceCalculationError'),
+        variant: "destructive"
+      });
+    } finally {
+      setIsCalculatingPrice(false);
+    }
+  };
+  
+  // Function to print the shipping label
+  const printShippingLabel = () => {
+    if (createdShipment && createdShipment.labelUrl) {
+      // Open the label in a new tab for printing
+      window.open(createdShipment.labelUrl, '_blank');
+    }
+  };
+  
+  // Draft shipment mutation
+  const saveDraftMutation = useMutation({
+    mutationFn: async () => {
+      // Get form data from both receiver and package forms
+      const receiverFormData = receiverForm.getValues();
+      const packageFormData = packageForm.getValues();
+      
+      // Combine data for saving as draft
+      const draftData = {
+        // Required user ID will be added by the server
+        userId: user?.id, // This is required by the schema
+        
+        // Sender information - use actual form values entered by user
+        senderName: receiverFormData.senderName || user?.name || "",
+        senderAddress1: receiverFormData.senderAddress1 || receiverFormData.senderAddress || "", 
+        senderAddress2: receiverFormData.senderAddress2 || "",
+        senderCity: receiverFormData.senderCity || "",
+        senderPostalCode: receiverFormData.senderPostalCode || "",
+        senderPhone: receiverFormData.senderPhone || "",
+        senderEmail: receiverFormData.senderEmail || user?.email || "",
+        
+        // Receiver information
+        receiverName: receiverFormData.receiverName || "",
+        receiverAddress: receiverFormData.receiverAddress || "",
+        receiverCity: receiverFormData.receiverCity || "",
+        receiverState: receiverFormData.receiverState || "",
+        receiverPostalCode: receiverFormData.receiverPostalCode || "",
+        receiverPhone: receiverFormData.receiverPhone || "",
+        receiverEmail: receiverFormData.receiverEmail || "",
+        receiverCountry: packageFormData.receiverCountry || "", // Get country from package form
+        
+        // Package information (convert to proper types)
+        packageLength: packageFormData.packageLength ? parseInt(packageFormData.packageLength.toString()) : null,
+        packageWidth: packageFormData.packageWidth ? parseInt(packageFormData.packageWidth.toString()) : null,
+        packageHeight: packageFormData.packageHeight ? parseInt(packageFormData.packageHeight.toString()) : null,
+        packageWeight: packageFormData.packageWeight ? parseFloat(packageFormData.packageWeight.toString()) : null,
+        pieceCount: packages.length > 0 ? packages.length : null,
+        packageContents: receiverFormData.packageContents || "", // Get contents from receiver form
+        
+        // Additional package information from packageForm
+        customsValue: packageFormData.customsValue,
+        currency: packageFormData.currency || "USD",
+        gtipCode: packageFormData.gtipCode || "",
+        serviceLevel: packageFormData.serviceLevel,
+        includeInsurance: packageFormData.includeInsurance || false,
+        
+        // Add any custom fields - if we're updating, keep the existing name
+        name: currentDraftId ? undefined : `Draft - ${new Date().toLocaleDateString()}` // Default name with date
+      };
+      
+      console.log("Saving shipment as draft:", draftData);
+      
+      let res;
+      
+      // If we have a draft ID, update the existing draft
+      if (currentDraftId) {
+        console.log(`Updating existing draft with ID: ${currentDraftId}`);
+        res = await apiRequest("PATCH", `/api/drafts/${currentDraftId}`, draftData);
+      } else {
+        // Otherwise create a new draft
+        res = await apiRequest("POST", "/api/drafts", draftData);
+      }
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || t('createShipment.draft.error'));
+      }
+      
+      const responseData = await res.json();
+      
+      // If this was a new draft, store the ID for future updates
+      if (!currentDraftId) {
+        setCurrentDraftId(responseData.id);
+      }
+      
+      return responseData;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: t('createShipment.draft.successTitle', 'Draft Saved'),
+        description: t('createShipment.draft.successDescription', 'Your shipment has been saved as a draft'),
+        variant: "default"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: t('createShipment.draft.errorTitle', 'Error Saving Draft'),
+        description: error.message || t('createShipment.draft.errorDescription', 'There was a problem saving your draft'),
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Shipment creation mutation
+  const createShipmentMutation = useMutation({
+    mutationFn: async (shipmentData: any) => {
+      if (!priceDetails) {
+        throw new Error(t('createShipment.priceDetails.notAvailable'));
+      }
+      
+      // Validate all sections
+      if (!isSectionComplete("recipient") || !isSectionComplete("package") || !isSectionComplete("price")) {
+        throw new Error(t('createShipment.validation.completeSections'));
+      }
+      
+      const enhancedShipmentData = {
+        ...shipmentData,
+        status: ShipmentStatus.PENDING,
+        price: priceDetails.totalPrice, // Use the calculated price
+        totalPrice: priceDetails.totalPrice, // Add totalPrice field to match what the table expects
+        basePrice: priceDetails.basePrice,
+        fuelCharge: priceDetails.fuelCharge,
+        pieceCount: priceDetails.pieceCount || shipmentData.pieceCount || 1,
+        currency: priceDetails.currency || "USD",
+        carrierName: priceDetails.carrierName || "Shipentegra",
+        estimatedDeliveryDays: priceDetails.estimatedDeliveryDays || 7,
+        packageItems: packageItems, // Include the package items
+        packages: packages, // Include the packages data,
+        // Pass the applied multiplier from the price calculation API to prevent double-multiplication
+        appliedMultiplier: priceDetails.appliedMultiplier,
+        // Also pass any original prices from the API if available
+        originalBasePrice: priceDetails.originalBasePrice,
+        originalFuelCharge: priceDetails.originalFuelCharge,
+        originalTotalPrice: priceDetails.originalTotalPrice,
+        // Include insurance details if insurance was added
+        includeInsurance: shipmentData.includeInsurance,
+        insuranceCost: priceDetails.insurance?.insuranceCost || 0,
+        declaredValue: priceDetails.insurance?.declaredValue || shipmentData.customsValue || 0,
+      };
+      
+      console.log("Creating shipment with packages:", packages);
+      
+      const res = await apiRequest("POST", "/api/shipments", enhancedShipmentData);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || t('createShipment.toast.error.description'));
+      }
+      
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: t('createShipment.toast.success.title'),
+        description: t('createShipment.toast.success.description'),
+      });
+      
+      // Invalidate query cache to refresh shipments
+      queryClient.invalidateQueries({ queryKey: ['/api/shipments/my'] });
+      
+      // Store the created shipment and show success dialog
+      setCreatedShipment(data);
+      setShowSuccessDialog(true);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('createShipment.toast.error.title'),
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  return (
+    <Layout hideMobileActions={true}>
+      {/* Shipment Success Dialog */}
+      <Dialog 
+        open={showSuccessDialog} 
+        onOpenChange={(open) => {
+          setShowSuccessDialog(open);
+          if (!open) {
+            // Navigate to my shipments when dialog is closed
+            navigate("/my-shipments");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-2">
+              <div className="bg-green-100 p-2 rounded-full">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">{t('createShipment.successDialog.title')}</DialogTitle>
+            <DialogDescription className="text-center">
+              {t('createShipment.successDialog.description', { id: createdShipment?.id })}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="p-4 border rounded-md bg-muted/30 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">{t('createShipment.successDialog.recipient')}:</span>
+              <span className="text-sm">{createdShipment?.receiverName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">{t('createShipment.successDialog.destination')}:</span>
+              <span className="text-sm">{createdShipment?.receiverCity}, {createdShipment?.receiverCountry}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">{t('createShipment.successDialog.serviceLevel')}:</span>
+              <span className="text-sm">{createdShipment?.serviceLevel}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">{t('createShipment.successDialog.status')}:</span>
+              <span className="text-sm bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs">
+                {createdShipment?.status}
+              </span>
+            </div>
+          </div>
+          
+          <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 sm:flex-initial"
+              onClick={() => {
+                setShowSuccessDialog(false);
+                navigate("/my-shipments");
+              }}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              {t('createShipment.successDialog.viewMyShipments')}
+            </Button>
+            
+            <Button 
+              type="button"
+              className="flex-1 sm:flex-initial bg-primary"
+              onClick={printShippingLabel}
+              disabled={!createdShipment?.labelUrl}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              {t('createShipment.successDialog.printLabel')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <div className="container py-6 pl-4 md:pl-6">
+        {/* Desktop header with button */}
+        <div className="hidden md:flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t('createShipment.title')}</h1>
+            <p className="text-muted-foreground mt-1">
+              {t('createShipment.subtitle')}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            className="flex items-center"
+            onClick={() => navigate("/dashboard")}
+          >
+            <ArrowLeftIcon className="mr-2 h-4 w-4" />
+            {t('createShipment.backToDashboard')}
+          </Button>
+        </div>
+        
+        {/* Mobile header without icons */}
+        <div className="md:hidden mb-6">
+          <div className="flex items-center mb-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="mr-2 -ml-3 h-9 w-9"
+              onClick={() => navigate("/dashboard")}
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span className="sr-only">{t('common.back')}</span>
+            </Button>
+            <h1 className="text-xl font-bold">{t('createShipment.title')}</h1>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            {t('createShipment.subtitle')}
+          </p>
+        </div>
+        
+        {/* Progress indicator */}
+        <div className="mb-8">
+          <div className="relative">
+            <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+              <div 
+                className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500 ease-in-out`}
+                style={{ 
+                  width: `${(
+                    (isSectionComplete("recipient") ? 33 : 0) + 
+                    (isSectionComplete("package") ? 33 : 0) + 
+                    (isSectionComplete("price") ? 34 : 0)
+                  )}%` 
+                }}
+              ></div>
+            </div>
+            
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <div className={`flex items-center gap-1 ${isSectionComplete("recipient") ? "text-primary font-semibold" : ""}`}>
+                {isSectionComplete("recipient") && <Check className="h-3 w-3" />}
+                {t('createShipment.sections.recipient')}
+              </div>
+              <div className={`flex items-center gap-1 ${isSectionComplete("package") ? "text-primary font-semibold" : ""}`}>
+                {isSectionComplete("package") && <Check className="h-3 w-3" />}
+                {t('createShipment.sections.package')}
+              </div>
+              <div className={`flex items-center gap-1 ${isSectionComplete("price") ? "text-primary font-semibold" : ""}`}>
+                {isSectionComplete("price") && <Check className="h-3 w-3" />}
+                {t('createShipment.sections.price')}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Expandable sections */}
+        <div className="space-y-4">
+          {/* 1. Recipient Information Section */}
+          <Card className={`${expandedSections.includes("recipient") ? "border-primary" : ""}`}>
+            <CardHeader 
+              className={`cursor-pointer ${isSectionComplete("recipient") ? "bg-green-50" : ""}`}
+              onClick={() => toggleSection("recipient")}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">{t('createShipment.recipientInfo.title')}</CardTitle>
+                  {isSectionComplete("recipient") && (
+                    <div className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      <Check className="h-3 w-3 mr-1" />
+                      {t('common.complete')}
+                    </div>
+                  )}
+                </div>
+                {expandedSections.includes("recipient") 
+                  ? <ChevronUp className="h-5 w-5" /> 
+                  : <ChevronDown className="h-5 w-5" />
+                }
+              </div>
+            </CardHeader>
+            
+            {expandedSections.includes("recipient") && (
+              <>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      {/* Destination Country */}
+                      <div className="col-span-2">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-sm font-medium">{t('createShipment.recipientInfo.title')}</h3>
+                          <Link 
+                            to="/recipients" 
+                            className="text-xs text-primary hover:underline flex items-center"
+                          >
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            {t('common.recipients')}
+                          </Link>
+                        </div>
+                      </div>
+                      
+                      {/* Receiver Information */}
+                      <Form {...receiverForm}>
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 col-span-2">
+                          {/* Full name field - full width on mobile, half width on desktop */}
+                          <div className="col-span-2 sm:col-span-1">
+                            <FormField
+                              control={receiverForm.control}
+                              name="receiverName"
+                              render={({ field }) => (
+                                <FormItem className="relative">
+                                  <FormLabel>{t('createShipment.recipientInfo.fields.fullName')}</FormLabel>
+                                  <FormControl>
+                                    <div className="relative">
+                                      <Input 
+                                        placeholder={t('createShipment.recipientInfo.placeholders.fullName')} 
+                                        {...field} 
+                                        onChange={(e) => {
+                                          field.onChange(e);
+                                          filterRecipients(e.target.value);
+                                        }}
+                                        onBlur={(e) => {
+                                          // Delay hiding suggestions to allow clicking on them
+                                          setTimeout(() => {
+                                            setShowRecipientSuggestions(false);
+                                          }, 200);
+                                          field.onBlur();
+                                        }}
+                                        className="pr-8 w-full"
+                                      />
+                                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    </div>
+                                  </FormControl>
+                                  {showRecipientSuggestions && filteredRecipients.length > 0 && (
+                                    <div className="absolute z-10 w-full mt-1 bg-white rounded-md border shadow-lg max-h-64 overflow-y-auto">
+                                      <ul className="py-1">
+                                        {filteredRecipients.map((recipient) => (
+                                          <li 
+                                            key={recipient.id}
+                                            className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex justify-between items-center"
+                                            onClick={() => useRecipientData(recipient)}
+                                          >
+                                            <div>
+                                              <div className="font-medium">{recipient.name}</div>
+                                              <div className="text-xs text-gray-500">{recipient.address}, {recipient.city}</div>
+                                            </div>
+                                            {recipient.isDefault && (
+                                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>
+                                            )}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          {/* Email field - full width on mobile, half width on desktop */}
+                          <div className="col-span-2 sm:col-span-1">
+                            <FormField
+                              control={receiverForm.control}
+                              name="receiverEmail"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t('createShipment.recipientInfo.fields.email')}</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="email" 
+                                      placeholder={t('createShipment.recipientInfo.placeholders.email')} 
+                                      {...field} 
+                                      className="w-full"
+                                      // If no email is provided, use info@moogship.com as default
+                                      onBlur={(e) => {
+                                        if (!e.target.value.trim()) {
+                                          field.onChange("info@moogship.com");
+                                        }
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    {t('createShipment.recipientInfo.descriptions.email')}
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          {/* Phone field - full width on mobile, half width on desktop */}
+                          <div className="col-span-2 sm:col-span-1">
+                            <FormField
+                              control={receiverForm.control}
+                              name="receiverPhone"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t('createShipment.recipientInfo.fields.phone')}</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder={t('createShipment.recipientInfo.placeholders.phone')} {...field} className="w-full" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="col-span-2">
+                            <FormField
+                              control={receiverForm.control}
+                              name="receiverAddress"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t('createShipment.recipientInfo.fields.address')}</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder={t('createShipment.recipientInfo.placeholders.address')} {...field} className="w-full" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          {/* All location fields on one line */}
+                          <div className="col-span-2 grid grid-cols-4 gap-5">
+                            {/* Country field - needs to be first */}
+                            <div className="col-span-1">
+                              <Form {...packageForm}>
+                                <FormField
+                                  control={packageForm.control}
+                                  name="receiverCountry"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>{t('createShipment.recipientInfo.fields.country')}</FormLabel>
+                                      <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder={t('createShipment.recipientInfo.placeholders.country')} />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {COUNTRIES.map((country) => (
+                                            <SelectItem key={country.code} value={country.code}>
+                                              {country.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </Form>
+                            </div>
+
+                            <FormField
+                              control={receiverForm.control}
+                              name="receiverCity"
+                              render={({ field }) => (
+                                <FormItem className="col-span-1">
+                                  <FormLabel>{t('createShipment.recipientInfo.fields.city')}</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder={t('createShipment.recipientInfo.placeholders.city')} {...field} className="w-full" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            {/* State shown conditionally but space reserved */}
+                            <div className="col-span-1">
+                              {hasStates(packageForm.watch("receiverCountry")) ? (
+                                <FormField
+                                  control={receiverForm.control}
+                                  name="receiverState"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>{t('createShipment.recipientInfo.fields.state')}</FormLabel>
+                                      <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder={t('createShipment.recipientInfo.placeholders.state')} />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {getStatesByCountryCode(packageForm.watch("receiverCountry")).map((state) => (
+                                            <SelectItem key={state.code} value={state.code}>
+                                              {state.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              ) : (
+                                <FormItem>
+                                  <FormLabel className="text-gray-400">{t('createShipment.recipientInfo.fields.state')}</FormLabel>
+                                  <Input disabled placeholder="N/A" className="bg-gray-100 w-full" />
+                                </FormItem>
+                              )}
+                            </div>
+                            
+                            <FormField
+                              control={receiverForm.control}
+                              name="receiverPostalCode"
+                              render={({ field }) => (
+                                <FormItem className="col-span-1">
+                                  <FormLabel>{t('createShipment.recipientInfo.fields.postalCode')}</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder={t('createShipment.recipientInfo.placeholders.postalCode')} {...field} className="w-full" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+
+                        </div>
+                      </Form>
+                  
+                      {/* Sender Information Section */}
+                      <div className="mt-8 col-span-2">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-medium">{t('createShipment.senderInfo.title')}</h3>
+                          {/* Edit Address button hidden as requested */}
+                          {isEditingAddress && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={resetToDefaultAddress}
+                              className="flex items-center"
+                            >
+                              <Save className="h-4 w-4 mr-1" />
+                              Use My Address
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-4">
+                          <Form {...receiverForm}>
+                            {isEditingAddress ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-md">
+                                <div className="space-y-4 col-span-full">
+                                  <FormField
+                                    control={receiverForm.control}
+                                    name="senderName"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <FormControl>
+                                          <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={receiverForm.control}
+                                    name="senderAddress"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Address</FormLabel>
+                                        <FormControl>
+                                          <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <div className="grid grid-cols-2 gap-5">
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderCity"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>City</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderPostalCode"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Postal Code</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-5">
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderPhone"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Phone</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <FormField
+                                      control={receiverForm.control}
+                                      name="senderEmail"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Email</FormLabel>
+                                          <FormControl>
+                                            <Input {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="bg-gray-50 p-3 rounded-md">
+                                  <p className="text-sm"><span className="font-semibold">Name:</span> {receiverForm.getValues().senderName}</p>
+                                  <p className="text-sm"><span className="font-semibold">Address:</span> {receiverForm.getValues().senderAddress}</p>
+                                  <p className="text-sm"><span className="font-semibold">City:</span> {receiverForm.getValues().senderCity}</p>
+                                  <p className="text-sm"><span className="font-semibold">Postal Code:</span> {receiverForm.getValues().senderPostalCode}</p>
+                                  {receiverForm.getValues().senderPhone && <p className="text-sm"><span className="font-semibold">Phone:</span> {receiverForm.getValues().senderPhone}</p>}
+                                  {receiverForm.getValues().senderEmail && <p className="text-sm"><span className="font-semibold">Email:</span> {receiverForm.getValues().senderEmail}</p>}
+                                </div>
+                              </div>
+                            )}
+                          </Form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                  {/* Save as Draft Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => saveDraftMutation.mutate()}
+                    disabled={saveDraftMutation.isPending}
+                  >
+                    {saveDraftMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('createShipment.draft.saving', 'Saving...')}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        {t('createShipment.draft.saveAsDraft', 'Save as Draft')}
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      // Only validate recipient fields & country - no longer need to validate sender fields
+                      // since we've made sender city and postal code optional
+                      receiverForm.trigger(["receiverName", "receiverPhone", "receiverAddress", 
+                                           "receiverCity", "receiverPostalCode",
+                                           "senderName", "senderAddress"]).then(recipientValid => {
+                        
+                        packageForm.trigger("receiverCountry").then(countryValid => {
+                          if (recipientValid && countryValid) {
+                            // First expand package section
+                            setExpandedSections(prev => {
+                              const newSections = [...prev];
+                              if (!newSections.includes("package")) {
+                                newSections.push("package");
+                              }
+                              // Then remove recipient section
+                              return newSections.filter(s => s !== "recipient");
+                            });
+                          }
+                        });
+                      });
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    {t('createShipment.actions.continueToPackage')}
+                  </Button>
+                </CardFooter>
+              </>
+            )}
+          </Card>
+          
+          {/* 2. Package Details Section */}
+          <Card className={`${expandedSections.includes("package") ? "border-primary" : ""}`}>
+            <CardHeader 
+              className={`cursor-pointer ${isSectionComplete("package") ? "bg-green-50" : ""}`}
+              onClick={() => toggleSection("package")}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Box className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">{t('createShipment.packageDetails.title')}</CardTitle>
+                  {isSectionComplete("package") && (
+                    <div className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      <Check className="h-3 w-3 mr-1" />
+                      {t('common.complete')}
+                    </div>
+                  )}
+                </div>
+                {expandedSections.includes("package") 
+                  ? <ChevronUp className="h-5 w-5" /> 
+                  : <ChevronDown className="h-5 w-5" />
+                }
+              </div>
+            </CardHeader>
+            
+            {expandedSections.includes("package") && (
+              <>
+                <CardContent>
+                  <Form {...packageForm}>
+                    <div className="space-y-6">
+                      {/* Grid layout for package form items */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" aria-label={t('createShipment.packageDetails.packageItems')}>
+                        {/* Package Contents */}
+                        {/* Package Contents field has been moved to the customs information tab */}
+                        
+                        {/* Package Items (Detailed) */}
+                        <div className="col-span-full mt-4">
+                          <PackageItemSelector
+                            items={packageItems}
+                            setItems={setPackageItems}
+                            packages={packages}
+                            setPackages={setPackages}
+                            userId={currentUserId}
+                          />
+                        </div>
+                        
+                        {/* Package dimensions fields are hidden since they're already in the items section */}
+                        {/* These fields are kept in the form but hidden from UI for functionality */}
+                        <div className="hidden">
+                          <FormField
+                            control={packageForm.control}
+                            name="packageLength"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('createShipment.packageDetails.length')}</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.1" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={packageForm.control}
+                            name="packageWidth"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('createShipment.packageDetails.width')}</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.1" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={packageForm.control}
+                            name="packageHeight"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('createShipment.packageDetails.height')}</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.1" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={packageForm.control}
+                            name="packageWeight"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('createShipment.packageDetails.weight')}</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.01" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        {/* Number of Packages and Items in Package fields are hidden since they're already in the items section */}
+                        <div className="hidden">
+                          <FormField
+                            control={packageForm.control}
+                            name="pieceCount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Number of Packages</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="1" step="1" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={packageForm.control}
+                            name="itemCount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Items in Package</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="1" step="1" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                <FormDescription>
+                                  {t('createShipment.packageDetails.totalItemsDescription')}
+                                </FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        {/* GTIP Code field is hidden since it's already in the items section */}
+                        <div className="hidden">
+                          <FormField
+                            control={packageForm.control}
+                            name="gtipCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>GTIP Code</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter GTIP code" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                <FormDescription>
+                                  Harmonized System (HS) code for customs
+                                </FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        {/* Customs Value fields now use our custom component for proper decimal formatting */}
+                        <div className="col-span-full mb-4">
+                          <PackageCustomsForm 
+                            form={packageForm}
+                            receiverForm={receiverForm}
+                            packageItems={packageItems}
+                            isAccordion={true} 
+                            defaultOpen={false} 
+                          />
+                        </div>
+                        
+                        {/* Hidden fields kept for compatibility */}
+                        <div className="hidden">
+                          <FormDescription className="mt-1">
+                            Value of goods for customs declaration
+                          </FormDescription>
+                        </div>
+                        
+                        {/* Service Level field hidden as requested */}
+                        <FormField
+                          control={packageForm.control}
+                          name="serviceLevel"
+                          render={({ field }) => (
+                            <FormItem className="hidden">
+                              <FormControl>
+                                <Input type="hidden" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      {/* Display volumetric weight if available */}
+                      {billableWeight !== null && (
+                        <div className="bg-blue-50 p-4 rounded-md mt-4">
+                          <h3 className="font-medium text-blue-700 mb-2">
+                            {t('createShipment.packageDetails.weightInfo')}
+                            {packages.length > 1 && (
+                              <span className="text-xs ml-2 px-2 py-1 bg-blue-100 rounded-full">
+                                {packages.length} {t('createShipment.packageDetails.packages')}
+                              </span>
+                            )}
+                          </h3>
+                          
+                          {packages.length <= 1 ? (
+                            <>
+                              <p className="text-sm text-blue-600">
+                                <span className="font-medium">{t('createShipment.packageDetails.actualWeight')}:</span> {packageForm.getValues().packageWeight} kg
+                              </p>
+                              <p className="text-sm text-blue-600">
+                                <span className="font-medium">{t('createShipment.packageDetails.volumetricWeight')}:</span> {calculateVolumetricWeight(
+                                  packageForm.getValues().packageLength,
+                                  packageForm.getValues().packageWidth,
+                                  packageForm.getValues().packageHeight
+                                ).toFixed(2)} kg
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-sm text-blue-600">
+                              <span className="font-medium">{t('createShipment.packageDetails.totalWeight')}:</span> {packageForm.getValues().packageWeight} kg ({t('createShipment.packageDetails.sumOfAllPackages')})
+                            </p>
+                          )}
+                          
+                          <p className="text-sm text-blue-800 font-medium mt-1">
+                            <span className="font-medium">{t('createShipment.packageDetails.billableWeight')}:</span> {billableWeight.toFixed(2)} kg
+                            {packages.length > 1 && (
+                              <span className="text-xs italic ml-1">({t('createShipment.packageDetails.sumOfAllPackageBillableWeights')})</span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </Form>
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setExpandedSections(prev => 
+                          prev.includes("recipient") ? prev : [...prev, "recipient"]
+                        );
+                        // Auto-collapse this section
+                        setExpandedSections(prev => prev.filter(s => s !== "package"));
+                      }}
+                    >
+                      {t('createShipment.actions.backToRecipient')}
+                    </Button>
+                    
+                    {/* Save as Draft Button */}
+                    <Button
+                      variant="outline"
+                      onClick={() => saveDraftMutation.mutate()}
+                      disabled={saveDraftMutation.isPending}
+                    >
+                      {saveDraftMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t('createShipment.draft.saving', 'Saving...')}
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          {t('createShipment.draft.saveAsDraft', 'Save as Draft')}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    onClick={async () => {
+                      // Force setting the service level explicitly
+                      packageForm.setValue("serviceLevel", ServiceLevel.STANDARD);
+                      
+                      // Make sure itemCount is at least 1 to avoid validation errors 
+                      // This ensures the form passes validation even if no explicit items are added
+                      const currentItemCount = packageForm.getValues().itemCount;
+                      if (!currentItemCount || currentItemCount < 1) {
+                        packageForm.setValue('itemCount', Math.max(1, packages.length));
+                      }
+                      
+                      console.log("Form values before validation:", {
+                        itemCount: packageForm.getValues().itemCount,
+                        packageCount: packages.length,
+                        billableWeight
+                      });
+                      
+                      // Validate package details first
+                      const packageValid = await packageForm.trigger();
+                      const contentsValid = await receiverForm.trigger("packageContents");
+                      
+                      if (packageValid && contentsValid) {
+                        if (packages.length === 0) {
+                          toast({
+                            title: "Missing packages",
+                            description: "Please add at least one package with dimensions before calculating price.",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
+                        // Calculate total billable weight right before calling API
+                        let totalWeight = 0;
+                        packages.forEach(pkg => {
+                          const volWeight = calculateVolumetricWeight(
+                            parseFloat(pkg.length || "0"),
+                            parseFloat(pkg.width || "0"),
+                            parseFloat(pkg.height || "0")
+                          );
+                          totalWeight += Math.max(volWeight, parseFloat(pkg.weight || "0"));
+                        });
+                        
+                        console.log("Using billable weight for ShipEntegra API:", totalWeight);
+                        
+                        // Calculate price using the combined billable weight
+                        calculatePrice();
+                        
+                        // Proceed to price section
+                        setExpandedSections(prev => 
+                          prev.includes("price") ? prev : [...prev, "price"]
+                        );
+                        // Auto-collapse this section
+                        setExpandedSections(prev => prev.filter(s => s !== "package"));
+                      } else {
+                        // Find and report missing fields for better user feedback
+                        const packageErrors = packageForm.formState.errors;
+                        const receiverErrors = receiverForm.formState.errors;
+                        
+                        // Get error messages into a list
+                        const errorMessages: string[] = [];
+                        
+                        // Check both forms for missing required fields
+                        if (Object.keys(packageErrors).length > 0) {
+                          // Add package form errors
+                          Object.values(packageErrors).forEach(error => {
+                            if (error?.message) errorMessages.push(error.message as string);
+                          });
+                        }
+                        
+                        if (Object.keys(receiverErrors).length > 0) {
+                          // Only check for packageContents since that's all we validate from receiver form
+                          if (receiverErrors.packageContents?.message) {
+                            errorMessages.push(receiverErrors.packageContents.message as string);
+                          }
+                        }
+                        
+                        // Create a detailed error message
+                        const errorDetails = errorMessages.length > 0 
+                          ? t("validations.missingFields", { fields: errorMessages.join(", ") })
+                          : t("validations.fillAllRequiredFields");
+                          
+                        // Show toast with specific validation errors
+                        toast({
+                          title: t("validations.validationFailed"),
+                          description: errorDetails,
+                          variant: "destructive"
+                        });
+                        
+                        // Log the errors for debugging
+                        console.log("Package form errors:", packageErrors);
+                        console.log("Receiver form errors:", receiverErrors);
+                      }
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    {priceDetails 
+                      ? (packageDetailsChanged ? t('createShipment.actions.calculatePrice') : t('createShipment.priceDetails.title')) 
+                      : t('createShipment.actions.calculatePrice')}
+                  </Button>
+                </CardFooter>
+              </>
+            )}
+          </Card>
+          
+          {/* 3. Price Section */}
+          <Card 
+            id="price-section"
+            className={`${expandedSections.includes("price") ? "border-primary" : ""}`}
+          >
+            <CardHeader 
+              className={`cursor-pointer ${isSectionComplete("price") ? "bg-green-50" : ""}`}
+              onClick={() => toggleSection("price")}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <TruckIcon className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">{t('createShipment.sections.priceAndShipping')}</CardTitle>
+                  {isSectionComplete("price") && (
+                    <div className="flex items-center text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      <Check className="h-3 w-3 mr-1" />
+                      {t('common.complete')}
+                    </div>
+                  )}
+                </div>
+                {expandedSections.includes("price") 
+                  ? <ChevronUp className="h-5 w-5" /> 
+                  : <ChevronDown className="h-5 w-5" />
+                }
+              </div>
+            </CardHeader>
+            
+            {expandedSections.includes("price") && (
+              <>
+                <CardContent>
+                  {priceDetails ? (
+                    <div className="space-y-6">
+                      <div className="bg-gray-50 p-6 rounded-lg border">
+                        <h3 className="text-lg font-medium mb-4">{t('createShipment.priceDetails.shippingPriceDetails')}</h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">{t('createShipment.priceDetails.basePrice')}:</span>
+                            <span className="font-medium">${(priceDetails.basePrice / 100).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">{t('createShipment.priceDetails.fuelCharge')}:</span>
+                            <span className="font-medium">${(priceDetails.fuelCharge / 100).toFixed(2)}</span>
+                          </div>
+                          {/* Display insurance cost when available or requested */}
+                          {packageForm.getValues("includeInsurance") && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">{t('createShipment.priceDetails.insuranceCost')}:</span>
+                              {priceDetails.insurance && priceDetails.insurance.available ? (
+                                <span className="font-medium">{priceDetails.insurance.formattedInsuranceCost}</span>
+                              ) : (
+                                <span className="font-medium text-yellow-600">{t('createShipment.priceDetails.notAvailable')}</span>
+                              )}
+                            </div>
+                          )}
+                          {/* We show package info as a reference, but not with multiplication indicator
+                             since we're already accounting for multiple packages in the total price */}
+                          {priceDetails.pieceCount > 1 && (
+                            <div className="flex justify-between font-medium text-blue-700 bg-blue-50 py-1 px-2 rounded">
+                              <span>{t('createShipment.priceDetails.packages')}:</span>
+                              <span>{t('createShipment.priceDetails.packagesWithWeight', { count: priceDetails.pieceCount })}</span>
+                            </div>
+                          )}
+                          <div className="border-t my-2 pt-2 flex justify-between">
+                            <span className="text-gray-800 font-semibold">{t('createShipment.priceDetails.totalPrice')}:</span>
+                            <span className="text-lg font-bold text-primary">${(priceDetails.totalPrice / 100).toFixed(2)}</span>
+                          </div>
+                          
+                          {/* Credit Limit Warning */}
+                          {creditLimitInfo && (
+                            <div className={`mt-4 p-3 rounded-md flex items-start gap-2 ${
+                              creditLimitInfo.hasWarning ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'
+                            }`}>
+                              {creditLimitInfo.hasWarning ? (
+                                <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                              ) : (
+                                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                              )}
+                              <div>
+                                <p className={`font-medium ${creditLimitInfo.hasWarning ? 'text-red-700' : 'text-green-700'}`}>
+                                  {creditLimitInfo.hasWarning ? t('createShipment.priceDetails.creditLimitWarning') : t('createShipment.priceDetails.creditCheckPassed')}
+                                </p>
+                                <div className="text-sm mt-1 space-y-1">
+                                  <p>{t('createShipment.priceDetails.currentBalance')}: <span className="font-medium">{creditLimitInfo.formattedUserBalance}</span></p>
+                                  <p>{t('createShipment.priceDetails.newBalanceAfterShipment')}: <span className="font-medium">{creditLimitInfo.formattedNewBalance}</span></p>
+                                  {creditLimitInfo.hasWarning && (
+                                    <>
+                                      <p>{t('createShipment.priceDetails.minimumBalanceRequired')}: <span className="font-medium">{creditLimitInfo.formattedMinBalance}</span></p>
+                                      <p className="text-red-600">
+                                        {t('createShipment.priceDetails.exceedCreditLimitBy')} <span className="font-bold">{creditLimitInfo.formattedExceededAmount}</span>
+                                      </p>
+                                      <div className="mt-2 py-2 px-3 bg-red-100 rounded border border-red-300">
+                                        <p className="font-medium text-red-800">
+                                          {t('createShipment.priceDetails.creditLimit')}: <span className="font-medium">${(creditLimitInfo.minBalance / 100).toFixed(2)}</span>
+                                        </p>
+                                        <p className="font-medium text-red-800">
+                                          {t('createShipment.priceDetails.currentBalance')}: <span className="font-medium">${(creditLimitInfo.userBalance / 100).toFixed(2)}</span>
+                                        </p>
+                                        <p className="font-medium text-red-800">
+                                          {t('createShipment.priceDetails.availableCredit')}: <span className="font-medium">{creditLimitInfo.formattedAvailableCredit}</span>
+                                        </p>
+                                        <p className="font-medium text-red-800 mt-1">
+                                          {t('createShipment.priceDetails.shipmentCost')}: <span className="font-medium">${((priceDetails?.totalPrice || 0) / 100).toFixed(2)}</span>
+                                        </p>
+                                        <div className="mt-2 pt-2 border-t border-red-300">
+                                          <p className="font-bold text-red-800">
+                                            {t('createShipment.priceDetails.needToAdd')} <span className="text-lg">${(Math.max(0, (priceDetails?.totalPrice || 0) - creditLimitInfo.availableCredit) / 100).toFixed(2)}</span> to your balance to create this shipment.
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="mt-6 bg-blue-50 p-3 rounded-md">
+                          <div className="flex">
+                            {/* Left Side - Product Details */}
+                            <div className="w-1/2 pr-3 border-r border-blue-200">
+                              <div className="flex items-start">
+                                <Check className="h-5 w-5 mr-2 text-blue-700 mt-0.5" />
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-medium text-blue-800">{t('createShipment.priceDetails.itemsInShipment')}</h4>
+                                  
+                                  {packageItems && packageItems.length > 0 ? (
+                                    <>
+                                      <div className="mt-1">
+                                        {packageItems.map((item, index) => {
+                                          const itemPrice = parseFloat(item.price) || 0;
+                                          const itemQuantity = parseInt(item.quantity) || 1;
+                                          const itemTotalPrice = itemPrice * itemQuantity;
+                                          
+                                          return (
+                                            <div key={index} className="mb-1 last:mb-0">
+                                              <p className="text-xs text-blue-700 flex justify-between">
+                                                <span className="font-medium">{item.name} (x{itemQuantity})</span>
+                                                <span>${itemTotalPrice.toFixed(2)}</span>
+                                              </p>
+                                              {item.description && (
+                                                <p className="text-xs text-blue-600 ml-2">{item.description}</p>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      
+                                      <div className="mt-2 pt-1 border-t border-blue-200">
+                                        <p className="text-xs text-blue-700 flex justify-between font-medium">
+                                          <span>{t('createShipment.priceDetails.totalItems')}:</span>
+                                          <span>
+                                            {packageItems.reduce((total, item) => total + (parseInt(item.quantity) || 1), 0)} items
+                                          </span>
+                                        </p>
+                                        <p className="text-xs text-blue-700 flex justify-between font-medium">
+                                          <span>{t('createShipment.priceDetails.totalValue')}:</span>
+                                          <span>
+                                            ${packageItems.reduce((total, item) => {
+                                              const price = parseFloat(item.price) || 0;
+                                              const quantity = parseInt(item.quantity) || 1;
+                                              return total + (price * quantity);
+                                            }, 0).toFixed(2)}
+                                          </span>
+                                        </p>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <p className="text-xs text-blue-700 mt-1">{t('createShipment.priceDetails.noProductsAdded')}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Right Side - Shipping Details */}
+                            <div className="w-1/2 pl-3">
+                              <div className="flex items-start">
+                                <Truck className="h-5 w-5 mr-2 text-blue-700 mt-0.5" />
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-medium text-blue-800">{t('createShipment.priceDetails.shippingAndDelivery')}</h4>
+                                  <p className="text-xs text-blue-700 mt-1">
+                                    {t('createShipment.priceDetails.serviceLevel')}: <span className="font-medium">EXPRESS</span>
+                                  </p>
+                                  <p className="text-xs text-blue-700">
+                                    {t('createShipment.priceDetails.estimatedDelivery', { days: '1-4' })}
+                                  </p>
+                                  <p className="text-xs text-blue-700">
+                                    {t('createShipment.priceDetails.carrier')}: <span className="font-medium">{priceDetails.carrierName || "Shipentegra"}</span>
+                                  </p>
+                                  
+                                  <div className="mt-2 pt-1 border-t border-blue-200">
+                                    <p className="text-xs text-blue-700 flex justify-between">
+                                      <span>{t('createShipment.priceDetails.basePrice')}:</span> 
+                                      <span className="font-medium">${(priceDetails.basePrice / 100).toFixed(2)}</span>
+                                    </p>
+                                    <p className="text-xs text-blue-700 flex justify-between">
+                                      <span>{t('createShipment.priceDetails.fuelCharge')}:</span> 
+                                      <span className="font-medium">${(priceDetails.fuelCharge / 100).toFixed(2)}</span>
+                                    </p>
+                                    
+                                    {/* Insurance cost line - displayed when insurance is requested */}
+                                    {packageForm.getValues("includeInsurance") && (
+                                      <p className="text-xs text-blue-700 flex justify-between">
+                                        <span>{t('createShipment.priceDetails.insuranceCost')}:</span> 
+                                        {priceDetails.insurance && priceDetails.insurance.available ? (
+                                          <span className="font-medium">{priceDetails.insurance.formattedInsuranceCost}</span>
+                                        ) : (
+                                          <span className="font-medium text-yellow-600">{t('createShipment.priceDetails.notAvailable')}</span>
+                                        )}
+                                      </p>
+                                    )}
+                                    
+                                    <p className="text-xs text-blue-700 flex justify-between font-medium">
+                                      <span>{t('createShipment.priceDetails.totalPrice')}:</span> 
+                                      <span>${(priceDetails.totalPrice / 100).toFixed(2)}</span>
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center">
+                        <div className="relative group">
+                          <Button 
+                            type="button"
+                            onClick={() => {
+                              // Always create the shipment with one click
+                              const receiverFormData = receiverForm.getValues();
+                              const packageFormData = packageForm.getValues();
+                              
+                              // Check if destination is an EU country or HMRC country and number is required
+                              const countryCode = packageFormData.receiverCountry;
+                              const isEUDestination = isEUCountry(countryCode);
+                              const isHMRCDestination = isHMRCCountry(countryCode);
+                              const numberValue = packageFormData.iossNumber || '';
+                              
+                              // Validate IOSS number for EU countries (not including HMRC countries)
+                              if (isEUDestination && !isHMRCDestination && (!numberValue || numberValue.trim() === '')) {
+                                toast({
+                                  title: t('notifications.iossNumberRequired'),
+                                  description: t('notifications.iossNumberRequiredDescription'),
+                                  variant: "destructive"
+                                });
+                                packageForm.setError('iossNumber', { 
+                                  type: 'manual', 
+                                  message: t('validations.iossNumberRequired')
+                                });
+                                return;
+                              }
+                              
+                              // Validate HMRC number for UK and Sweden
+                              if (isHMRCDestination && (!numberValue || numberValue.trim() === '')) {
+                                const countryName = countryCode === 'GB' ? 'United Kingdom' : 'Sweden';
+                                toast({
+                                  title: t('notifications.hmrcNumberRequired'),
+                                  description: t('notifications.hmrcNumberRequiredDescription', { countryName }),
+                                  variant: "destructive"
+                                });
+                                packageForm.setError('iossNumber', { 
+                                  type: 'manual', 
+                                  message: t('validations.hmrcNumberRequired', { countryName })
+                                });
+                                return;
+                              }
+                              
+                              // Calculate dimensions from the package data entered in the UI
+                              let totalPackageData = { length: 0, width: 0, height: 0, weight: 0 };
+                              
+                              // If we have packages, use the dimensions from those packages
+                              if (packages && packages.length > 0) {
+                                console.log(`Using dimensions from ${packages.length} packages entered by user`);
+                                
+                                // For a single package, use its dimensions directly
+                                if (packages.length === 1) {
+                                  const pkg = packages[0];
+                                  totalPackageData = {
+                                    length: parseFloat(pkg.length || 0), 
+                                    width: parseFloat(pkg.width || 0), 
+                                    height: parseFloat(pkg.height || 0),
+                                    weight: parseFloat(pkg.weight || 0)
+                                  };
+                                } else {
+                                  // For multiple packages, calculate combined weight
+                                  let totalWeight = 0;
+                                  let maxLength = 0, maxWidth = 0, maxHeight = 0;
+                                  
+                                  // Get the maximum dimensions across all packages
+                                  packages.forEach(pkg => {
+                                    totalWeight += parseFloat(pkg.weight || 0);
+                                    maxLength = Math.max(maxLength, parseFloat(pkg.length || 0));
+                                    maxWidth = Math.max(maxWidth, parseFloat(pkg.width || 0));
+                                    maxHeight = Math.max(maxHeight, parseFloat(pkg.height || 0));
+                                  });
+                                  
+                                  // Use the max dimensions and total weight
+                                  totalPackageData = {
+                                    length: maxLength,
+                                    width: maxWidth,
+                                    height: maxHeight,
+                                    weight: totalWeight
+                                  };
+                                }
+                              }
+                              
+                              // Override the form data with the calculated dimensions
+                              const formattedPackageData = {
+                                packageLength: totalPackageData.length,
+                                packageWidth: totalPackageData.width,
+                                packageHeight: totalPackageData.height,
+                                packageWeight: totalPackageData.weight,
+                                pieceCount: packages.length || 1
+                              };
+                              
+                              console.log('Submitting shipment with package dimensions:', formattedPackageData);
+                              
+                              // Calculate total item value and count from package items for customs
+                              const totalItemsCount = packageItems.reduce((total, item) => 
+                                total + (parseInt(item.quantity) || 1), 0);
+                                
+                              // Calculate total value with proper decimal handling
+                              const totalItemsValue = packageItems.reduce((total, item) => {
+                                // Get price in dollars (with decimals) from item
+                                const price = parseFloat(item.price) || 0;
+                                const quantity = parseInt(item.quantity) || 1;
+                                return total + (price * quantity);
+                              }, 0);
+                              
+                              // Ensure we got a properly formatted decimal value
+                              const formattedTotalValue = parseFloat(totalItemsValue.toFixed(2));
+                              
+                              console.log("Calculated customs values:", {
+                                totalItemsCount,
+                                totalItemsValueDollars: totalItemsValue,
+                                totalItemsValueCents: Math.round(totalItemsValue * 100)
+                              });
+                              
+                              // Create the shipment with the proper package dimensions and customs values
+                              // Create a copy of the form data to modify if needed
+                              const shipmentData = {
+                                ...receiverFormData,
+                                ...packageFormData,
+                                ...formattedPackageData,
+                                packageItems: packageItems,
+                                packages: packages,
+                                // Add customs values based on the package items
+                                // Convert dollars to cents and round to integer for database storage
+                                customsValue: Math.round(formattedTotalValue * 100), 
+                                customsItemCount: totalItemsCount,
+                                // Include insurance information if available
+                                includeInsurance: packageFormData.includeInsurance,
+                                insuranceCost: priceDetails.insurance?.insuranceCost || 0,
+                                declaredValue: priceDetails.insurance?.declaredValue || 0,
+                              };
+                              
+                              // Log IOSS/HMRC number information for debugging
+                              console.log("IOSS/HMRC Info:", {
+                                country: packageFormData.receiverCountry,
+                                isEUDestination: isEUDestination,
+                                isHMRCDestination: isHMRCDestination,
+                                numberValue: packageFormData.iossNumber || 'not provided',
+                                fieldType: isHMRCDestination ? "HMRC" : (isEUDestination ? "IOSS" : "None"),
+                                includesInShipmentData: !!shipmentData.iossNumber
+                              });
+                              
+                              // Set default email if none provided
+                              if (!shipmentData.receiverEmail || shipmentData.receiverEmail.trim() === '') {
+                                console.log("Setting default receiver email: info@moogship.com");
+                                shipmentData.receiverEmail = "info@moogship.com";
+                              }
+                              
+                              // Submit the data
+                              createShipmentMutation.mutate(shipmentData);
+                            }}
+                            className="w-full md:w-auto"
+                            variant="default"
+                            disabled={createShipmentMutation.isPending || (creditLimitInfo && creditLimitInfo.hasWarning) || false}
+                          >
+                            {createShipmentMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {t('shipping.creatingLabel')}
+                              </>
+                            ) : (
+                              t('shipping.acceptPriceAndCreateLabel')
+                            )}
+                          </Button>
+                          
+                          {/* Save as Draft Button */}
+                          <Button
+                            type="button"
+                            className="w-full md:w-auto mr-2"
+                            variant="outline"
+                            onClick={() => saveDraftMutation.mutate()}
+                            disabled={saveDraftMutation.isPending}
+                          >
+                            {saveDraftMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                {t('createShipment.draft.saving', 'Saving...')}
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                {t('createShipment.draft.saveAsDraft', 'Save as Draft')}
+                              </>
+                            )}
+                          </Button>
+                          
+                          {/* Tooltip for users who are over their credit limit */}
+                          {creditLimitInfo && creditLimitInfo.hasWarning && (
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-red-100 text-red-800 text-xs rounded border border-red-300 shadow-lg hidden group-hover:block transition-opacity duration-300">
+                              <p className="font-medium">{t('notifications.insufficientFunds')}</p>
+                              <p>{t('notifications.addFundsToBalance', { amount: (Math.max(0, (priceDetails?.totalPrice || 0) - (creditLimitInfo?.availableCredit || 0)) / 100).toFixed(2) })}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center">
+                      <p className="text-muted-foreground">
+                        {t('shipping.priceDetailsWillAppear')}
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-4" 
+                        onClick={() => {
+                          setExpandedSections(prev => 
+                            prev.includes("package") ? prev : [...prev, "package"]
+                          );
+                          setExpandedSections(prev => prev.filter(s => s !== "price"));
+                        }}
+                      >
+                        {t('shipping.goToPackageDetails')}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setExpandedSections(prev => 
+                          prev.includes("package") ? prev : [...prev, "package"]
+                        );
+                        // Auto-collapse this section
+                        setExpandedSections(prev => prev.filter(s => s !== "price"));
+                      }}
+                    >
+                      {t('shipping.backToPackageDetails')}
+                    </Button>
+                    
+                    {/* Save as Draft Button */}
+                    <Button
+                      variant="outline"
+                      onClick={() => saveDraftMutation.mutate()}
+                      disabled={saveDraftMutation.isPending}
+                    >
+                      {saveDraftMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t('createShipment.draft.saving', 'Saving...')}
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          {t('createShipment.draft.saveAsDraft', 'Save as Draft')}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Create Order Button (only shown when price details are available) */}
+                  {priceDetails && (
+                    <Button
+                      onClick={() => createShipmentFn()}
+                      disabled={createShipmentMutation.isPending || !canCreateShipment}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {createShipmentMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t('shipping.creatingShipment')}
+                        </>
+                      ) : (
+                        <>
+                          <Truck className="mr-2 h-4 w-4" />
+                          {t('shipping.createShipment')}
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </CardFooter>
+              </>
+            )}
+          </Card>
+        </div>
+      </div>
+    </Layout>
+  );
+}

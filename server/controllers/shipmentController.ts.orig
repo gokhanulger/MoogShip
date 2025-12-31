@@ -1,0 +1,1067 @@
+import { Request, Response } from 'express';
+// Extended request type with file
+interface FileRequest extends Request {
+  file?: {
+    buffer: Buffer;
+    originalname: string;
+    mimetype: string;
+    size: number;
+  };
+}
+import { storage } from '../storage';
+import { ShipmentStatus, ServiceLevel } from '@shared/schema';
+import { 
+  generateShippingLabel, 
+  getLabelUrl, 
+  generateTrackingNumber 
+} from '../services/labelGenerator';
+import * as xlsx from 'xlsx';
+import { parse } from 'csv-parse/sync';
+
+/**
+ * Parse an Etsy CSV order file into shipment data
+ * This function converts Etsy's exported Orders CSV format into the format needed for shipment creation
+ */
+function parseEtsyOrdersCsv(csvBuffer: Buffer): any[] {
+  try {
+    // Parse the CSV data with more forgiving options
+    const csvString = csvBuffer.toString('utf8');
+    const records = parse(csvString, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      relax_quotes: true,      // Handle cases where quotes aren't properly closed
+      relax_column_count: true, // Handle rows with inconsistent column counts
+      skip_records_with_error: true // Skip problematic rows instead of failing
+    });
+    
+    if (records.length === 0) {
+      return [];
+    }
+    
+    console.log(`Parsed ${records.length} Etsy orders from CSV`);
+    
+    // Get the first record to analyze columns
+    const firstRecord = records[0];
+    const columnNames = Object.keys(firstRecord);
+    console.log('Detected CSV columns:', columnNames);
+    
+    // Enhanced helper function to find the correct column name regardless of exact format
+    const findColumn = (possibleNames: string[]): string | undefined => {
+      // First try exact matches
+      const exactMatch = columnNames.find(col => 
+        possibleNames.some(name => col === name)
+      );
+      
+      if (exactMatch) return exactMatch;
+      
+      // If no exact match, try case-insensitive partial matches
+      return columnNames.find(col => possibleNames.some(name => 
+        col.toLowerCase().includes(name.toLowerCase())
+      ));
+    };
+  
+  // Map column names to our expected format
+  const shipNameCol = findColumn(['ship name', 'recipient', 'buyer name', 'full name']);
+  const firstNameCol = findColumn(['first name']);
+  const lastNameCol = findColumn(['last name']);
+  const buyerCol = findColumn(['buyer', 'customer']);
+  const shipAddress1Col = findColumn(['ship address1', 'address1', 'address line 1', 'street 1']);
+  const shipAddress2Col = findColumn(['ship address2', 'address2', 'address line 2', 'street 2']);
+  const shipCityCol = findColumn(['ship city', 'city', 'town']);
+  const shipStateCol = findColumn(['ship state', 'state', 'province', 'region']);
+  const shipZipCol = findColumn(['ship zipcode', 'zip', 'postal', 'post code']);
+  const shipCountryCol = findColumn(['ship country', 'country']);
+  const orderIdCol = findColumn(['order id', 'order number', 'order #', 'orderid']);
+  const itemNameCol = findColumn(['item name', 'product', 'title', 'item']);
+  const saleDateCol = findColumn(['sale date', 'order date', 'purchase date']);
+  const datePaidCol = findColumn(['date paid', 'payment date']);
+  const dateShippedCol = findColumn(['date shipped', 'ship date']);
+  const variationsCol = findColumn(['variations', 'product options', 'options']);
+  const currencyCol = findColumn(['currency', 'currency code']);
+  const skuCol = findColumn(['sku', 'product code', 'item code']);
+  const emailCol = findColumn(['email', 'buyer email', 'customer email']);
+  const phoneCol = findColumn(['phone', 'telephone', 'buyer phone', 'customer phone']);
+  const quantityCol = findColumn(['quantity', 'qty', 'number of items']);
+  
+  console.log('Mapped columns:', {
+    shipNameCol, shipAddress1Col, shipCityCol, orderIdCol, itemNameCol, skuCol
+  });
+  
+  // Map Etsy orders to our shipment format
+  return records.map((order: any) => {
+    // Try to determine dimensions from SKU, item name or variations
+    // Format examples: "DSNL-TRK-YZK-10X14" might indicate a 10x14 cm item
+    let extractedDims = { length: 0, width: 0, height: 0, weight: 0 };
+    
+    // Parse SKU for dimensions
+    if (skuCol && order[skuCol]) {
+      const sku = order[skuCol];
+      extractedDims = parseDimensionsFromText(sku, extractedDims);
+    }
+    
+    // Check the item name for dimensions
+    if (itemNameCol && order[itemNameCol]) {
+      const itemName = order[itemNameCol];
+      extractedDims = parseDimensionsFromText(itemName, extractedDims);
+    }
+    
+    // Check variations for dimensions
+    if (variationsCol && order[variationsCol]) {
+      const variations = order[variationsCol];
+      extractedDims = parseDimensionsFromText(variations, extractedDims);
+      
+      // Look for specific variations like "Size:" or "Dimensions:"
+      if (variations.includes('Size:')) {
+        const sizeMatch = variations.match(/Size:\s*([0-9x.]+)/i);
+        if (sizeMatch && sizeMatch[1]) {
+          extractedDims = parseDimensionsFromText(sizeMatch[1], extractedDims);
+        }
+      }
+    }
+    
+    // Use extracted dimensions if found, otherwise use defaults
+    const packageLength = extractedDims.length > 0 ? extractedDims.length : 15; 
+    const packageWidth = extractedDims.width > 0 ? extractedDims.width : 15;
+    const packageHeight = extractedDims.height > 0 ? extractedDims.height : 5;
+    const packageWeight = extractedDims.weight > 0 ? extractedDims.weight : 0.5;
+    
+    // Try to determine the best name
+    let receiverName = '';
+    
+    if (shipNameCol && order[shipNameCol]) {
+      receiverName = order[shipNameCol];
+    } else if (firstNameCol && lastNameCol && order[firstNameCol] && order[lastNameCol]) {
+      receiverName = `${order[firstNameCol]} ${order[lastNameCol]}`;
+    } else if (buyerCol && order[buyerCol]) {
+      // Clean up buyer field - sometimes has format "Name (userid)"
+      const buyerName = order[buyerCol];
+      const parenIndex = buyerName.indexOf('(');
+      receiverName = parenIndex > 0 ? buyerName.substring(0, parenIndex).trim() : buyerName;
+    }
+    
+    // Don't use order number as name - this fixes the issue where recipient shows as #OrderNumber
+    if (!receiverName || receiverName.trim() === '' || receiverName.startsWith('#')) {
+      receiverName = "Unnamed Recipient";
+    }
+    
+    // Determine the best receiver address
+    const receiverAddress = shipAddress1Col && order[shipAddress1Col] ? order[shipAddress1Col] : '';
+    
+    // Try to get receiver email and phone
+    let receiverEmail = '(Not provided)';
+    let receiverPhone = '(Not provided)';
+    
+    if (emailCol && order[emailCol]) {
+      receiverEmail = order[emailCol];
+    }
+    
+    if (phoneCol && order[phoneCol]) {
+      receiverPhone = order[phoneCol];
+    }
+    
+    // Default to standard service, but could be determined by order metadata
+    const serviceLevel = 'standard';
+    
+    // Figure out the package contents
+    let packageContents = 'Merchandise';
+    if (itemNameCol && order[itemNameCol]) {
+      packageContents = order[itemNameCol];
+    }
+    
+    // If we have quantity, add it to the description
+    if (quantityCol && order[quantityCol] && parseInt(order[quantityCol]) > 1) {
+      packageContents = `${order[quantityCol]}x ${packageContents}`;
+    }
+    
+    // Create a shipment from the Etsy order
+    return {
+      // Sender information (default values since Etsy doesn't provide this)
+      senderName: 'TR Ofis',
+      senderAddress: 'Mecidiyeköy Mah, Trump Towers',
+      senderCity: 'Istanbul',
+      senderCountry: 'Turkey',
+      senderPostalCode: '34387',
+      senderPhone: '+90 212 123 4567',
+      senderEmail: 'shipping@moogship.com',
+      
+      // Receiver information from Etsy order - use mapped column names
+      receiverName,
+      receiverAddress,
+      receiverAddress2: shipAddress2Col ? order[shipAddress2Col] || '' : '',
+      receiverCity: shipCityCol ? order[shipCityCol] || '' : '',
+      receiverState: shipStateCol ? order[shipStateCol] || '' : '',
+      receiverCountry: shipCountryCol ? order[shipCountryCol] || '' : '',
+      receiverPostalCode: shipZipCol ? order[shipZipCol] || '' : '',
+      receiverPhone,
+      receiverEmail,
+      
+      // Package details - using intelligent detection or defaults
+      packageWeight,
+      packageLength,
+      packageWidth,
+      packageHeight,
+      packageContents,
+      serviceLevel,
+      
+      // Additional information
+      description: `Etsy Order #${orderIdCol ? order[orderIdCol] : ''} - ${packageContents}`,
+      orderReference: orderIdCol ? order[orderIdCol] || '' : '',
+      itemVariations: variationsCol ? order[variationsCol] || '' : '',
+      orderDate: saleDateCol ? order[saleDateCol] || '' : '',
+      paymentDate: datePaidCol ? order[datePaidCol] || '' : '',
+      shipDate: dateShippedCol ? order[dateShippedCol] || '' : '',
+      currency: currencyCol ? order[currencyCol] || 'USD' : 'USD',
+      
+      // Store original Etsy order number for UI reference
+      orderNumber: orderIdCol ? order[orderIdCol] || '' : '',
+      
+      // Include SKU if available
+      sku: skuCol ? order[skuCol] || '' : '',
+      
+      // Include original Etsy data for debugging
+      originalOrderData: order
+    };
+  });
+}
+
+/**
+ * Try to parse dimensions from text like SKUs, item names, or variations
+ * Looking for patterns like 10x14, 5cm x 10cm, etc.
+ */
+function parseDimensionsFromText(text: string, currentDims: {length: number, width: number, height: number, weight: number}) {
+  if (!text) return currentDims;
+  
+  // Make a copy of the current dimensions
+  const dims = {...currentDims};
+  
+  try {
+    // Look for dimension patterns like 10x14, 10x14x5, 10cm x 14cm
+    const dimensionRegex = /(\d+)(?:\s*[xX×]\s*)(\d+)(?:\s*[xX×]\s*)(\d+)?/g;
+    const matchesArray = text.matchAll(dimensionRegex);
+    const matches = Array.from(matchesArray);
+    
+    if (matches.length > 0) {
+      // Use the first match
+      const match = matches[0];
+      if (match[1] && match[2]) {
+        dims.length = parseInt(match[1]);
+        dims.width = parseInt(match[2]);
+        if (match[3]) {
+          dims.height = parseInt(match[3]);
+        }
+      }
+    }
+    
+    // Look for weight patterns like 0.5kg, 500g, 1.2 kg
+    const weightRegex = /(\d+(?:\.\d+)?)\s*(?:kg|g|grams|kilograms)/i;
+    const weightMatch = text.match(weightRegex);
+    
+    if (weightMatch && weightMatch[1]) {
+      let weight = parseFloat(weightMatch[1]);
+      // Convert to kg if in grams
+      if (text.toLowerCase().includes('g') && !text.toLowerCase().includes('kg')) {
+        weight = weight / 1000;
+      }
+      dims.weight = weight;
+    }
+  } catch (error) {
+    console.error('Error parsing dimensions from text:', error);
+  }
+  
+  return dims;
+}
+
+/**
+ * Parse generic CSV/Excel data to detect recipient information
+ * Automatically detects column names that contain recipient information
+ */
+function parseGenericShipmentData(rawData: any[]): any[] {
+  if (!rawData || rawData.length === 0) {
+    return [];
+  }
+  
+  console.log(`Analyzing ${rawData.length} rows of generic CSV/Excel data`);
+  
+  // Get all column names from the first record
+  const firstRecord = rawData[0];
+  const columnNames = Object.keys(firstRecord);
+  
+  console.log('Detected columns:', columnNames);
+  
+  // Helper function to find columns that might contain specific types of data
+  const findColumns = (keywordList: string[]): string[] => {
+    return columnNames.filter(col => 
+      keywordList.some(keyword => col.toLowerCase().includes(keyword.toLowerCase()))
+    );
+  };
+  
+  // Find potential columns for different data elements
+  const nameColumns = findColumns(['name', 'customer', 'client', 'recipient', 'receiver', 'ship to', 'buyer']);
+  const addressColumns = findColumns(['address', 'street', 'location', 'ship to']);
+  const cityColumns = findColumns(['city', 'town', 'municipality']);
+  const stateColumns = findColumns(['state', 'province', 'region', 'county']);
+  const zipColumns = findColumns(['zip', 'postal', 'post code', 'code postal']);
+  const countryColumns = findColumns(['country', 'nation']);
+  const phoneColumns = findColumns(['phone', 'telephone', 'mobile', 'cell', 'tel']);
+  const emailColumns = findColumns(['email', 'e-mail', 'mail']);
+  const orderRefColumns = findColumns(['order', 'reference', 'ref', 'id', 'number']);
+  const contentColumns = findColumns(['content', 'item', 'product', 'description', 'article']);
+  const dimensionColumns = findColumns(['dimension', 'size', 'length', 'width', 'height']);
+  const weightColumns = findColumns(['weight', 'kg', 'mass']);
+  
+  // Create shipment objects from the raw data
+  return rawData.map((row, index) => {
+    // Extract receiver name - try multiple potential columns
+    let receiverName = '';
+    for (const col of nameColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        receiverName = row[col];
+        break;
+      }
+    }
+    
+    // If no name found, look for columns with "first" and "last"
+    if (!receiverName) {
+      const firstNameCol = findColumns(['first'])[0];
+      const lastNameCol = findColumns(['last'])[0];
+      
+      if (firstNameCol && lastNameCol && row[firstNameCol] && row[lastNameCol]) {
+        receiverName = `${row[firstNameCol]} ${row[lastNameCol]}`;
+      }
+    }
+    
+    // If still no name, use a generic one based on row index
+    // Also filter out names that look like order numbers (starting with #)
+    if (!receiverName || receiverName.trim() === '' || (typeof receiverName === 'string' && receiverName.startsWith('#'))) {
+      receiverName = `Recipient ${index + 1}`;
+    }
+    
+    // Extract address
+    let receiverAddress = '';
+    for (const col of addressColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        receiverAddress = row[col];
+        break;
+      }
+    }
+    
+    // Extract address line 2
+    let receiverAddress2 = '';
+    const address2Cols = addressColumns.filter(col => col.toLowerCase().includes('2') || col.toLowerCase().includes('line'));
+    for (const col of address2Cols) {
+      if (row[col] && typeof row[col] === 'string') {
+        receiverAddress2 = row[col];
+        break;
+      }
+    }
+    
+    // Extract city
+    let receiverCity = '';
+    for (const col of cityColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        receiverCity = row[col];
+        break;
+      }
+    }
+    
+    // Extract state/province
+    let receiverState = '';
+    for (const col of stateColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        receiverState = row[col];
+        break;
+      }
+    }
+    
+    // Extract postal code
+    let receiverPostalCode = '';
+    for (const col of zipColumns) {
+      if (row[col]) {
+        // Convert to string in case it's a number
+        receiverPostalCode = String(row[col]);
+        break;
+      }
+    }
+    
+    // Extract country
+    let receiverCountry = '';
+    for (const col of countryColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        receiverCountry = row[col];
+        break;
+      }
+    }
+    
+    // Extract phone
+    let receiverPhone = '';
+    for (const col of phoneColumns) {
+      if (row[col]) {
+        // Convert to string in case it's a number
+        receiverPhone = String(row[col]);
+        break;
+      }
+    }
+    
+    // Extract email
+    let receiverEmail = '';
+    for (const col of emailColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        receiverEmail = row[col];
+        break;
+      }
+    }
+    
+    // Extract order reference
+    let orderReference = '';
+    for (const col of orderRefColumns) {
+      if (row[col]) {
+        // Convert to string in case it's a number
+        orderReference = String(row[col]);
+        break;
+      }
+    }
+    
+    // Extract package contents/description
+    let packageContents = 'Merchandise';
+    for (const col of contentColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        packageContents = row[col];
+        break;
+      }
+    }
+    
+    // Look for dimensions in the data
+    // Default package dimensions
+    let packageLength = 15;
+    let packageWidth = 15;
+    let packageHeight = 5;
+    let packageWeight = 0.5;
+    
+    // First check specific dimension columns
+    for (const col of dimensionColumns) {
+      if (row[col] && typeof row[col] === 'string') {
+        const dims = parseDimensionsFromText(row[col], {
+          length: packageLength,
+          width: packageWidth,
+          height: packageHeight,
+          weight: packageWeight
+        });
+        
+        packageLength = dims.length;
+        packageWidth = dims.width;
+        packageHeight = dims.height;
+      }
+    }
+    
+    // Check weight columns
+    for (const col of weightColumns) {
+      if (row[col]) {
+        // Try to parse weight - could be a number or string with units
+        if (typeof row[col] === 'number') {
+          packageWeight = row[col];
+        } else if (typeof row[col] === 'string') {
+          const dims = parseDimensionsFromText(row[col], {
+            length: packageLength,
+            width: packageWidth,
+            height: packageHeight,
+            weight: packageWeight
+          });
+          packageWeight = dims.weight;
+        }
+        break;
+      }
+    }
+    
+    // Look for dimensions in any text field
+    for (const col of columnNames) {
+      if (row[col] && typeof row[col] === 'string') {
+        const text = row[col];
+        const dims = parseDimensionsFromText(text, {
+          length: packageLength,
+          width: packageWidth,
+          height: packageHeight,
+          weight: packageWeight
+        });
+        
+        // Update if we found dimensions
+        if (dims.length !== packageLength || dims.width !== packageWidth || 
+            dims.height !== packageHeight || dims.weight !== packageWeight) {
+          packageLength = dims.length;
+          packageWidth = dims.width;
+          packageHeight = dims.height;
+          packageWeight = dims.weight;
+          break;
+        }
+      }
+    }
+    
+    // Return the constructed shipment object
+    return {
+      // Sender information (default values)
+      senderName: 'TR Ofis',
+      senderAddress: 'Mecidiyeköy Mah, Trump Towers',
+      senderCity: 'Istanbul',
+      senderCountry: 'Turkey',
+      senderPostalCode: '34387',
+      senderPhone: '+90 212 123 4567',
+      senderEmail: 'shipping@moogship.com',
+      
+      // Receiver information extracted from the data
+      receiverName,
+      receiverAddress,
+      receiverAddress2,
+      receiverCity,
+      receiverState,
+      receiverCountry,
+      receiverPostalCode,
+      receiverPhone,
+      receiverEmail,
+      
+      // Package details - using extracted data or defaults
+      packageWeight,
+      packageLength,
+      packageWidth,
+      packageHeight,
+      packageContents,
+      serviceLevel: ServiceLevel.STANDARD,
+      
+      // Additional information
+      description: packageContents,
+      orderReference,
+      
+      // Include original data for debugging
+      originalRowData: row
+    };
+  });
+}
+
+/**
+ * Create a new shipment
+ */
+export const createShipment = async (req: Request, res: Response) => {
+  try {
+    // For testing purposes, use a default user ID if not authenticated
+    const userId = req.user?.id || 1; // Use ID 1 as default for testing
+    
+    console.log('Creating shipment with data:', req.body);
+    
+    // Use the pricing provided by the client or calculate it if not provided
+    const shipmentData = { ...req.body };
+    
+    // Create the shipment with calculated pricing
+    const shipment = await storage.createShipment(shipmentData, userId);
+    console.log('Shipment created successfully with pricing:', shipment.id, 'Total price:', shipmentData.totalPrice);
+    
+    // Generate the shipping label
+    try {
+      console.log('Generating shipping label...');
+      const labelPath = await generateShippingLabel(shipment);
+      const labelUrl = getLabelUrl(labelPath);
+      console.log('Label generated successfully at:', labelUrl);
+      
+      // Update the shipment with the label URL
+      await storage.updateShipmentStatus(
+        shipment.id, 
+        ShipmentStatus.PENDING, 
+        labelUrl,
+        undefined // No tracking number yet
+      );
+      
+      // Return the updated shipment
+      const updatedShipment = await storage.getShipment(shipment.id);
+      return res.status(200).json(updatedShipment);
+    } catch (labelError) {
+      console.error('Error generating label:', labelError);
+      // Still return the shipment even if label generation fails
+      return res.status(200).json(shipment);
+    }
+  } catch (error) {
+    console.error('Error creating shipment:', error);
+    return res.status(500).json({ message: 'Failed to create shipment' });
+  }
+};
+
+/**
+ * Upload bulk shipments
+ */
+export const uploadBulkShipments = async (req: FileRequest, res: Response) => {
+  try {
+    // Get user ID from authenticated user
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    // Make sure we have a file in the request
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    
+    // Read the uploaded file
+    console.log('Processing uploaded file:', req.file.originalname);
+    
+    let shipmentsData: any[] = [];
+    let fileType: 'excel' | 'etsy-csv' = 'excel'; // Default to excel
+    const createLabels = req.body.createLabels === 'true';
+    
+    // Check if client provided prepared shipments data with pricing
+    if (req.body.shipments) {
+      try {
+        // Parse the shipments data sent from the client
+        shipmentsData = JSON.parse(req.body.shipments);
+        console.log(`Using ${shipmentsData.length} prepared shipments from client with pricing details`);
+        
+        // Detect if this is Etsy data
+        if (shipmentsData.length > 0 && shipmentsData[0].orderNumber) {
+          fileType = 'etsy-csv';
+        }
+      } catch (e) {
+        console.error('Error parsing shipments data from request:', e);
+        // Fall back to parsing the file
+      }
+    }
+    
+    // If no shipments data was provided in the request, parse from file
+    if (shipmentsData.length === 0) {
+      try {
+        // Determine file type based on extension
+        const fileName = req.file.originalname.toLowerCase();
+        
+        if (fileName.endsWith('.csv')) {
+          // Check if this is an Etsy CSV file by looking for specific headers
+          const csvString = req.file.buffer.toString('utf8');
+          const firstLine = csvString.split('\n')[0].trim();
+          
+          // More flexible Etsy CSV detection - looking for key column patterns
+          const isEtsyCsv = 
+            // Check for various column patterns that indicate this is an Etsy export
+            (firstLine.toLowerCase().includes('sale date') || firstLine.toLowerCase().includes('order date')) &&
+            ((firstLine.toLowerCase().includes('ship name') || firstLine.toLowerCase().includes('recipient')) ||
+             (firstLine.toLowerCase().includes('buyer') && 
+              (firstLine.toLowerCase().includes('address') || firstLine.toLowerCase().includes('city')))) &&
+            (firstLine.toLowerCase().includes('order id') || firstLine.toLowerCase().includes('order #'));
+            
+          if (isEtsyCsv) {
+            console.log('Detected Etsy orders CSV format');
+            fileType = 'etsy-csv';
+            
+            // Parse Etsy CSV file
+            shipmentsData = parseEtsyOrdersCsv(req.file.buffer);
+          } else {
+            // Regular CSV, treat as Excel
+            const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rawData = xlsx.utils.sheet_to_json(worksheet);
+            
+            // Process generic CSV/Excel data to extract recipient information
+            shipmentsData = parseGenericShipmentData(rawData);
+          }
+        } else {
+          // Excel file
+          const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+          
+          // Get the first worksheet
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          
+          // Convert to JSON
+          const rawData = xlsx.utils.sheet_to_json(worksheet);
+          
+          // Process generic Excel data to extract recipient information
+          shipmentsData = parseGenericShipmentData(rawData);
+        }
+      } catch (e) {
+        console.error('Error processing file:', e);
+        return res.status(400).json({ message: `Error processing file: ${e}` });
+      }
+    }
+    
+    if (shipmentsData.length === 0) {
+      return res.status(400).json({ message: 'The uploaded file contains no shipment data' });
+    }
+    
+    console.log(`Extracted ${shipmentsData.length} shipments from the uploaded file`);
+    
+    // Filter out any shipments that should be skipped (marked with skipImport=true)
+    const shipmentsToCreate = shipmentsData.filter(shipment => !shipment.skipImport);
+    
+    if (shipmentsToCreate.length === 0) {
+      return res.status(400).json({ 
+        message: 'No shipments to create. All shipments were skipped or the file was empty.'
+      });
+    }
+    
+    console.log(`Creating ${shipmentsToCreate.length} shipments out of ${shipmentsData.length} total`);
+    
+    // Create the shipments with the filtered data
+    const createdShipments = await storage.createBulkShipments(shipmentsToCreate, userId);
+    
+    console.log(`Successfully created ${createdShipments.length} shipments`);
+    
+    // Generate labels if requested
+    if (createLabels) {
+      console.log(`Automatically generating labels for ${createdShipments.length} shipments`);
+      
+      for (const shipment of createdShipments) {
+        try {
+          // Generate label
+          const labelPath = await generateShippingLabel(shipment);
+          const labelUrl = getLabelUrl(labelPath);
+          
+          // Update the shipment with the label URL
+          await storage.updateShipmentStatus(
+            shipment.id,
+            ShipmentStatus.PENDING,
+            labelUrl,
+            undefined // No tracking number yet
+          );
+          
+          console.log(`Generated label for shipment ${shipment.id}: ${labelUrl}`);
+        } catch (labelError) {
+          console.error(`Error generating label for shipment ${shipment.id}:`, labelError);
+        }
+      }
+      
+      // Reload shipments to get updated label URLs
+      const updatedShipments = await Promise.all(
+        createdShipments.map(s => storage.getShipment(s.id))
+      );
+      
+      // Filter out any undefined shipments
+      const finalShipments = updatedShipments.filter(s => s !== undefined);
+      
+      return res.status(200).json({
+        message: `Successfully uploaded ${finalShipments.length} shipments with labels${
+          shipmentsData.length > shipmentsToCreate.length 
+            ? ` (${shipmentsData.length - shipmentsToCreate.length} shipments were skipped)`
+            : ''
+        }`,
+        shipments: finalShipments
+      });
+    }
+    
+    return res.status(200).json({
+      message: `Successfully uploaded ${createdShipments.length} shipments${
+        shipmentsData.length > shipmentsToCreate.length 
+          ? ` (${shipmentsData.length - shipmentsToCreate.length} shipments were skipped)`
+          : ''
+      }`,
+      shipments: createdShipments
+    });
+  } catch (error) {
+    console.error('Error uploading bulk shipments:', error);
+    return res.status(500).json({ message: 'Failed to upload bulk shipments' });
+  }
+};
+
+/**
+ * Get all shipments for the current user
+ */
+export const getMyShipments = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    const shipments = await storage.getUserShipments(userId);
+    return res.status(200).json(shipments);
+  } catch (error) {
+    console.error('Error fetching user shipments:', error);
+    return res.status(500).json({ message: 'Failed to fetch shipments' });
+  }
+};
+
+/**
+ * Get all shipments (admin only)
+ */
+export const getAllShipments = async (req: Request, res: Response) => {
+  try {
+    const shipments = await storage.getAllShipments();
+    return res.status(200).json(shipments);
+  } catch (error) {
+    console.error('Error fetching all shipments:', error);
+    return res.status(500).json({ message: 'Failed to fetch shipments' });
+  }
+};
+
+/**
+ * Get pending shipments (admin only)
+ */
+export const getPendingShipments = async (req: Request, res: Response) => {
+  try {
+    const shipments = await storage.getPendingShipments();
+    return res.status(200).json(shipments);
+  } catch (error) {
+    console.error('Error fetching pending shipments:', error);
+    return res.status(500).json({ message: 'Failed to fetch pending shipments' });
+  }
+};
+
+/**
+ * Get a single shipment by ID
+ */
+export const getShipment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const shipment = await storage.getShipment(parseInt(id));
+    
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+    
+    return res.status(200).json(shipment);
+  } catch (error) {
+    console.error('Error fetching shipment:', error);
+    return res.status(500).json({ message: 'Failed to fetch shipment' });
+  }
+};
+
+/**
+ * Edit a shipment
+ */
+export const editShipment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const shipmentId = parseInt(id);
+    const updateData = req.body;
+    
+    // First get existing shipment to check ownership/status
+    const existingShipment = await storage.getShipment(shipmentId);
+    
+    if (!existingShipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+    
+    // Update the shipment
+    const updatedShipment = await storage.updateShipment(shipmentId, updateData);
+    
+    if (!updatedShipment) {
+      return res.status(404).json({ message: 'Failed to update shipment' });
+    }
+    
+    return res.status(200).json(updatedShipment);
+  } catch (error) {
+    console.error('Error editing shipment:', error);
+    return res.status(500).json({ message: 'Failed to edit shipment' });
+  }
+};
+
+/**
+ * Approve a shipment (admin only)
+ */
+export const approveShipment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const shipmentId = parseInt(id);
+    
+    // Get the shipment to check we can approve it
+    const shipment = await storage.getShipment(shipmentId);
+    
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+    
+    // Generate tracking number
+    const trackingNumber = generateTrackingNumber(shipmentId);
+    
+    // Update status to approved
+    const updatedShipment = await storage.updateShipmentStatus(
+      shipmentId,
+      ShipmentStatus.APPROVED,
+      shipment.labelUrl || undefined, 
+      trackingNumber,
+      undefined // No rejection reason
+    );
+    
+    if (!updatedShipment) {
+      return res.status(500).json({ message: 'Failed to approve shipment' });
+    }
+    
+    return res.status(200).json(updatedShipment);
+  } catch (error) {
+    console.error('Error approving shipment:', error);
+    return res.status(500).json({ message: 'Failed to approve shipment' });
+  }
+};
+
+/**
+ * Reject a shipment (admin only)
+ */
+export const rejectShipment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    if (!reason) {
+      return res.status(400).json({ message: 'Rejection reason is required' });
+    }
+    
+    const shipmentId = parseInt(id);
+    
+    // Get the shipment to check we can reject it
+    const shipment = await storage.getShipment(shipmentId);
+    
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+    
+    // Update status to rejected
+    const updatedShipment = await storage.updateShipmentStatus(
+      shipmentId,
+      ShipmentStatus.REJECTED,
+      shipment.labelUrl || undefined,
+      undefined, // No tracking number for rejected shipments
+      reason // Include rejection reason
+    );
+    
+    if (!updatedShipment) {
+      return res.status(500).json({ message: 'Failed to reject shipment' });
+    }
+    
+    return res.status(200).json(updatedShipment);
+  } catch (error) {
+    console.error('Error rejecting shipment:', error);
+    return res.status(500).json({ message: 'Failed to reject shipment' });
+  }
+};
+
+/**
+ * Get shipping label for a shipment
+ */
+export const getShippingLabel = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const shipmentId = parseInt(id);
+    
+    // Get the shipment
+    const shipment = await storage.getShipment(shipmentId);
+    
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+    
+    // Return the existing label URL
+    return res.status(200).json({ labelUrl: shipment.labelUrl });
+  } catch (error) {
+    console.error('Error getting shipping label:', error);
+    return res.status(500).json({ message: 'Failed to get shipping label' });
+  }
+};
+
+/**
+ * Validate bulk shipments from an uploaded file without creating them
+ */
+export const validateBulkShipments = async (req: FileRequest, res: Response) => {
+  try {
+    // Get user ID from authenticated user
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    // Make sure we have a file in the request
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    
+    // Read the uploaded file
+    console.log('Validating uploaded file:', req.file.originalname);
+    
+    let shipmentsData: any[] = [];
+    let fileType: 'excel' | 'etsy-csv' = 'excel'; // Default to excel
+    
+    // Determine file type based on extension
+    const fileName = req.file.originalname.toLowerCase();
+    
+    try {
+      if (fileName.endsWith('.csv')) {
+        // Check if this is an Etsy CSV file by looking for specific headers
+        const csvString = req.file.buffer.toString('utf8');
+        const firstLine = csvString.split('\n')[0].trim();
+        
+        // More flexible Etsy CSV detection - looking for key column patterns
+        const isEtsyCsv = 
+          // Check for various column patterns that indicate this is an Etsy export
+          (firstLine.toLowerCase().includes('sale date') || firstLine.toLowerCase().includes('order date')) &&
+          ((firstLine.toLowerCase().includes('ship name') || firstLine.toLowerCase().includes('recipient')) ||
+           (firstLine.toLowerCase().includes('buyer') && 
+            (firstLine.toLowerCase().includes('address') || firstLine.toLowerCase().includes('city')))) &&
+          (firstLine.toLowerCase().includes('order id') || firstLine.toLowerCase().includes('order #'));
+          
+        if (isEtsyCsv) {
+          console.log('Detected Etsy orders CSV format');
+          fileType = 'etsy-csv';
+          
+          // Parse Etsy CSV file
+          shipmentsData = parseEtsyOrdersCsv(req.file.buffer);
+        } else {
+          // Regular CSV, treat as Excel
+          const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          shipmentsData = xlsx.utils.sheet_to_json(worksheet);
+        }
+      } else {
+        // Excel file
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        
+        // Get the first worksheet
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        
+        // Convert to JSON
+        shipmentsData = xlsx.utils.sheet_to_json(worksheet);
+      }
+    } catch (e: any) {
+      console.error('Error processing file:', e);
+      return res.status(400).json({ 
+        message: `Error processing file: ${e.message}` 
+      });
+    }
+    
+    // Basic validations for any file type
+    if (shipmentsData.length === 0) {
+      return res.status(400).json({ message: 'The uploaded file contains no shipment data' });
+    }
+    
+    console.log(`Extracted ${shipmentsData.length} shipments from the uploaded file for validation`);
+    
+    // Add fake pricing for simplicity and ensure required fields
+    const shipmentsWithPricing = shipmentsData.map(shipment => {
+      // Ensure we have sender information for Etsy orders
+      const enrichedShipment = fileType === 'etsy-csv' && !shipment.senderName ? {
+        ...shipment,
+        senderName: 'TR Ofis',
+        senderAddress: 'Mecidiyeköy Mah, Trump Towers',
+        senderCity: 'Istanbul',
+        senderCountry: 'Turkey',
+        senderPostalCode: '34387',
+        senderPhone: '+90 212 123 4567',
+        senderEmail: 'shipping@moogship.com'
+      } : shipment;
+      
+      // Add pricing information
+      return {
+        ...enrichedShipment,
+        basePrice: 1000,
+        fuelCharge: 100,
+        taxes: 0,
+        totalPrice: 1100,
+        carrierName: "Standard Service",
+        estimatedDeliveryDays: 7
+      };
+    });
+    
+    // Return the validated shipments
+    return res.status(200).json({
+      message: `Successfully validated ${shipmentsWithPricing.length} shipments`,
+      shipments: shipmentsWithPricing,
+      fileType
+    });
+  } catch (error) {
+    console.error('Error validating bulk shipments:', error);
+    return res.status(500).json({ message: 'Failed to validate bulk shipments' });
+  }
+};

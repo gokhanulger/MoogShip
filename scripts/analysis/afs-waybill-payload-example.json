@@ -1,0 +1,43 @@
+{
+  "islem": "waybill_olustur",
+  "alici": "John Doe",
+  "alici_telefon": "+14252987618",
+  "alici_adres": "123 Main Street, Apt 2B",
+  "alici_ulke": "DE",
+  "alici_sehir": "Berlin",
+  "alici_posta_kodu": "10115",
+  "gonderici": "Mustafa Hayirli",
+  "gonderici_adres": "Esentepe Mahallesi Anadolu Caddesi No:1",
+  "gonderici_telefon": "905407447911",
+  "gonderici_ulke": "TR",
+  "gonderici_sehir": "Istanbul",
+  "gonderici_posta_kodu": "34394",
+  "gonderiler": [
+    {
+      "kap": 1,
+      "agirlik": 0.5,
+      "uzunluk": 20,
+      "genislik": 15,
+      "yukseklik": 10
+    }
+  ],
+  "servis_id": 7,
+  "beyan_id": 1,
+  "odeme_id": 1,
+  "fatura_icerigi": [
+    {
+      "mal_cinsi": "Electronics",
+      "adet": 1,
+      "tip_id": 1,
+      "birim_fiyat": 50.00,
+      "gtip": "8517623900"
+    }
+  ],
+  "kur": 1,
+  "referans_kodu": "MOG255805000500-1750904000000",
+  "aciklama": "MoogShip shipment 500",
+  "ddp": 1,
+  "ioss": "IM2760000184",
+  "vat": "",
+  "eori": ""
+}

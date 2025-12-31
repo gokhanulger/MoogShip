@@ -1,0 +1,43 @@
+{
+  "islem": "waybill_olustur",
+  "alici": "GOKHAN ULGER",
+  "alici_telefon": "14257864314",
+  "alici_adres": "6825 176th Ave NE",
+  "alici_ulke": "DE",
+  "alici_sehir": "Redmond",
+  "alici_posta_kodu": "98052",
+  "gonderici": "MOOG ENTERPRISE",
+  "gonderici_adres": "HALIL RIFAT PASA Mahallesi YUZER HAVUZ",
+  "gonderici_telefon": "+905052878705",
+  "gonderici_ulke": "TR",
+  "gonderici_sehir": "ISTANBUL",
+  "gonderici_posta_kodu": "34300",
+  "gonderiler": [
+    {
+      "kap": 1,
+      "agirlik": 1,
+      "uzunluk": 5,
+      "genislik": 5,
+      "yukseklik": 5
+    }
+  ],
+  "servis_id": 7,
+  "beyan_id": 1,
+  "odeme_id": 1,
+  "fatura_icerigi": [
+    {
+      "mal_cinsi": "Desk Organizer",
+      "adet": 1,
+      "tip_id": 1,
+      "birim_fiyat": 100.00,
+      "gtip": "9999999999"
+    }
+  ],
+  "kur": 1,
+  "referans_kodu": "MOG255755000501-1750904000000",
+  "aciklama": "MoogShip shipment 501",
+  "ddp": 1,
+  "ioss": "1231231",
+  "vat": "",
+  "eori": ""
+}
