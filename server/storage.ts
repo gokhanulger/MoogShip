@@ -758,7 +758,9 @@ export class DatabaseStorage {
         });
         console.log("Default admin user created successfully");
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Failed to initialize default admin user:", error);
+    }
   }
 
   // Draft shipment operations
@@ -1580,7 +1582,9 @@ export class DatabaseStorage {
         console.log(
           `[DB] System minimum balance: ${minBalance !== null ? minBalance + " cents" : "not set"}`,
         );
-      } catch (error) {}
+      } catch (error) {
+        console.error("[DB] Failed to fetch minimum balance setting:", error);
+      }
     }
 
     // Calculate expected new balance for validation
@@ -1660,7 +1664,9 @@ export class DatabaseStorage {
         console.log(
           `[DB] System minimum balance: ${minBalance !== null ? minBalance + " cents" : "not set"}`,
         );
-      } catch (error) {}
+      } catch (error) {
+        console.error("[DB] Failed to fetch system minimum balance for setBalance:", error);
+      }
     }
 
     // Check if new balance would be below minimum
@@ -7876,7 +7882,9 @@ export class DatabaseOnlyStorage implements IStorage {
           sentAt: status === "sent" ? new Date() : undefined,
         })
         .where(eq(emailCampaignRecipients.id, recipientId));
-    } catch (error) {}
+    } catch (error) {
+      console.error(`[DB] Failed to update email campaign recipient ${recipientId}:`, error);
+    }
   }
 
   async getEmailCampaignsByUser(userId: number): Promise<EmailCampaign[]> {
