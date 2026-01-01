@@ -3792,6 +3792,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test ALL carrier API connections
+  app.get("/api/test/all-connections", async (req, res) => {
+    console.log("🧪 TESTING ALL API CONNECTIONS");
+    const results: Record<string, { success: boolean; message: string; details?: any }> = {};
+
+    // FedEx
+    try {
+      const { testFedExConnection } = await import("./services/fedex");
+      const fedexResult = await testFedExConnection();
+      results.fedex = { success: fedexResult.success, message: fedexResult.message, details: fedexResult.debug };
+    } catch (e) {
+      results.fedex = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    // UPS
+    try {
+      const upsClientId = process.env.UPS_CLIENT_ID;
+      const upsClientSecret = process.env.UPS_CLIENT_SECRET;
+      results.ups = {
+        success: !!(upsClientId && upsClientSecret),
+        message: upsClientId && upsClientSecret ? "Credentials configured" : "Missing credentials",
+        details: { clientIdLength: upsClientId?.length || 0, secretLength: upsClientSecret?.length || 0 }
+      };
+    } catch (e) {
+      results.ups = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    // DHL
+    try {
+      const dhlApiKey = process.env.DHL_API_KEY;
+      results.dhl = {
+        success: !!dhlApiKey,
+        message: dhlApiKey ? "API Key configured" : "Missing DHL_API_KEY",
+        details: { apiKeyLength: dhlApiKey?.length || 0 }
+      };
+    } catch (e) {
+      results.dhl = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    // Aramex
+    try {
+      const aramexUsername = process.env.ARAMEX_USERNAME;
+      const aramexPassword = process.env.ARAMEX_PASSWORD;
+      const aramexAccountNumber = process.env.ARAMEX_ACCOUNT_NUMBER;
+      results.aramex = {
+        success: !!(aramexUsername && aramexPassword && aramexAccountNumber),
+        message: aramexUsername && aramexPassword && aramexAccountNumber ? "Credentials configured" : "Missing credentials",
+        details: {
+          usernameExists: !!aramexUsername,
+          passwordExists: !!aramexPassword,
+          accountExists: !!aramexAccountNumber
+        }
+      };
+    } catch (e) {
+      results.aramex = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    // ShipEntegra
+    try {
+      const shipintegraApiKey = process.env.SHIPENTEGRA_API_KEY || process.env.SHIPINTEGRA_API_KEY;
+      results.shipentegra = {
+        success: !!shipintegraApiKey,
+        message: shipintegraApiKey ? "API Key configured" : "Missing SHIPENTEGRA_API_KEY",
+        details: { apiKeyLength: shipintegraApiKey?.length || 0 }
+      };
+    } catch (e) {
+      results.shipentegra = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    // OpenAI
+    try {
+      const openaiKey = process.env.OPENAI_API_KEY;
+      results.openai = {
+        success: !!openaiKey,
+        message: openaiKey ? "API Key configured" : "Missing OPENAI_API_KEY",
+        details: { apiKeyLength: openaiKey?.length || 0 }
+      };
+    } catch (e) {
+      results.openai = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    // Database
+    try {
+      const dbUrl = process.env.DATABASE_URL;
+      results.database = {
+        success: !!dbUrl,
+        message: dbUrl ? "Database URL configured" : "Missing DATABASE_URL",
+        details: { urlExists: !!dbUrl }
+      };
+    } catch (e) {
+      results.database = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    // BizimHesap
+    try {
+      const bizimhesapKey = process.env.BIZIMHESAP_API_KEY;
+      results.bizimhesap = {
+        success: !!bizimhesapKey,
+        message: bizimhesapKey ? "API Key configured" : "Missing BIZIMHESAP_API_KEY",
+        details: { apiKeyLength: bizimhesapKey?.length || 0 }
+      };
+    } catch (e) {
+      results.bizimhesap = { success: false, message: e instanceof Error ? e.message : String(e) };
+    }
+
+    const allSuccess = Object.values(results).every(r => r.success);
+    res.json({
+      success: allSuccess,
+      message: allSuccess ? "All APIs configured!" : "Some APIs missing configuration",
+      results
+    });
+  });
+
   // Test Aramex pricing endpoint
   app.get("/api/test/aramex-pricing", async (req, res) => {
     try {
