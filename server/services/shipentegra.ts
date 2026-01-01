@@ -2162,7 +2162,9 @@ export async function sendToShipEntegra(
                 if (cleanHsCode) {
                   gtipCode = parseInt(cleanHsCode, 10);
                 }
-              } catch (error) {}
+              } catch (error) {
+                console.warn(`[ShipEntegra] Failed to parse HS code "${hsCodeValue}", using default:`, error);
+              }
             }
 
             // Validate and format item name (min 1, max 100 characters)

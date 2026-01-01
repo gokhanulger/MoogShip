@@ -138,54 +138,66 @@ export class ShipEntegraProvider implements ShippingProvider {
 }
 
 /**
- * DHL provider implementation (placeholder for future)
+ * DHL provider implementation
+ * NOTE: DHL is available for TRACKING ONLY. Pricing and label generation
+ * should be done through ShipEntegra which handles DHL shipments.
  */
 export class DHLProvider implements ShippingProvider {
   name = 'dhl';
   displayName = 'DHL';
 
   async getSupportedServices(): Promise<ServiceOption[]> {
-    return [
-      { code: 'dhl-express-worldwide', name: 'DHL Express Worldwide', type: 'EXPRESS', price: 0, estimatedDays: 2 },
-      { code: 'dhl-express-12', name: 'DHL Express 12:00', type: 'EXPRESS', price: 0, estimatedDays: 1 },
-      { code: 'dhl-economy-select', name: 'DHL Economy Select', type: 'ECO', price: 0, estimatedDays: 5 },
-    ];
+    // DHL services are handled through ShipEntegra, return empty for direct DHL
+    return [];
   }
 
   async calculatePrice(packageData: any): Promise<PriceResult> {
-    // TODO: Implement DHL pricing API integration
-    return { success: false, options: [], error: 'DHL integration not implemented yet' };
+    // DHL pricing is handled through ShipEntegra integration
+    return {
+      success: false,
+      options: [],
+      error: 'DHL pricing is handled through ShipEntegra. Use ShipEntegra for DHL shipments.'
+    };
   }
 
   async purchaseLabel(shipment: any, serviceCode: string): Promise<LabelResult> {
-    // TODO: Implement DHL label purchasing
-    return { success: false, error: 'DHL integration not implemented yet' };
+    // DHL labels are generated through ShipEntegra
+    return {
+      success: false,
+      error: 'DHL labels are generated through ShipEntegra. Use ShipEntegra for DHL shipments.'
+    };
   }
 }
 
 /**
- * FedEx provider implementation (placeholder for future)
+ * FedEx provider implementation
+ * NOTE: FedEx is available for TRACKING and ADDRESS VALIDATION.
+ * Pricing and label generation should be done through ShipEntegra.
  */
 export class FedExProvider implements ShippingProvider {
   name = 'fedex';
   displayName = 'FedEx';
 
   async getSupportedServices(): Promise<ServiceOption[]> {
-    return [
-      { code: 'fedex-priority-overnight', name: 'FedEx Priority Overnight', type: 'EXPRESS', price: 0, estimatedDays: 1 },
-      { code: 'fedex-2day', name: 'FedEx 2Day', type: 'EXPRESS', price: 0, estimatedDays: 2 },
-      { code: 'fedex-ground', name: 'FedEx Ground', type: 'STANDARD', price: 0, estimatedDays: 5 },
-    ];
+    // FedEx services are handled through ShipEntegra, return empty for direct FedEx
+    return [];
   }
 
   async calculatePrice(packageData: any): Promise<PriceResult> {
-    // TODO: Implement FedEx pricing API integration
-    return { success: false, options: [], error: 'FedEx integration not implemented yet' };
+    // FedEx pricing is handled through ShipEntegra integration
+    return {
+      success: false,
+      options: [],
+      error: 'FedEx pricing is handled through ShipEntegra. Use ShipEntegra for FedEx shipments.'
+    };
   }
 
   async purchaseLabel(shipment: any, serviceCode: string): Promise<LabelResult> {
-    // TODO: Implement FedEx label purchasing
-    return { success: false, error: 'FedEx integration not implemented yet' };
+    // FedEx labels are generated through ShipEntegra
+    return {
+      success: false,
+      error: 'FedEx labels are generated through ShipEntegra. Use ShipEntegra for FedEx shipments.'
+    };
   }
 }
 

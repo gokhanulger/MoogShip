@@ -350,7 +350,9 @@ function BulkUploadContent({ user }: BulkUploadProps) {
     if (savedTemplates) {
       try {
         setUserTemplates(JSON.parse(savedTemplates));
-      } catch (error) {}
+      } catch (error) {
+        console.warn("Failed to parse saved package templates from localStorage:", error);
+      }
     }
   }, []);
 

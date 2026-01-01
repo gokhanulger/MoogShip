@@ -9,33 +9,8 @@ import "./lib/mobile-performance-optimizer";
 // Import i18n instance
 import "./i18n";
 
-// Service worker disabled temporarily for debugging
-// TODO: Re-enable after fixing refresh loop issue
-/*
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('MoogShip SW: Registered successfully', registration);
-
-        // Check for updates every 10 minutes (reduced frequency)
-        setInterval(() => {
-          registration.update();
-        }, 10 * 60 * 1000);
-
-        // Listen for new service worker ready
-        registration.addEventListener('updatefound', () => {
-          console.log('MoogShip SW: Update found, new version available');
-        });
-      })
-      .catch((registrationError) => {
-        console.warn('MoogShip SW: Registration failed:', registrationError);
-      });
-  });
-}
-*/
-
-// Unregister any existing service workers to prevent reload loops
+// Service worker disabled - was causing refresh loop issues
+// Unregister any existing service workers to prevent issues
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {

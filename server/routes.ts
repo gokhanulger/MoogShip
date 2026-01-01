@@ -3910,14 +3910,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("🧪 TESTING ARAMEX PRICING API");
 
+      // Safe number parsing helper
+      const safeParseInt = (value: string | undefined, defaultVal: number, minVal: number = 1): number => {
+        const parsed = parseInt(value || '', 10);
+        return isNaN(parsed) || parsed < minVal ? defaultVal : parsed;
+      };
+      const safeParseFloat = (value: string | undefined, defaultVal: number, minVal: number = 0): number => {
+        const parsed = parseFloat(value || '');
+        return isNaN(parsed) || parsed < minVal ? defaultVal : parsed;
+      };
+
       // Test parameters - can be customized via query params
       const testParams = {
-        packageLength: parseInt(req.query.length as string) || 1,
-        packageWidth: parseInt(req.query.width as string) || 1,
-        packageHeight: parseInt(req.query.height as string) || 1,
-        packageWeight: parseFloat(req.query.weight as string) || 1,
+        packageLength: safeParseInt(req.query.length as string, 1, 1),
+        packageWidth: safeParseInt(req.query.width as string, 1, 1),
+        packageHeight: safeParseInt(req.query.height as string, 1, 1),
+        packageWeight: safeParseFloat(req.query.weight as string, 1, 0.1),
         receiverCountry: (req.query.country as string) || "US",
-        userMultiplier: parseFloat(req.query.multiplier as string) || 1.2,
+        userMultiplier: safeParseFloat(req.query.multiplier as string, 1.2, 0.1),
       };
 
       console.log("Test parameters:", testParams);

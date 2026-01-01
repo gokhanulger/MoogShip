@@ -252,7 +252,10 @@ const editShipmentSchema = z.object({
             });
           }
         }
-      } catch (error) {}
+      } catch (error) {
+        // Validation context error - log but don't break form
+        console.warn("Rejection reason validation error:", error);
+      }
       return z.NEVER;
     }),
 });

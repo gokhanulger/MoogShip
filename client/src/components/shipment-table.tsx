@@ -728,7 +728,9 @@ export default function ShipmentTable({
           ),
         }));
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(`Failed to fetch package items for shipment ${shipment.id}:`, error);
+    }
   };
 
   // State for product catalog
