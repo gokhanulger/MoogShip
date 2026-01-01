@@ -69,22 +69,27 @@ app.get('*.mov', (req, res) => {
 app.use((req, res, next) => {
   const host = req.get('host');
   const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
-  
-  // Only log redirects, not every request
+
+  // Handle app.moogship.com - redirect root to /auth
+  if (host && (host === 'app.moogship.com' || host.startsWith('app.')) && req.originalUrl === '/') {
+    console.log(`App subdomain root redirect to: /auth`);
+    return res.redirect(302, '/auth');
+  }
+
   // Handle moogship.com redirects (both http and https)
   if (host === 'moogship.com' || host === 'http://moogship.com' || host === 'https://moogship.com') {
     const redirectUrl = `https://www.moogship.com${req.originalUrl}`;
     console.log(`Redirecting to: ${redirectUrl}`);
     return res.redirect(301, redirectUrl);
   }
-  
+
   // Also handle case where host includes protocol (but exclude app subdomain)
   if (host && host.includes('moogship.com') && !host.includes('www.') && !host.includes('app.')) {
     const redirectUrl = `https://www.moogship.com${req.originalUrl}`;
     console.log(`Protocol-included redirect to: ${redirectUrl}`);
     return res.redirect(301, redirectUrl);
   }
-  
+
   next();
 });
 

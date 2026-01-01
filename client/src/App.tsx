@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { lazy, Suspense, useState, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "./lib/protected-route";
 import Layout from "@/components/layout";
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
@@ -143,32 +143,6 @@ import { useAuth, AuthProvider } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 
-// Check if we're on the app subdomain
-const isAppSubdomain = () => {
-  const hostname = window.location.hostname;
-  return hostname === 'app.moogship.com' || hostname.startsWith('app.');
-};
-
-// Component to handle app subdomain root redirect
-function AppRootRedirect() {
-  const [location, setLocation] = useLocation();
-  const [hasRedirected, setHasRedirected] = useState(false);
-
-  useEffect(() => {
-    // On app subdomain, redirect root to auth page (only once)
-    if (isAppSubdomain() && location === '/' && !hasRedirected) {
-      setHasRedirected(true);
-      setLocation('/auth');
-    }
-  }, [location, setLocation, hasRedirected]);
-
-  // While redirecting on app subdomain, show nothing
-  if (isAppSubdomain() && location === '/') {
-    return null;
-  }
-
-  return <StaticMarketing />;
-}
 
 function Router() {
   return (
@@ -227,9 +201,9 @@ function Router() {
       </Route>
       
       {/* Root route - must come after specific routes */}
-      {/* On app.moogship.com, redirect to /auth; on www.moogship.com, show marketing */}
+      {/* Server handles app.moogship.com redirect to /auth */}
       <Route path="/">
-        <AppRootRedirect />
+        <StaticMarketing />
       </Route>
       
       {/* English aliases */}
