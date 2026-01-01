@@ -4,9 +4,10 @@
  */
 
 // FedEx API Configuration from environment variables
-const FEDEX_API_KEY = process.env.FEDEX_API_KEY;
-const FEDEX_SECRET_KEY = process.env.FEDEX_SECRET_KEY;
-const FEDEX_ACCOUNT_NUMBER = process.env.FEDEX_ACCOUNT_NUMBER || process.env.FEDEX_ACCOUNT;
+// Trim whitespace/newlines that can sneak in from copy-paste
+const FEDEX_API_KEY = process.env.FEDEX_API_KEY?.trim();
+const FEDEX_SECRET_KEY = process.env.FEDEX_SECRET_KEY?.trim();
+const FEDEX_ACCOUNT_NUMBER = (process.env.FEDEX_ACCOUNT_NUMBER || process.env.FEDEX_ACCOUNT)?.trim();
 const FEDEX_API_BASE_URL = 'https://apis.fedex.com';
 
 export interface FedExTrackingResult {
@@ -1107,16 +1108,29 @@ export async function testFedExConnection(): Promise<{
   debug: {
     apiKeyLength: number;
     apiKeyPrefix: string;
+    apiKeySuffix: string;
     secretKeyLength: number;
     accountNumberExists: boolean;
+    rawApiKeyLength: number;
+    rawSecretKeyLength: number;
+    hadWhitespace: boolean;
   };
   error?: string;
 }> {
+  // Check raw values for whitespace issues
+  const rawApiKey = process.env.FEDEX_API_KEY;
+  const rawSecretKey = process.env.FEDEX_SECRET_KEY;
+  const hadWhitespace = (rawApiKey !== rawApiKey?.trim()) || (rawSecretKey !== rawSecretKey?.trim());
+
   const debug = {
     apiKeyLength: FEDEX_API_KEY?.length || 0,
     apiKeyPrefix: FEDEX_API_KEY?.substring(0, 8) || 'EMPTY',
+    apiKeySuffix: FEDEX_API_KEY?.substring(FEDEX_API_KEY.length - 4) || 'EMPTY',
     secretKeyLength: FEDEX_SECRET_KEY?.length || 0,
     accountNumberExists: !!FEDEX_ACCOUNT_NUMBER,
+    rawApiKeyLength: rawApiKey?.length || 0,
+    rawSecretKeyLength: rawSecretKey?.length || 0,
+    hadWhitespace,
   };
 
   try {
