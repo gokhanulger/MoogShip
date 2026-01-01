@@ -11,9 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { MiniLanguageSwitcher } from "../components/language-switcher";
 import { useTranslation } from "react-i18next";
 
-import Alt_n_Sar_s__Kag__t_Uc_ak from "@assets/Altın Sarısı Kağıt Uçak.png";
+const Alt_n_Sar_s__Kag__t_Uc_ak = "/gold-paper-plane.svg";
 
-import ChatGPT_Image_11_May_2025_10_51_43 from "@assets/ChatGPT Image 11 May 2025 10_51_43.png";
+const ChatGPT_Image_11_May_2025_10_51_43 = "/moogship-logo.jpg";
 
 export default function MobileAuthPage() {
   const [, setLocation] = useLocation();

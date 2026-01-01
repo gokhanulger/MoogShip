@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import videoPath from "@assets/WhatsApp Video 2025-05-30 at 12.18.50.mp4";
+// Video path - using static loader fallback
+const videoPath = "";
 
 interface VideoLoaderProps {
   message?: string;

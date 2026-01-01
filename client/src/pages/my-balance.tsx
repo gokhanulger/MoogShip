@@ -50,9 +50,9 @@ import {
 } from "lucide-react";
 import { formatTransactionForExport, exportToExcel } from "@/lib/export-utils";
 import { formatDistanceToNow } from "date-fns";
-import PHOTO_2025_04_16_12_14_32 from "@assets/PHOTO-2025-04-16-12-14-32.jpg";
-import WhatsApp_Image_2025_09_17_at_01_43_47 from "@assets/WhatsApp Image 2025-09-17 at 01.43.47.jpeg";
-// We'll use a direct path to the image in the public folder instead of importing
+// Bank QR images - using public folder path
+const PHOTO_2025_04_16_12_14_32 = "/ziraat-bank-qr.png";
+const WhatsApp_Image_2025_09_17_at_01_43_47 = "/ziraat-bank-qr-new.png";
 
 interface Balance {
   balance: number;

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Package, TruckIcon, ArrowLeft } from "lucide-react";
-import moogshipLogo from "@assets/moogship-box-logo.png";
+const moogshipLogo = "/moogship-logo.jpg";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 

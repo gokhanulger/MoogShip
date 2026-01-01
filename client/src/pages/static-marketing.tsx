@@ -4,9 +4,9 @@ import { SiWhatsapp, SiInstagram } from 'react-icons/si';
 import { MiniLanguageSwitcher } from '../components/language-switcher';
 import { LazyLoadingWrapper } from '../components/lazy-loading-wrapper';
 import { CriticalCSSLoader } from '../components/critical-css-loader';
-// Import logos - header uses original, footer uses new shipping box image
+// Import logos - header and footer use the same logo
 import moogshipLogoPath from '../assets/moogship-logo.png.jpeg';
-import moogshipFooterLogoPath from '@assets/Generated Image September 24, 2025 - 2_39PM_1758750017432.png';
+const moogshipFooterLogoPath = moogshipLogoPath;
 import { clearTranslationCache } from '../i18n';
 import { getAuthUrl, redirectToAuth } from '../lib/mobile-auth-redirect';
 

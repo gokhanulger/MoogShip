@@ -54,7 +54,7 @@ import { PopIn, FadeIn, SlideUp } from "@/components/animated-elements";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { useAuth } from "@/hooks/use-auth";
-import upsLogoPath from "@assets/UPS_logo_PNG4.png";
+const upsLogoPath = "/UPS_logo_PNG4.png";
 import {
   formatDate,
   formatShipmentId,
