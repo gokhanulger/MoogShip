@@ -22,6 +22,9 @@ const app = express();
 
 // ========== SECURITY CONFIGURATION ==========
 
+// Trust proxy for correct client IP behind Cloudflare/Render
+app.set('trust proxy', 1);
+
 // Disable X-Powered-By header to hide Express
 app.disable('x-powered-by');
 
