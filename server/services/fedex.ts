@@ -175,12 +175,13 @@ async function getAccessToken(): Promise<string> {
     throw new Error('FedEx credentials not configured. Set FEDEX_API_KEY and FEDEX_SECRET_KEY environment variables.');
   }
   
-  // Log environment variable availability (but not their values)
-  console.log('FedEx API Configuration:');
-  console.log('- API Base URL provided:', !!FEDEX_API_BASE_URL);
-  console.log('- API Key provided:', !!FEDEX_API_KEY);
-  console.log('- Secret Key provided:', !!FEDEX_SECRET_KEY);
-  console.log('- Account Number provided:', !!FEDEX_ACCOUNT_NUMBER);
+  // Log environment variable availability with length info for debugging
+  console.log('=== FedEx API Configuration Debug ===');
+  console.log('- API Base URL:', FEDEX_API_BASE_URL);
+  console.log('- API Key exists:', !!FEDEX_API_KEY, '| Length:', FEDEX_API_KEY?.length || 0, '| First 4 chars:', FEDEX_API_KEY?.substring(0, 4) || 'EMPTY');
+  console.log('- Secret Key exists:', !!FEDEX_SECRET_KEY, '| Length:', FEDEX_SECRET_KEY?.length || 0);
+  console.log('- Account Number exists:', !!FEDEX_ACCOUNT_NUMBER);
+  console.log('=====================================');
 
   try {
     const tokenUrl = `${FEDEX_API_BASE_URL}/oauth/token`;
