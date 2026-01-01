@@ -143,7 +143,24 @@ import { useAuth, AuthProvider } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 
+// Check if we're on the app subdomain
+const isAppSubdomain = () => {
+  const hostname = window.location.hostname;
+  return hostname === 'app.moogship.com' || hostname.startsWith('app.');
+};
 
+// Component to handle app subdomain root redirect
+function AppRootRedirect() {
+  const [, setLocation] = useLocation();
+
+  // On app subdomain, redirect root to auth page
+  if (isAppSubdomain() && window.location.pathname === '/') {
+    setLocation('/auth');
+    return null;
+  }
+
+  return <StaticMarketing />;
+}
 
 function Router() {
   return (
@@ -202,8 +219,9 @@ function Router() {
       </Route>
       
       {/* Root route - must come after specific routes */}
+      {/* On app.moogship.com, redirect to /auth; on www.moogship.com, show marketing */}
       <Route path="/">
-        <StaticMarketing />
+        <AppRootRedirect />
       </Route>
       
       {/* English aliases */}
