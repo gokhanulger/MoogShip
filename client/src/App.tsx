@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { ProtectedRoute } from "./lib/protected-route";
 import Layout from "@/components/layout";
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
@@ -151,11 +151,19 @@ const isAppSubdomain = () => {
 
 // Component to handle app subdomain root redirect
 function AppRootRedirect() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
-  // On app subdomain, redirect root to auth page
-  if (isAppSubdomain() && window.location.pathname === '/') {
-    setLocation('/auth');
+  useEffect(() => {
+    // On app subdomain, redirect root to auth page (only once)
+    if (isAppSubdomain() && location === '/' && !hasRedirected) {
+      setHasRedirected(true);
+      setLocation('/auth');
+    }
+  }, [location, setLocation, hasRedirected]);
+
+  // While redirecting on app subdomain, show nothing
+  if (isAppSubdomain() && location === '/') {
     return null;
   }
 
