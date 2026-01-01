@@ -4,6 +4,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables - replaces Replit plugin */
+:root {
+  --background: 210 40% 98%;
+  --foreground: 210 40% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 40% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 40% 10%;
+  --primary: 210 80% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 20% 96%;
+  --secondary-foreground: 210 40% 10%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 210 15% 45%;
+  --accent: 210 20% 96%;
+  --accent-foreground: 210 40% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 20% 94%;
+  --input: 210 20% 94%;
+  --ring: 210 80% 55%;
+  --radius: 0.8rem;
+  --chart-1: 210 80% 55%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
+  --sidebar-background: 210 40% 98%;
+  --sidebar-foreground: 210 40% 10%;
+  --sidebar-primary: 210 80% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 210 20% 96%;
+  --sidebar-accent-foreground: 210 40% 10%;
+  --sidebar-border: 210 20% 94%;
+  --sidebar-ring: 210 80% 55%;
+}
+
 /* MoogShip Mascot Styles */
 .moogship-mascot {
   animation: pulse 2s infinite;
