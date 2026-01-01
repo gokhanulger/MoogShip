@@ -1,11 +1,27 @@
 import React from 'react';
-import { motion, AnimatePresence, Variant } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Types for different animation variants
+// Types for different animation variants with transition support
+type AnimationVariant = {
+  opacity?: number;
+  x?: number;
+  y?: number;
+  scale?: number;
+  transition?: {
+    type?: string;
+    duration?: number;
+    delay?: number;
+    staggerChildren?: number;
+    delayChildren?: number;
+    damping?: number;
+    stiffness?: number;
+  };
+};
+
 type AnimationVariants = {
-  hidden: Variant;
-  visible: Variant;
-  exit?: Variant;
+  hidden: AnimationVariant;
+  visible: AnimationVariant;
+  exit?: AnimationVariant;
 };
 
 // Standard fade animations

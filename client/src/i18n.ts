@@ -47,12 +47,15 @@ i18n
 
 // Language change function
 export const changeLanguage = (lng: string) => {
-  
+
   localStorage.setItem('preferred-language', lng);
   i18n.changeLanguage(lng).then(() => {
     window.location.reload();
   });
 };
+
+// Alias for backward compatibility
+export const setLanguageWithPersistence = changeLanguage;
 
 export const getCurrentLanguage = () => i18n.language || 'tr';
 

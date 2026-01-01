@@ -1672,9 +1672,7 @@ const ShipmentEditContent = ({ user }: ShipmentEditProps) => {
                             </>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
                 </Tabs>
               </form>
             </Form>

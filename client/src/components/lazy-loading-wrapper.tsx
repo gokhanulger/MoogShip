@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
-import { performanceOptimizer } from '../lib/performance-optimizer';
 
 interface LazyLoadingWrapperProps {
   children: ReactNode;

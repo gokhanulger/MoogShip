@@ -108,7 +108,7 @@ function AttachmentItem({ attachment }: AttachmentItemProps) {
       
     } catch (error) {
       console.error('Download error:', error);
-      alert(`Download failed: ${error.message}`);
+      alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
