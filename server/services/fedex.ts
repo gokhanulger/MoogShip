@@ -189,22 +189,33 @@ async function getAccessToken(): Promise<string> {
     
     console.log(`Requesting FedEx OAuth token from: ${tokenUrl}`);
     
-    // Request a new access token
+    // Request a new access token with additional headers
+    const requestBody = new URLSearchParams({
+      'grant_type': 'client_credentials',
+      'client_id': FEDEX_API_KEY,
+      'client_secret': FEDEX_SECRET_KEY,
+    }).toString();
+
+    console.log('OAuth request body length:', requestBody.length);
+
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+        'User-Agent': 'MoogShip/1.0',
       },
-      body: new URLSearchParams({
-        'grant_type': 'client_credentials',
-        'client_id': FEDEX_API_KEY,
-        'client_secret': FEDEX_SECRET_KEY,
-      }).toString()
+      body: requestBody
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('FedEx OAuth error:', errorText);
+      console.error('FedEx OAuth error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: errorText
+      });
       
       let errorMessage = `Failed to obtain FedEx access token: ${response.status} ${response.statusText}`;
       
