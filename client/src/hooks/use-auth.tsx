@@ -695,14 +695,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Only redirect if confirmed unauthorized (not just effectiveUser === null)
     if (!isLoading && confirmedUnauthorized && effectiveUser === null && !isMarketingOrAuthPage) {
       console.log('[AUTH] Confirmed unauthorized - redirecting to auth');
-      
+
       // For mobile browsers, redirect to external mobile auth URL
       const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-      
+
       if (isMobile) {
         window.location.href = 'https://www.moogship.com/mobile-auth';
       } else {
-        setLocation('/');
+        // Redirect to /auth directly to avoid loop with app.moogship.com
+        setLocation('/auth');
       }
     }
   }, [effectiveUser, isLoading, setLocation]);
