@@ -3776,6 +3776,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Calculate shipping price - single and bulk
   app.post("/api/calculate-price", calculatePrice);
 
+  // Test FedEx OAuth connection
+  app.get("/api/test/fedex-connection", async (req, res) => {
+    try {
+      console.log("🧪 TESTING FEDEX OAUTH CONNECTION");
+      const { testFedExConnection } = await import("./services/fedex");
+      const result = await testFedExConnection();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Test failed",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
   // Test Aramex pricing endpoint
   app.get("/api/test/aramex-pricing", async (req, res) => {
     try {

@@ -1099,6 +1099,44 @@ function parseServiceAvailabilityResponse(data: any, payload: FedExServiceAvaila
 }
 
 /**
+ * Test FedEx OAuth connection - for debugging credentials issues
+ */
+export async function testFedExConnection(): Promise<{
+  success: boolean;
+  message: string;
+  debug: {
+    apiKeyLength: number;
+    apiKeyPrefix: string;
+    secretKeyLength: number;
+    accountNumberExists: boolean;
+  };
+  error?: string;
+}> {
+  const debug = {
+    apiKeyLength: FEDEX_API_KEY?.length || 0,
+    apiKeyPrefix: FEDEX_API_KEY?.substring(0, 8) || 'EMPTY',
+    secretKeyLength: FEDEX_SECRET_KEY?.length || 0,
+    accountNumberExists: !!FEDEX_ACCOUNT_NUMBER,
+  };
+
+  try {
+    const token = await getAccessToken();
+    return {
+      success: true,
+      message: 'FedEx OAuth connection successful!',
+      debug,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'FedEx OAuth connection failed',
+      debug,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
  * Validates a postal code using ONLY FedEx Postal Code Validation API - NO FALLBACKS
  * @param postalCode - The postal code to validate
  * @param countryCode - The country code (ISO 2-letter)
