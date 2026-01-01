@@ -78,8 +78,8 @@ app.use((req, res, next) => {
     return res.redirect(301, redirectUrl);
   }
   
-  // Also handle case where host includes protocol
-  if (host && host.includes('moogship.com') && !host.includes('www.')) {
+  // Also handle case where host includes protocol (but exclude app subdomain)
+  if (host && host.includes('moogship.com') && !host.includes('www.') && !host.includes('app.')) {
     const redirectUrl = `https://www.moogship.com${req.originalUrl}`;
     console.log(`Protocol-included redirect to: ${redirectUrl}`);
     return res.redirect(301, redirectUrl);
