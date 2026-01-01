@@ -527,22 +527,15 @@ export function setupAuth(app: Express) {
 
     console.log("[AUTH] OPTIONS preflight request for login - Mobile:", isMobile);
 
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    // CORS is handled by main middleware in index.ts
     res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.header('Pragma', 'no-cache');
     res.header('Expires', '0');
-
     res.sendStatus(200);
   });
 
   app.options("/api/mobile-login", (req, res) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    // CORS is handled by main middleware in index.ts
     res.sendStatus(200);
   });
 

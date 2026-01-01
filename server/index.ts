@@ -10,6 +10,7 @@ import { optimizedRoutes } from "./routes-optimized";
 import { startTrackingScheduler, startBatchProcessingScheduler } from "./services/trackingScheduler";
 import { dutyJobProcessor } from "./services/duty-job-processor";
 import path from "path";
+import rateLimit from "express-rate-limit";
 
 // Set up unhandled rejection handler to avoid crashing on database errors
 process.on('unhandledRejection', (reason, promise) => {
@@ -18,6 +19,53 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const app = express();
+
+// ========== SECURITY CONFIGURATION ==========
+
+// Disable X-Powered-By header to hide Express
+app.disable('x-powered-by');
+
+// Rate limiting for login attempts (brute-force protection)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+});
+
+// General API rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: { success: false, message: 'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiters
+app.use('/api/login', loginLimiter);
+app.use('/api/register', loginLimiter);
+app.use('/api/forgot-password', loginLimiter);
+app.use('/api/', apiLimiter);
+
+// Security headers middleware
+app.use((req, res, next) => {
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  // Prevent MIME sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // XSS Protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Referrer Policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Permissions Policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
+
+// ========== END SECURITY CONFIGURATION ==========
 
 // Serve static files with proper MIME types and cache headers
 app.use('/public', express.static(path.join(process.cwd(), 'public'), {
@@ -96,36 +144,50 @@ app.use((req, res, next) => {
 // Enhanced CORS headers for deployment compatibility
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1';
-  
-  // Allow specific origins in production, all in development
-  const allowedOrigins = isProduction 
-    ? ['https://www.moogship.com', 'https://moogship.com', 'https://app.moogship.com']
-    : [origin || '*'];
-  
-  const requestOrigin = origin || req.headers.referer || req.headers.host;
-  
-  if (isProduction && origin && !allowedOrigins.some(allowed => origin.includes(allowed.replace('https://', '')))) {
-    console.log(`[CORS] Blocked origin: ${origin} for production deployment`);
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1' || process.env.RENDER === 'true';
+
+  // Allowed origins list
+  const allowedOrigins = [
+    'https://www.moogship.com',
+    'https://moogship.com',
+    'https://app.moogship.com',
+    'https://moogship.onrender.com'
+  ];
+
+  // In development, also allow localhost
+  if (!isProduction) {
+    allowedOrigins.push('http://localhost:5000', 'http://localhost:3000', 'http://127.0.0.1:5000');
   }
-  
-  res.header('Access-Control-Allow-Origin', origin || '*');
+
+  // Check if origin is allowed
+  const isAllowed = !origin || allowedOrigins.includes(origin);
+
+  if (origin && !isAllowed) {
+    console.log(`[CORS] Blocked unauthorized origin: ${origin}`);
+    // For non-allowed origins, don't set CORS headers (browser will block)
+    return next();
+  }
+
+  // Only set CORS headers for allowed origins
+  if (origin && isAllowed) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    // For same-origin requests (no Origin header), allow
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie, X-CSRF-Token');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Expose-Headers', 'Set-Cookie');
   res.header('Vary', 'Origin');
-  
+
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
+
+  next();
 });
 
 // Increase body parser limits to handle large requests (e.g., bulk uploads, shipment data)
