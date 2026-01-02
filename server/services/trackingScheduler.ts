@@ -198,12 +198,8 @@ export async function syncAllTrackingData() {
         let carrierType = shipment.carrierName ? mapCarrierNameToType(shipment.carrierName) : null;
         if (!carrierType || carrierType === 'UNKNOWN') {
           const detectedCarrier = detectCarrierFromNumber(shipment.carrierTrackingNumber!);
-          // Map the detected carrier to our supported types
-          if (detectedCarrier === 'FedEx') carrierType = 'FEDEX';
-          else if (detectedCarrier === 'UPS') carrierType = 'UPS';
-          else if (detectedCarrier === 'DHL') carrierType = 'DHL';
-          else if (detectedCarrier === 'GLS') carrierType = 'GLS';
-          else carrierType = 'UNKNOWN';
+          // detectCarrierFromNumber returns uppercase types: 'FEDEX', 'UPS', 'DHL', 'GLS', 'AFS', 'ROYAL', 'UNKNOWN'
+          carrierType = detectedCarrier as 'UPS' | 'DHL' | 'AFS' | 'GLS' | 'FEDEX' | 'ROYAL' | 'UNKNOWN';
         }
         console.log(`[TRACKING SCHEDULER] Processing ${carrierType} shipment ${shipment.id} (carrier: ${shipment.carrierName || 'auto-detected'}) with tracking: ${shipment.carrierTrackingNumber}`);
         
