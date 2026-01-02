@@ -580,27 +580,6 @@ function PriceCalculatorContent({ user }: PriceCalculatorProps) {
                                       </div>
                                     )}
                                     
-                                    {/* Admin Cost View */}
-                                    {user?.role === 'admin' && option.originalTotalPrice && (
-                                      <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
-                                        <div className="flex justify-between items-center">
-                                          <span className="font-medium text-red-700">Cost (Base):</span>
-                                          <span className="font-bold text-red-800">${(option.originalTotalPrice / 100).toFixed(2)}</span>
-                                        </div>
-                                        {option.originalTotalPrice !== option.totalPrice && (
-                                          <div className="flex justify-between items-center mt-1">
-                                            <span className="font-medium text-green-700">Margin:</span>
-                                            <span className="font-bold text-green-800">
-                                              ${((option.totalPrice - option.originalTotalPrice) / 100).toFixed(2)}
-                                              <span className="text-green-600 ml-1">
-                                                ({(((option.totalPrice - option.originalTotalPrice) / option.originalTotalPrice) * 100).toFixed(1)}%)
-                                              </span>
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-
                                     <div className="flex items-end justify-between">
                                       <div>
                                         <p className="text-xs text-gray-600 mb-0.5">Total Shipment Cost</p>
