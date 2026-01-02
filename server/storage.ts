@@ -497,6 +497,7 @@ export interface IStorage {
   ): Promise<SystemSetting>;
   getSystemSetting(key: string): Promise<SystemSetting | undefined>;
   getSystemSettingValue(key: string, defaultValue?: string): Promise<string>;
+  getDefaultPriceMultiplier(): Promise<number>;
   updateSystemSetting(
     key: string,
     value: string,
@@ -4773,6 +4774,10 @@ export class DatabaseOnlyStorage implements IStorage {
     return dbStorage.getSystemSettingValue(key, defaultValue);
   }
 
+  async getDefaultPriceMultiplier(): Promise<number> {
+    return dbStorage.getDefaultPriceMultiplier();
+  }
+
   async updateSystemSetting(
     key: string,
     value: string,
@@ -5988,6 +5993,27 @@ export class DatabaseOnlyStorage implements IStorage {
     } catch (error) {
       console.error("Error getting system setting value:", error);
       return defaultValue;
+    }
+  }
+
+  /**
+   * Get the default price multiplier from system settings
+   * This is used as fallback when a user's priceMultiplier is null/undefined
+   */
+  async getDefaultPriceMultiplier(): Promise<number> {
+    try {
+      const setting = await this.getSystemSetting('DEFAULT_PRICE_MULTIPLIER');
+      if (setting) {
+        const value = parseFloat(setting.value);
+        if (!isNaN(value) && value > 0) {
+          return value;
+        }
+      }
+      // Return default value of 1.45 if setting doesn't exist or is invalid
+      return 1.45;
+    } catch (error) {
+      console.error("Error getting default price multiplier:", error);
+      return 1.45;
     }
   }
 

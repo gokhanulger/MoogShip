@@ -735,22 +735,23 @@ export const createShipment = async (req: Request, res: Response) => {
     // Handle admin billing to other users
     let userId = req.body.userId || req.body.userId; // Use userId from admin form
     let targetUser = user;
-    let userPriceMultiplier = user?.priceMultiplier || 1;
-    
+    const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+    let userPriceMultiplier = user?.priceMultiplier || defaultMultiplier;
+
     if (user?.role === 'admin' && userId) {
       // Admin is creating a shipment and billing to another user
       console.log(`🔧 ADMIN BILLING: Admin ${adminUserId} creating shipment for user ${userId}`);
-      
+
       // Get the target user's information for pricing
       try {
         targetUser = await storage.getUser(userId);
         if (!targetUser) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: 'Selected user not found',
             error: 'USER_NOT_FOUND'
           });
         }
-        userPriceMultiplier = targetUser.priceMultiplier || 1;
+        userPriceMultiplier = targetUser.priceMultiplier || defaultMultiplier;
         console.log(`👤 Target user found: ${targetUser.name} (ID: ${userId}) with multiplier: ${userPriceMultiplier}`);
       } catch (error) {
         console.error('Error fetching target user:', error);
@@ -1572,13 +1573,14 @@ export const uploadBulkShipments = async (req: FileRequest, res: Response) => {
     // Get user data from authenticated user
     const user = req.user;
     const userId = user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
-    // Get user's price multiplier if available
-    const userPriceMultiplier = user?.priceMultiplier || 1;
+
+    // Get user's price multiplier if available (use system default as fallback)
+    const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+    const userPriceMultiplier = user?.priceMultiplier || defaultMultiplier;
     
     // Make sure we have a file in the request
     if (!req.file) {
@@ -4853,10 +4855,11 @@ export const validateBulkShipments = async (req: FileRequest, res: Response) => 
       console.error('🔍 VALIDATE BULK: User not authenticated');
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
-    // Get user's price multiplier if available
-    const userPriceMultiplier = user?.priceMultiplier || 1;
-    
+
+    // Get user's price multiplier if available (use system default as fallback)
+    const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+    const userPriceMultiplier = user?.priceMultiplier || defaultMultiplier;
+
     // Make sure we have a file in the request
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -4965,10 +4968,11 @@ export const validateBulkShipments = async (req: FileRequest, res: Response) => 
     try {
       // Import the MoogShip pricing service that returns multiple options
       const { calculateMoogShipPricing } = await import('../services/moogship-pricing');
-      
+
       // Get user data for pricing calculations
       const user = req.user;
-      const userPriceMultiplier = user?.priceMultiplier || 1;
+      const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+      const userPriceMultiplier = user?.priceMultiplier || defaultMultiplier;
       
       console.log(`🔍 Calculating pricing for ${shipmentsData.length} shipments with multiplier ${userPriceMultiplier}`);
       

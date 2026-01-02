@@ -551,8 +551,8 @@ function EtsyIntegrationContent({ user }: { user: any }) {
       // Get insurance status from the sigortala field
       const isInsured = getOrderDetail(order.id, 'sigortala', false);
       
-      // Get user's price multiplier (default to 1.25 if not set)
-      const userMultiplier = user?.priceMultiplier || 1.25;
+      // Get user's price multiplier (use system default 1.45 as fallback)
+      const userMultiplier = user?.priceMultiplier || 1.45;
       console.log('[Etsy] User multiplier:', userMultiplier);
       
       // Extract SHIPPING prices from selected service (without insurance)
@@ -887,7 +887,7 @@ function EtsyIntegrationContent({ user }: { user: any }) {
             serviceType: option.serviceType || 'standard',
             carrier: option.carrier || 'MoogShip',
             // Store original cost price for backend (divide by multiplier)
-            costPrice: Math.round(baseShippingPrice / (user?.priceMultiplier || 1.25)),
+            costPrice: Math.round(baseShippingPrice / (user?.priceMultiplier || 1.45)),
           };
         }) || [];
         
@@ -2339,7 +2339,7 @@ function EtsyIntegrationContent({ user }: { user: any }) {
                                           const baseShippingPrice = selectedService.baseShippingPrice || selectedService.totalPrice || 0;
                                           const insuranceAmount = getOrderDetail(order.id, 'insuranceAmount', 0);
                                           const hasInsurance = getOrderDetail(order.id, 'sigortala', false);
-                                          const costPrice = selectedService.costPrice || Math.round(baseShippingPrice / (user?.priceMultiplier || 1.25));
+                                          const costPrice = selectedService.costPrice || Math.round(baseShippingPrice / (user?.priceMultiplier || 1.45));
                                           
                                           const duties = getOrderDetail(order.id, 'duties');
                                           const isUSDestination = order.shipToCountry === 'USA' || order.shipToCountry === 'US';

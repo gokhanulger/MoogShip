@@ -4104,9 +4104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "./services/moogship-pricing"
       );
 
-      // Get user's price multiplier
+      // Get user's price multiplier (use system default as fallback)
       const user = req.user;
-      const userPriceMultiplier = user.priceMultiplier || 1.25;
+      const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+      const userPriceMultiplier = user.priceMultiplier || defaultMultiplier;
 
       console.log(
         `Bulk pricing for user ${user.username} with multiplier ${userPriceMultiplier}`,
@@ -4328,9 +4329,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get user's price multiplier if available
+      // Get user's price multiplier if available (use system default as fallback)
       const user = authenticatedUser;
-      const userPriceMultiplier = user?.priceMultiplier || 1.25; // Default to 1.25 if not set (standard customer rate)
+      const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+      const userPriceMultiplier = user?.priceMultiplier || defaultMultiplier;
 
       console.log(
         `💰 Using price multiplier: ${userPriceMultiplier} for user ${user.username}`,
@@ -9917,6 +9919,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     packageController.deletePackage,
   );
 
+  // Get default price multiplier (for any authenticated user)
+  app.get("/api/settings/default-multiplier", authenticateToken, async (req, res) => {
+    try {
+      const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+      res.json({ defaultPriceMultiplier: defaultMultiplier });
+    } catch (error) {
+      console.error("Error getting default price multiplier:", error);
+      res.json({ defaultPriceMultiplier: 1.45 }); // Fallback
+    }
+  });
+
   // System settings routes (admin only)
   app.get("/api/settings", authenticateToken, isAdmin, async (req, res) => {
     try {
@@ -11799,21 +11812,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Import the pricing service
       const { calculateMoogShipPricing } = await import('./services/moogship-pricing');
-      
+
+      // Get system default multiplier for fallback
+      const defaultMultiplier = await storage.getDefaultPriceMultiplier();
+
       // Get user multiplier (if admin is creating for a customer, use customer's multiplier)
-      let userMultiplier = 1.0;
+      let userMultiplier = defaultMultiplier;
       if (userId && req.user?.role === 'admin') {
         try {
           const user = await storage.getUser(userId);
           if (user) {
-            userMultiplier = user.priceMultiplier || 1.0;
+            userMultiplier = user.priceMultiplier || defaultMultiplier;
             console.log(`💰 Using customer multiplier: ${userMultiplier} for user ID ${userId}`);
           }
         } catch (err) {
-          console.log(`⚠️ Could not get user multiplier for user ${userId}, using default 1.0`);
+          console.log(`⚠️ Could not get user multiplier for user ${userId}, using default ${defaultMultiplier}`);
         }
       } else if (req.user?.role !== 'admin') {
-        userMultiplier = req.user?.priceMultiplier || 1.25;
+        userMultiplier = req.user?.priceMultiplier || defaultMultiplier;
         console.log(`💰 Using user multiplier: ${userMultiplier} for user ${req.user?.username}`);
       }
 
