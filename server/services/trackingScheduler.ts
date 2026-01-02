@@ -185,11 +185,14 @@ export async function syncAllTrackingData() {
     
     let updated = 0;
     let errors = 0;
-    
+    let skippedUnknownCarrier = 0;
+    const statusCounts: Record<string, number> = {};
+    const carrierCounts: Record<string, number> = {};
+
     for (const shipment of shipmentsWithTracking) {
       try {
-        // Add delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Add delay between requests to avoid rate limiting (200ms is enough)
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         // Use carrier from shipment data if available, otherwise auto-detect
         let carrierType = shipment.carrierName ? mapCarrierNameToType(shipment.carrierName) : null;
@@ -267,9 +270,14 @@ export async function syncAllTrackingData() {
           trackingData = await trackPackage(shipment.carrierTrackingNumber!);
         } else {
           console.log(`[TRACKING SCHEDULER] Skipping unsupported carrier ${carrierType} for tracking: ${shipment.carrierTrackingNumber}`);
+          skippedUnknownCarrier++;
           continue;
         }
-        
+
+        // Count carrier types and tracking statuses for summary
+        carrierCounts[carrierType] = (carrierCounts[carrierType] || 0) + 1;
+        statusCounts[trackingData.status || 'UNKNOWN'] = (statusCounts[trackingData.status || 'UNKNOWN'] || 0) + 1;
+
         // Map carrier status to our system status
         let newStatus = shipment.status;
         let shouldUpdate = false;
@@ -301,24 +309,24 @@ export async function syncAllTrackingData() {
             }
           }
         } else if (trackingData.status === 'OUT_FOR_DELIVERY') {
-          // Out for delivery means it's in transit
-          if (shipment.status === ShipmentStatus.APPROVED || shipment.status === ShipmentStatus.APPROVED) {
+          // Out for delivery means it's in transit - update from approved status
+          if (shipment.status === ShipmentStatus.APPROVED) {
             newStatus = ShipmentStatus.IN_TRANSIT;
             shouldUpdate = true;
             console.log(`[TRACKING SCHEDULER] Package ${shipment.id} out for delivery, moving to in transit (${carrierType})`);
           }
         } else if (trackingData.status === 'IN_TRANSIT') {
           // Any transit events beyond label creation move to in transit
-          if (shipment.status === ShipmentStatus.APPROVED || shipment.status === ShipmentStatus.APPROVED) {
+          if (shipment.status === ShipmentStatus.APPROVED) {
             newStatus = ShipmentStatus.IN_TRANSIT;
             shouldUpdate = true;
             console.log(`[TRACKING SCHEDULER] Package ${shipment.id} has transit events, moving to in transit (${carrierType})`);
+          } else {
+            console.log(`[TRACKING SCHEDULER] Package ${shipment.id} already ${shipment.status}, tracking shows IN_TRANSIT (${carrierType})`);
           }
         } else if (trackingData.status === 'PRE_TRANSIT') {
-          // Only label creation events - keep status as approved or in transit based on current state
-          if (shipment.status === ShipmentStatus.APPROVED) {
-            console.log(`[TRACKING SCHEDULER] Package ${shipment.id} has only label events, keeping as approved (${carrierType})`);
-          }
+          // Only label creation events - keep status as approved
+          console.log(`[TRACKING SCHEDULER] Package ${shipment.id} still PRE_TRANSIT (label created, not picked up yet) (${carrierType})`);
         } else if (trackingData.status === 'EXCEPTION') {
           // Handle exceptions - send delivery issue notification
           console.log(`[TRACKING SCHEDULER] Package ${shipment.id} has exception status: ${trackingData.statusDescription} (${carrierType})`);
@@ -467,7 +475,14 @@ export async function syncAllTrackingData() {
       }
     }
     
-    console.log(`[TRACKING SCHEDULER] Sync completed: ${updated} shipments updated, ${errors} errors`);
+    console.log(`[TRACKING SCHEDULER] ========== SYNC SUMMARY ==========`);
+    console.log(`[TRACKING SCHEDULER] Total checked: ${shipmentsWithTracking.length}`);
+    console.log(`[TRACKING SCHEDULER] Updated: ${updated}`);
+    console.log(`[TRACKING SCHEDULER] Errors: ${errors}`);
+    console.log(`[TRACKING SCHEDULER] Skipped (unknown carrier): ${skippedUnknownCarrier}`);
+    console.log(`[TRACKING SCHEDULER] Carrier breakdown: ${JSON.stringify(carrierCounts)}`);
+    console.log(`[TRACKING SCHEDULER] Tracking status breakdown: ${JSON.stringify(statusCounts)}`);
+    console.log(`[TRACKING SCHEDULER] ==================================`);
     
   } catch (error) {
     console.error('[TRACKING SCHEDULER] Error during bulk tracking sync:', error);
