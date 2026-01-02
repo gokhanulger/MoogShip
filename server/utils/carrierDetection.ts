@@ -54,12 +54,14 @@ export function detectCarrier(trackingNumber: string): CarrierType {
   }
   
   // DHL tracking numbers have specific formats:
-  // - 10-30 digit numeric (DHL Express and eCommerce including very long format)
+  // - 9-10 digit numeric (DHL Express waybill numbers)
+  // - 16-30 digit numeric (DHL eCommerce including very long format)
   // - Starting with specific DHL prefixes (like GM, RX, etc.)
   // - Includes both short and long numeric DHL tracking numbers
   // - EXCLUDE numbers starting with "003" (those are AFS Transport)
   // - EXCLUDE GLS patterns (10-15 digits starting with certain patterns)
-  if ((/^\d{16,30}$/.test(cleanTrackingNumber) && !cleanTrackingNumber.startsWith('003')) || 
+  if (/^\d{9,10}$/.test(cleanTrackingNumber) ||  // DHL Express 9-10 digit waybills
+      (/^\d{16,30}$/.test(cleanTrackingNumber) && !cleanTrackingNumber.startsWith('003')) ||
       /^(GM|RX|JV|CV|TV|JX)[A-Z0-9]{7,12}$/i.test(cleanTrackingNumber) ||
       (/^\d{13,15}$/.test(cleanTrackingNumber) && !cleanTrackingNumber.startsWith('50') && !cleanTrackingNumber.startsWith('59'))) {
     return 'DHL';
