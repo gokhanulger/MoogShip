@@ -116,11 +116,52 @@ export async function recreateConnectionPool(): Promise<boolean> {
   }
 }
 
+// Ensure required tables exist (for new tables added without migration)
+async function ensureTablesExist(): Promise<void> {
+  try {
+    // Create pricingCalculationLogs table if it doesn't exist
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS pricing_calculation_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        username TEXT,
+        shipment_id INTEGER,
+        package_weight REAL NOT NULL,
+        package_length REAL,
+        package_width REAL,
+        package_height REAL,
+        volumetric_weight REAL,
+        billable_weight REAL,
+        receiver_country TEXT NOT NULL,
+        user_multiplier REAL NOT NULL,
+        country_multiplier REAL,
+        weight_multiplier REAL,
+        combined_multiplier REAL NOT NULL,
+        country_rule_source TEXT,
+        weight_rule_source TEXT,
+        applied_rules JSONB,
+        base_price INTEGER,
+        final_price INTEGER,
+        selected_service TEXT,
+        pricing_options JSONB,
+        request_source TEXT,
+        ip_address TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log('[DB] Ensured pricing_calculation_logs table exists');
+  } catch (error) {
+    console.error('[DB] Error ensuring tables exist:', error);
+  }
+}
+
 // Run a test connection when this module loads and set up periodic health checks
-testConnection().then(isConnected => {
+testConnection().then(async isConnected => {
   if (isConnected) {
     console.log('[DB] Database connection verified and working properly');
     globalConnectionStatus.failedAttempts = 0;
+    // Ensure all required tables exist
+    await ensureTablesExist();
   } else {
     console.error('[DB] WARNING: Could not verify database connection');
     // Schedule a retry if initial connection fails
