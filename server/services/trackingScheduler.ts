@@ -130,13 +130,23 @@ function scheduleTrackingSync(hour: number) {
 
 /**
  * Background service that automatically syncs UPS and DHL tracking data at specific Turkey times
- * Runs at 6 AM Turkey time daily
+ * Runs at 6 AM, 14:00 (2 PM), and 22:00 (10 PM) Turkey time daily
  */
 export async function startTrackingScheduler() {
-  console.log('[TRACKING SCHEDULER] Starting automatic tracking updates at 6 AM Turkey time daily');
-  
-  // Schedule tracking sync for 6 AM Turkey time only
-  scheduleTrackingSync(6);  // 6 AM
+  console.log('[TRACKING SCHEDULER] Starting automatic tracking updates at 6:00, 14:00, 22:00 Turkey time daily');
+
+  // Schedule tracking sync for 3 times a day (Turkey time)
+  scheduleTrackingSync(6);   // 6 AM
+  scheduleTrackingSync(14);  // 2 PM
+  scheduleTrackingSync(22);  // 10 PM
+
+  // Also run an initial sync 5 minutes after server start to catch up on updates
+  setTimeout(async () => {
+    console.log('[TRACKING SCHEDULER] Running initial tracking sync 5 minutes after server start...');
+    syncAllTrackingData().catch(error => {
+      console.error('[TRACKING SCHEDULER] Initial sync failed:', error);
+    });
+  }, 5 * 60 * 1000); // 5 minutes delay
 }
 
 /**

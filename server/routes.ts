@@ -1209,101 +1209,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all shipments for tracking (admin only, fast version without packages)
   app.get("/api/shipments/tracking", authenticateToken, isAdmin, getAllShipmentsForTracking);
 
-  // Sync shipment statuses with UPS tracking data
+  // Sync shipment statuses with all carrier tracking APIs (UPS, DHL, FedEx, GLS, AFS)
   app.post(
     "/api/shipments/sync-status",
     authenticateToken,
     isAdmin,
     async (req, res) => {
       try {
-        console.log("Starting shipment status sync with UPS tracking data...");
+        console.log("🔄 Starting comprehensive shipment status sync with all carriers...");
 
-        // Get all shipments that have carrier tracking numbers
-        const shipments = await storage.getAllShipments();
-        const shipmentsWithTracking = shipments.filter(
-          (s) =>
-            s.carrierTrackingNumber && s.carrierTrackingNumber.trim() !== "",
-        );
+        // Use the comprehensive syncAllTrackingData function that supports all carriers
+        const { syncAllTrackingData } = await import("./services/trackingScheduler");
 
-        console.log(
-          `Found ${shipmentsWithTracking.length} shipments with carrier tracking numbers`,
-        );
-
-        let updated = 0;
-        const updates = [];
-
-        for (const shipment of shipmentsWithTracking) {
-          try {
-            const { trackPackage } = await import("./services/ups.js");
-            const upsData = await trackPackage(shipment.carrierTrackingNumber!);
-
-            // Map UPS status to our system status
-            let newStatus = shipment.status;
-            console.log(
-              `Checking shipment ${shipment.id}: UPS status="${upsData.status}", description="${upsData.statusDescription}", current status="${shipment.status}"`,
-            );
-
-            // Check description first for delivery status
-            if (
-              upsData.statusDescription &&
-              upsData.statusDescription.toUpperCase().includes("DELIVERED")
-            ) {
-              newStatus = ShipmentStatus.DELIVERED;
-              console.log(
-                `Package delivered based on description: ${upsData.statusDescription}`,
-              );
-            } else if (upsData.status === "DELIVERED") {
-              newStatus = ShipmentStatus.DELIVERED;
-              console.log(`Package delivered based on status code`);
-            } else if (upsData.status === "OUT_FOR_DELIVERY") {
-              newStatus = ShipmentStatus.IN_TRANSIT;
-            } else if (upsData.status === "IN_TRANSIT") {
-              newStatus = ShipmentStatus.IN_TRANSIT;
-            } else if (upsData.status === "EXCEPTION") {
-              newStatus = ShipmentStatus.IN_TRANSIT; // Keep as in_transit for exceptions
-            } else if (upsData.status === "PICKUP") {
-              newStatus = ShipmentStatus.IN_TRANSIT; // Package picked up, now in transit
-            } else if (upsData.status === "ORIGIN_SCAN") {
-              newStatus = ShipmentStatus.IN_TRANSIT; // Package scanned at origin
-            }
-
-            // Only update if status changed
-            if (newStatus !== shipment.status) {
-              await storage.updateShipment(shipment.id, { status: newStatus });
-              updated++;
-              updates.push({
-                id: shipment.id,
-                trackingNumber: shipment.carrierTrackingNumber,
-                oldStatus: shipment.status,
-                newStatus,
-                upsStatus: upsData.status,
-              });
-              console.log(
-                `Updated shipment ${shipment.id} (${shipment.carrierTrackingNumber}): ${shipment.status} → ${newStatus}`,
-              );
-            }
-
-            // Add small delay to avoid rate limiting
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          } catch (error) {
-            console.error(
-              `Error syncing shipment ${shipment.id} (${shipment.carrierTrackingNumber}):`,
-              error,
-            );
-          }
-        }
-
-        console.log(`Status sync complete: ${updated} shipments updated`);
+        // Run sync in background but respond immediately
+        syncAllTrackingData().catch((error) => {
+          console.error("Background tracking sync failed:", error);
+        });
 
         res.json({
-          message: `Successfully synced ${updated} shipment statuses`,
-          totalChecked: shipmentsWithTracking.length,
-          updated,
-          updates,
+          success: true,
+          message: "Tracking sync initiated for all carriers (UPS, DHL, FedEx, GLS, AFS). Check server logs for progress.",
         });
       } catch (error) {
-        console.error("Error syncing shipment statuses:", error);
-        res.status(500).json({ message: "Failed to sync shipment statuses" });
+        console.error("Error initiating tracking sync:", error);
+        res.status(500).json({ message: "Failed to initiate tracking sync" });
       }
     },
   );

@@ -1065,21 +1065,27 @@ const AdminShipmentListContent = ({ user }: AdminShipmentListProps) => {
                     setIsSyncingStatus(true);
                     try {
                       toast({
-                        title: "Sync Started",
-                        description: "Checking shipment statuses with carriers...",
+                        title: "Tracking Sync Started",
+                        description: "Syncing with all carriers (UPS, DHL, FedEx, GLS, AFS)...",
                       });
-                      
+
                       const response = await apiRequest('POST', '/api/shipments/sync-status');
-                      
+
                       const result = await response.json();
-                      
-                      toast({
-                        title: "Status Sync Complete",
-                        description: `Updated ${result.updated} shipments from ${result.totalChecked} checked`,
-                      });
-                      
-                      // Refresh the shipments data
-                      queryClient.invalidateQueries({ queryKey: ['/api/shipments/all'] });
+
+                      if (result.success) {
+                        toast({
+                          title: "Tracking Sync Initiated",
+                          description: "Syncing all shipments in background. Refresh the page in a few minutes to see updates.",
+                        });
+                      } else {
+                        throw new Error(result.message || "Sync failed");
+                      }
+
+                      // Refresh the shipments data after a short delay
+                      setTimeout(() => {
+                        queryClient.invalidateQueries({ queryKey: ['/api/shipments/all'] });
+                      }, 3000);
                     } catch (error) {
                       toast({
                         title: "Sync Failed",
@@ -1092,7 +1098,7 @@ const AdminShipmentListContent = ({ user }: AdminShipmentListProps) => {
                   }}
                   variant="outline"
                   size="sm"
-                  className="whitespace-nowrap"
+                  className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
                   disabled={isSyncingStatus}
                 >
                   {isSyncingStatus ? (
@@ -1100,7 +1106,7 @@ const AdminShipmentListContent = ({ user }: AdminShipmentListProps) => {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  {isSyncingStatus ? "Syncing..." : "Sync Status"}
+                  {isSyncingStatus ? "Syncing..." : "Sync All Tracking"}
                 </Button>
                 
 
