@@ -745,6 +745,496 @@ function WeightRangePricingDialog({ open, onOpenChange }: { open: boolean; onOpe
   );
 }
 
+// User-Specific Pricing Rules Dialog Component
+function UserPricingRulesDialog({
+  open,
+  onOpenChange,
+  user
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  user: User | null;
+}) {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("countries");
+
+  // Country rules state
+  const [newCountryRule, setNewCountryRule] = useState({
+    countryCode: "",
+    priceMultiplier: "",
+    fixedDiscount: "",
+    fixedMarkup: ""
+  });
+  const [editingCountryRule, setEditingCountryRule] = useState<any>(null);
+
+  // Weight rules state
+  const [newWeightRule, setNewWeightRule] = useState({
+    ruleName: "",
+    minWeight: "",
+    maxWeight: "",
+    priceMultiplier: "",
+    perKgDiscount: "",
+    fixedDiscount: ""
+  });
+  const [editingWeightRule, setEditingWeightRule] = useState<any>(null);
+
+  // Fetch user's country pricing rules
+  const { data: countryRules, isLoading: loadingCountryRules, refetch: refetchCountryRules } = useQuery({
+    queryKey: [`/api/users/${user?.id}/pricing-rules/countries`],
+    enabled: open && !!user?.id
+  });
+
+  // Fetch user's weight pricing rules
+  const { data: weightRules, isLoading: loadingWeightRules, refetch: refetchWeightRules } = useQuery({
+    queryKey: [`/api/users/${user?.id}/pricing-rules/weights`],
+    enabled: open && !!user?.id
+  });
+
+  // Country rules mutations
+  const createCountryRuleMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/users/${user?.id}/pricing-rules/countries`, data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create country pricing rule");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Country pricing rule created successfully" });
+      setNewCountryRule({ countryCode: "", priceMultiplier: "", fixedDiscount: "", fixedMarkup: "" });
+      refetchCountryRules();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateCountryRuleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest("PUT", `/api/pricing-rules/countries/${id}`, data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update country pricing rule");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Country pricing rule updated successfully" });
+      setEditingCountryRule(null);
+      refetchCountryRules();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteCountryRuleMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/pricing-rules/countries/${id}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete country pricing rule");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Country pricing rule deleted successfully" });
+      refetchCountryRules();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Weight rules mutations
+  const createWeightRuleMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/users/${user?.id}/pricing-rules/weights`, data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create weight pricing rule");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Weight pricing rule created successfully" });
+      setNewWeightRule({ ruleName: "", minWeight: "", maxWeight: "", priceMultiplier: "", perKgDiscount: "", fixedDiscount: "" });
+      refetchWeightRules();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateWeightRuleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest("PUT", `/api/pricing-rules/weights/${id}`, data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update weight pricing rule");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Weight pricing rule updated successfully" });
+      setEditingWeightRule(null);
+      refetchWeightRules();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteWeightRuleMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/pricing-rules/weights/${id}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete weight pricing rule");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Weight pricing rule deleted successfully" });
+      refetchWeightRules();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleSubmitCountryRule = () => {
+    if (!newCountryRule.countryCode) {
+      toast({ title: "Error", description: "Please enter a country code", variant: "destructive" });
+      return;
+    }
+
+    const multiplier = newCountryRule.priceMultiplier ? parseFloat(newCountryRule.priceMultiplier) : null;
+    const fixedDiscount = newCountryRule.fixedDiscount ? parseFloat(newCountryRule.fixedDiscount) * 100 : null;
+    const fixedMarkup = newCountryRule.fixedMarkup ? parseFloat(newCountryRule.fixedMarkup) * 100 : null;
+
+    if (!multiplier && !fixedDiscount && !fixedMarkup) {
+      toast({ title: "Error", description: "Please enter at least one pricing adjustment", variant: "destructive" });
+      return;
+    }
+
+    createCountryRuleMutation.mutate({
+      countryCode: newCountryRule.countryCode.toUpperCase(),
+      priceMultiplier: multiplier,
+      fixedDiscount: fixedDiscount,
+      fixedMarkup: fixedMarkup
+    });
+  };
+
+  const handleSubmitWeightRule = () => {
+    const minWeight = parseFloat(newWeightRule.minWeight);
+    if (!newWeightRule.ruleName || isNaN(minWeight) || minWeight < 0) {
+      toast({ title: "Error", description: "Please enter a rule name and valid minimum weight", variant: "destructive" });
+      return;
+    }
+
+    const maxWeight = newWeightRule.maxWeight ? parseFloat(newWeightRule.maxWeight) : null;
+    const multiplier = newWeightRule.priceMultiplier ? parseFloat(newWeightRule.priceMultiplier) : null;
+    const perKgDiscount = newWeightRule.perKgDiscount ? parseFloat(newWeightRule.perKgDiscount) * 100 : null;
+    const fixedDiscount = newWeightRule.fixedDiscount ? parseFloat(newWeightRule.fixedDiscount) * 100 : null;
+
+    if (!multiplier && !perKgDiscount && !fixedDiscount) {
+      toast({ title: "Error", description: "Please enter at least one pricing adjustment", variant: "destructive" });
+      return;
+    }
+
+    createWeightRuleMutation.mutate({
+      ruleName: newWeightRule.ruleName,
+      minWeight,
+      maxWeight,
+      priceMultiplier: multiplier,
+      perKgDiscount: perKgDiscount,
+      fixedDiscount: fixedDiscount
+    });
+  };
+
+  const countryRulesArray = Array.isArray(countryRules) ? countryRules : [];
+  const weightRulesArray = Array.isArray(weightRules) ? weightRules : [];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-emerald-500" />
+            User Pricing Rules - {user?.name}
+          </DialogTitle>
+          <DialogDescription>
+            Set custom pricing rules that override global settings for this user.
+            These rules take priority over the system-wide country and weight multipliers.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="countries">Country Rules ({countryRulesArray.length})</TabsTrigger>
+            <TabsTrigger value="weights">Weight Rules ({weightRulesArray.length})</TabsTrigger>
+          </TabsList>
+
+          {/* Country Rules Tab */}
+          <TabsContent value="countries" className="space-y-4">
+            <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+              <p className="text-xs text-blue-700">
+                Country-specific pricing rules override global country multipliers for this user.
+              </p>
+            </div>
+
+            {/* Add new country rule */}
+            <div className="grid grid-cols-5 gap-2 items-end">
+              <div>
+                <Label className="text-xs">Country Code</Label>
+                <Input
+                  placeholder="US, DE, GB..."
+                  value={newCountryRule.countryCode}
+                  onChange={(e) => setNewCountryRule({ ...newCountryRule, countryCode: e.target.value.toUpperCase() })}
+                  maxLength={2}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Multiplier</Label>
+                <Input
+                  type="number"
+                  placeholder="1.0"
+                  step="0.01"
+                  min="0"
+                  value={newCountryRule.priceMultiplier}
+                  onChange={(e) => setNewCountryRule({ ...newCountryRule, priceMultiplier: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Fixed Discount ($)</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  value={newCountryRule.fixedDiscount}
+                  onChange={(e) => setNewCountryRule({ ...newCountryRule, fixedDiscount: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Fixed Markup ($)</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  value={newCountryRule.fixedMarkup}
+                  onChange={(e) => setNewCountryRule({ ...newCountryRule, fixedMarkup: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={handleSubmitCountryRule}
+                disabled={createCountryRuleMutation.isPending}
+                className="h-9"
+              >
+                {createCountryRuleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+              </Button>
+            </div>
+
+            {/* Country rules table */}
+            <div className="border rounded-lg max-h-60 overflow-y-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background">
+                  <TableRow>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Multiplier</TableHead>
+                    <TableHead>Discount</TableHead>
+                    <TableHead>Markup</TableHead>
+                    <TableHead className="w-24">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingCountryRules ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ) : countryRulesArray.length > 0 ? (
+                    countryRulesArray.map((rule: any) => (
+                      <TableRow key={rule.id}>
+                        <TableCell>
+                          <Badge variant="outline">{rule.countryCode}</Badge>
+                        </TableCell>
+                        <TableCell>{rule.priceMultiplier ? `${rule.priceMultiplier}x` : "-"}</TableCell>
+                        <TableCell>{rule.fixedDiscount ? `$${(rule.fixedDiscount / 100).toFixed(2)}` : "-"}</TableCell>
+                        <TableCell>{rule.fixedMarkup ? `$${(rule.fixedMarkup / 100).toFixed(2)}` : "-"}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteCountryRuleMutation.mutate(rule.id)}
+                            disabled={deleteCountryRuleMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                        No country-specific pricing rules for this user
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* Weight Rules Tab */}
+          <TabsContent value="weights" className="space-y-4">
+            <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100">
+              <p className="text-xs text-yellow-700">
+                Weight-based pricing rules override global weight multipliers for this user.
+              </p>
+            </div>
+
+            {/* Add new weight rule */}
+            <div className="grid grid-cols-6 gap-2 items-end">
+              <div>
+                <Label className="text-xs">Rule Name</Label>
+                <Input
+                  placeholder="Heavy"
+                  value={newWeightRule.ruleName}
+                  onChange={(e) => setNewWeightRule({ ...newWeightRule, ruleName: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Min kg</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  step="0.1"
+                  min="0"
+                  value={newWeightRule.minWeight}
+                  onChange={(e) => setNewWeightRule({ ...newWeightRule, minWeight: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Max kg</Label>
+                <Input
+                  type="number"
+                  placeholder="∞"
+                  step="0.1"
+                  min="0"
+                  value={newWeightRule.maxWeight}
+                  onChange={(e) => setNewWeightRule({ ...newWeightRule, maxWeight: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Multiplier</Label>
+                <Input
+                  type="number"
+                  placeholder="1.0"
+                  step="0.01"
+                  min="0"
+                  value={newWeightRule.priceMultiplier}
+                  onChange={(e) => setNewWeightRule({ ...newWeightRule, priceMultiplier: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">$/kg Disc.</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  value={newWeightRule.perKgDiscount}
+                  onChange={(e) => setNewWeightRule({ ...newWeightRule, perKgDiscount: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={handleSubmitWeightRule}
+                disabled={createWeightRuleMutation.isPending}
+                className="h-9"
+              >
+                {createWeightRuleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+              </Button>
+            </div>
+
+            {/* Weight rules table */}
+            <div className="border rounded-lg max-h-60 overflow-y-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background">
+                  <TableRow>
+                    <TableHead>Rule Name</TableHead>
+                    <TableHead>Min kg</TableHead>
+                    <TableHead>Max kg</TableHead>
+                    <TableHead>Multiplier</TableHead>
+                    <TableHead>$/kg</TableHead>
+                    <TableHead className="w-24">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingWeightRules ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ) : weightRulesArray.length > 0 ? (
+                    weightRulesArray.map((rule: any) => (
+                      <TableRow key={rule.id}>
+                        <TableCell>{rule.ruleName}</TableCell>
+                        <TableCell>{rule.minWeight}</TableCell>
+                        <TableCell>{rule.maxWeight ?? "∞"}</TableCell>
+                        <TableCell>{rule.priceMultiplier ? `${rule.priceMultiplier}x` : "-"}</TableCell>
+                        <TableCell>{rule.perKgDiscount ? `$${(rule.perKgDiscount / 100).toFixed(2)}` : "-"}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteWeightRuleMutation.mutate(rule.id)}
+                            disabled={deleteWeightRuleMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                        No weight-specific pricing rules for this user
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 interface User {
   id: number;
   username: string;
@@ -797,6 +1287,7 @@ export default function ManageUsers() {
   const [isDefaultPriceMultiplierDialogOpen, setIsDefaultPriceMultiplierDialogOpen] = useState(false);
   const [isCountryPricingDialogOpen, setIsCountryPricingDialogOpen] = useState(false);
   const [isWeightRangePricingDialogOpen, setIsWeightRangePricingDialogOpen] = useState(false);
+  const [isUserPricingRulesDialogOpen, setIsUserPricingRulesDialogOpen] = useState(false);
   const [showInsuranceManager, setShowInsuranceManager] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(false); // State to force rerenders
   const [addAmount, setAddAmount] = useState<number | "">("");
@@ -2042,7 +2533,12 @@ export default function ManageUsers() {
   const handleOpenWeightRangePricingDialog = () => {
     setIsWeightRangePricingDialogOpen(true);
   };
-  
+
+  const handleOpenUserPricingRulesDialog = (user: User) => {
+    setSelectedUser(user);
+    setIsUserPricingRulesDialogOpen(true);
+  };
+
   const handleNewUserInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setNewUser(prev => ({
@@ -2418,6 +2914,10 @@ export default function ManageUsers() {
                       <DropdownMenuItem onClick={() => handleOpenPriceMultiplierDialog(user)}>
                         <DollarSign className="mr-2 h-4 w-4 text-blue-500" />
                         Edit Price Multiplier
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenUserPricingRulesDialog(user)}>
+                        <Settings className="mr-2 h-4 w-4 text-emerald-500" />
+                        User Pricing Rules
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleOpenCountryPricingDialog()}>
                         <Calculator className="mr-2 h-4 w-4 text-green-500" />
@@ -4087,9 +4587,16 @@ export default function ManageUsers() {
       />
 
       {/* Weight Range Pricing Dialog */}
-      <WeightRangePricingDialog 
-        open={isWeightRangePricingDialogOpen} 
-        onOpenChange={setIsWeightRangePricingDialogOpen} 
+      <WeightRangePricingDialog
+        open={isWeightRangePricingDialogOpen}
+        onOpenChange={setIsWeightRangePricingDialogOpen}
+      />
+
+      {/* User-Specific Pricing Rules Dialog */}
+      <UserPricingRulesDialog
+        open={isUserPricingRulesDialogOpen}
+        onOpenChange={setIsUserPricingRulesDialogOpen}
+        user={selectedUser}
       />
     </Layout>
   );
