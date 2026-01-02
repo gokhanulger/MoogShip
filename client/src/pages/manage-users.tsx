@@ -2976,6 +2976,10 @@ export default function ManageUsers() {
                         <DollarSign className="mr-2 h-4 w-4 text-green-500" />
                         View Financial Activity
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => window.open(`/admin-pricing-logs?userId=${user.id}`, '_blank')}>
+                        <Calculator className="mr-2 h-4 w-4 text-cyan-500" />
+                        View Pricing Logs
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDownloadUserActions(user)}>
                         <Download className="mr-2 h-4 w-4 text-blue-500" />
                         Download User Actions

@@ -389,7 +389,7 @@ import { calculateMoogShipPricing } from "./services/moogship-pricing";
 import { storage } from "./storage";
 import { registerCmsRoutes } from "./cms-routes";
 import { db } from "./db";
-import { shipments } from "../shared/schema";
+import { shipments, type InsertPricingCalculationLog } from "../shared/schema";
 import { eq, or } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -10613,6 +10613,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // PRICING CALCULATION LOGS (Admin-only)
+  // ============================================
+
+  // Get pricing calculation logs (admin only)
+  app.get("/api/admin/pricing-logs", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const { userId, limit, offset, startDate, endDate } = req.query;
+
+      const options: {
+        userId?: number;
+        limit?: number;
+        offset?: number;
+        startDate?: Date;
+        endDate?: Date;
+      } = {};
+
+      if (userId) options.userId = parseInt(userId as string);
+      if (limit) options.limit = parseInt(limit as string);
+      if (offset) options.offset = parseInt(offset as string);
+      if (startDate) options.startDate = new Date(startDate as string);
+      if (endDate) options.endDate = new Date(endDate as string);
+
+      const logs = await storage.getPricingCalculationLogs(options);
+      const total = await storage.getPricingCalculationLogCount({
+        userId: options.userId,
+        startDate: options.startDate,
+        endDate: options.endDate,
+      });
+
+      res.json({
+        success: true,
+        logs,
+        total,
+        limit: options.limit || 100,
+        offset: options.offset || 0,
+      });
+    } catch (error: unknown) {
+      console.error("Error fetching pricing calculation logs:", error);
+      res.status(500).json({ message: "Error fetching pricing logs", error: (error as Error).message });
+    }
+  });
+
+  // Get pricing calculation logs for a specific user (admin only)
+  app.get("/api/admin/pricing-logs/user/:userId", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const { limit, offset } = req.query;
+
+      const logs = await storage.getPricingCalculationLogs({
+        userId,
+        limit: limit ? parseInt(limit as string) : 50,
+        offset: offset ? parseInt(offset as string) : 0,
+      });
+
+      const total = await storage.getPricingCalculationLogCount({ userId });
+
+      res.json({
+        success: true,
+        logs,
+        total,
+      });
+    } catch (error: unknown) {
+      console.error("Error fetching user pricing logs:", error);
+      res.status(500).json({ message: "Error fetching pricing logs", error: (error as Error).message });
+    }
+  });
+
   // Set user-specific minimum balance (admin only)
   app.post(
     "/api/users/:userId/min-balance",
@@ -12274,14 +12346,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add insurance information to the response if insurance was calculated
-        const responseOptions = insuranceCost > 0 ? 
+        const responseOptions = insuranceCost > 0 ?
           pricingResult.options.map(option => ({
             ...option,
             insuranceCost: insuranceCost,
             totalPrice: option.totalPrice + insuranceCost,
             hasInsurance: true
           })) : pricingResult.options;
-        
+
+        // Log pricing calculation for admin visibility (async, non-blocking)
+        try {
+          const firstOption = pricingResult.options?.[0];
+          const volWeight = (parseFloat(packageLength) * parseFloat(packageWidth) * parseFloat(packageHeight)) / 5000;
+          const logData: InsertPricingCalculationLog = {
+            userId: effectiveUserId || null,
+            username: req.user?.username || null,
+            packageWeight: parseFloat(packageWeight),
+            packageLength: parseFloat(packageLength),
+            packageWidth: parseFloat(packageWidth),
+            packageHeight: parseFloat(packageHeight),
+            volumetricWeight: volWeight,
+            billableWeight: Math.max(parseFloat(packageWeight), volWeight),
+            receiverCountry: receiverCountry,
+            userMultiplier: userMultiplier,
+            countryMultiplier: null,
+            weightMultiplier: null,
+            combinedMultiplier: userMultiplier,
+            countryRuleSource: null,
+            weightRuleSource: null,
+            appliedRules: null,
+            basePrice: firstOption?.cargoPrice || null,
+            finalPrice: firstOption?.totalPrice || null,
+            selectedService: firstOption?.displayName || null,
+            pricingOptions: pricingResult.options || null,
+            requestSource: 'price_calculator',
+            ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || null,
+          };
+          storage.createPricingCalculationLog(logData).catch(err =>
+            console.error('Failed to log pricing calculation:', err)
+          );
+        } catch (logError) {
+          console.error('Error preparing pricing log:', logError);
+        }
+
         res.json({
           success: true,
           options: responseOptions,

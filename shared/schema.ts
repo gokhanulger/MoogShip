@@ -1683,6 +1683,61 @@ export const PricingRuleTypeColors = {
   per_kg_markup: "bg-red-100 text-red-800"
 };
 
+// Pricing calculation logs table for admin visibility
+export const pricingCalculationLogs = pgTable("pricing_calculation_logs", {
+  id: serial("id").primaryKey(),
+
+  // User and shipment info
+  userId: integer("user_id"), // User who requested the pricing (null for public/guest)
+  username: text("username"), // Snapshot of username at time of calculation
+  shipmentId: integer("shipment_id"), // Associated shipment if available
+
+  // Package details
+  packageWeight: real("package_weight").notNull(), // Weight in kg
+  packageLength: real("package_length"), // Dimensions in cm
+  packageWidth: real("package_width"),
+  packageHeight: real("package_height"),
+  volumetricWeight: real("volumetric_weight"), // Calculated volumetric weight
+  billableWeight: real("billable_weight"), // Final billable weight used
+
+  // Destination
+  receiverCountry: text("receiver_country").notNull(), // ISO country code
+
+  // Multiplier breakdown
+  userMultiplier: real("user_multiplier").notNull(), // User's base multiplier
+  countryMultiplier: real("country_multiplier"), // Country-specific multiplier applied
+  weightMultiplier: real("weight_multiplier"), // Weight-range multiplier applied
+  combinedMultiplier: real("combined_multiplier").notNull(), // Final combined multiplier
+
+  // Rule sources (tracks whether global or user-specific rules were applied)
+  countryRuleSource: text("country_rule_source"), // "global", "user_specific", or null
+  weightRuleSource: text("weight_rule_source"), // "global", "user_specific", or null
+
+  // Applied rules details (JSON for flexibility)
+  appliedRules: json("applied_rules"), // Array of applied rule descriptions
+
+  // Pricing results
+  basePrice: integer("base_price"), // Base price before multiplier (in cents)
+  finalPrice: integer("final_price"), // Final price after multiplier (in cents)
+  selectedService: text("selected_service"), // Service name selected
+  pricingOptions: json("pricing_options"), // All pricing options returned
+
+  // Request context
+  requestSource: text("request_source"), // "shipment_create", "bulk_upload", "price_calculator", etc.
+  ipAddress: text("ip_address"), // For security/audit
+
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertPricingCalculationLogSchema = createInsertSchema(pricingCalculationLogs).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertPricingCalculationLog = z.infer<typeof insertPricingCalculationLogSchema>;
+export type PricingCalculationLog = typeof pricingCalculationLogs.$inferSelect;
+
 // GPT Advisor conversations table
 export const advisorConversations = pgTable("advisor_conversations", {
   id: serial("id").primaryKey(),

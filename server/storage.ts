@@ -73,6 +73,9 @@ import {
   type InsertCountryPricingRule,
   type WeightPricingRule,
   type InsertWeightPricingRule,
+  pricingCalculationLogs,
+  type PricingCalculationLog,
+  type InsertPricingCalculationLog,
   type AdvisorConversation,
   type InsertAdvisorConversation,
   type EtsyConnection,
@@ -537,6 +540,21 @@ export interface IStorage {
   createWeightPricingRule(data: schema.InsertWeightPricingRule): Promise<schema.WeightPricingRule>;
   updateWeightPricingRule(id: number, data: Partial<schema.WeightPricingRule>): Promise<schema.WeightPricingRule | undefined>;
   deleteWeightPricingRule(id: number): Promise<schema.WeightPricingRule | undefined>;
+
+  // Pricing Calculation Logs (admin-only visibility)
+  createPricingCalculationLog(data: schema.InsertPricingCalculationLog): Promise<schema.PricingCalculationLog>;
+  getPricingCalculationLogs(options: {
+    userId?: number;
+    limit?: number;
+    offset?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<schema.PricingCalculationLog[]>;
+  getPricingCalculationLogCount(options: {
+    userId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<number>;
 
   // Recipient operations
   getRecipients(userId: number): Promise<schema.Recipient[]>;
@@ -4893,6 +4911,29 @@ export class DatabaseOnlyStorage implements IStorage {
     return dbStorage.deleteWeightPricingRule(id);
   }
 
+  // Pricing Calculation Logs
+  async createPricingCalculationLog(data: InsertPricingCalculationLog): Promise<PricingCalculationLog> {
+    return dbStorage.createPricingCalculationLog(data);
+  }
+
+  async getPricingCalculationLogs(options: {
+    userId?: number;
+    limit?: number;
+    offset?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PricingCalculationLog[]> {
+    return dbStorage.getPricingCalculationLogs(options);
+  }
+
+  async getPricingCalculationLogCount(options: {
+    userId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<number> {
+    return dbStorage.getPricingCalculationLogCount(options);
+  }
+
   // Forward all operations to the database storage implementation
   async getUser(id: number): Promise<User | undefined> {
     return dbStorage.getUser(id);
@@ -6492,6 +6533,92 @@ export class DatabaseOnlyStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting weight pricing rule:", error);
       return undefined;
+    }
+  }
+
+  // Pricing Calculation Logs (admin-only)
+  async createPricingCalculationLog(data: InsertPricingCalculationLog): Promise<PricingCalculationLog> {
+    try {
+      const [log] = await db
+        .insert(pricingCalculationLogs)
+        .values(data)
+        .returning();
+
+      return log;
+    } catch (error) {
+      console.error("Error creating pricing calculation log:", error);
+      throw error;
+    }
+  }
+
+  async getPricingCalculationLogs(options: {
+    userId?: number;
+    limit?: number;
+    offset?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PricingCalculationLog[]> {
+    try {
+      const conditions = [];
+
+      if (options.userId) {
+        conditions.push(eq(pricingCalculationLogs.userId, options.userId));
+      }
+      if (options.startDate) {
+        conditions.push(gte(pricingCalculationLogs.createdAt, options.startDate));
+      }
+      if (options.endDate) {
+        conditions.push(lte(pricingCalculationLogs.createdAt, options.endDate));
+      }
+
+      const query = db
+        .select()
+        .from(pricingCalculationLogs)
+        .orderBy(desc(pricingCalculationLogs.createdAt))
+        .limit(options.limit || 100)
+        .offset(options.offset || 0);
+
+      if (conditions.length > 0) {
+        return await query.where(and(...conditions));
+      }
+
+      return await query;
+    } catch (error) {
+      console.error("Error getting pricing calculation logs:", error);
+      return [];
+    }
+  }
+
+  async getPricingCalculationLogCount(options: {
+    userId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<number> {
+    try {
+      const conditions = [];
+
+      if (options.userId) {
+        conditions.push(eq(pricingCalculationLogs.userId, options.userId));
+      }
+      if (options.startDate) {
+        conditions.push(gte(pricingCalculationLogs.createdAt, options.startDate));
+      }
+      if (options.endDate) {
+        conditions.push(lte(pricingCalculationLogs.createdAt, options.endDate));
+      }
+
+      const query = db.select({ count: sql`count(*)` }).from(pricingCalculationLogs);
+
+      if (conditions.length > 0) {
+        const result = await query.where(and(...conditions));
+        return Number(result[0].count);
+      }
+
+      const result = await query;
+      return Number(result[0].count);
+    } catch (error) {
+      console.error("Error getting pricing calculation log count:", error);
+      return 0;
     }
   }
 
