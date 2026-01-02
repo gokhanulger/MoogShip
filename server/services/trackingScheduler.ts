@@ -165,18 +165,22 @@ export async function syncAllTrackingData() {
   try {
     console.log('[TRACKING SCHEDULER] Starting bulk tracking data sync...');
     
-    // Get all shipments that have carrier tracking numbers and are not manually closed
+    // Get all shipments that have any tracking number and are not manually closed
     const shipments = await storage.getAllShipments();
-    const shipmentsWithTracking = shipments.filter(s => 
-      s.carrierTrackingNumber && 
-      s.carrierTrackingNumber.trim() !== '' &&
-      s.status !== ShipmentStatus.DELIVERED &&
-      s.status !== ShipmentStatus.CANCELLED &&
-      s.status !== ShipmentStatus.REJECTED &&
-      !s.trackingClosed  // Exclude shipments where admin manually closed tracking
-    );
-    
-    console.log(`[TRACKING SCHEDULER] Found ${shipmentsWithTracking.length} shipments with carrier tracking numbers to sync (excluding manually closed tracking)`);
+    const shipmentsWithTracking = shipments.filter(s => {
+      // Check if any tracking number exists
+      const hasTracking = (s.carrierTrackingNumber && s.carrierTrackingNumber.trim() !== '') ||
+                          ((s as any).afsBarkod && (s as any).afsBarkod.trim() !== '') ||
+                          ((s as any).manualTrackingNumber && (s as any).manualTrackingNumber.trim() !== '');
+
+      return hasTracking &&
+        s.status !== ShipmentStatus.DELIVERED &&
+        s.status !== ShipmentStatus.CANCELLED &&
+        s.status !== ShipmentStatus.REJECTED &&
+        !(s as any).trackingClosed;  // Exclude shipments where admin manually closed tracking
+    });
+
+    console.log(`[TRACKING SCHEDULER] Found ${shipmentsWithTracking.length} shipments with tracking numbers to sync`);
     
     if (shipmentsWithTracking.length === 0) {
       console.log('[TRACKING SCHEDULER] No shipments to sync');
@@ -208,27 +212,42 @@ export async function syncAllTrackingData() {
         
         // Smart tracking: Check actual tracking number format to use correct API
         // Some shipments have multiple tracking numbers (AFS internal + UPS/DHL carrier)
-        const trackingNum = shipment.carrierTrackingNumber!;
-        const manualTrackingNum = (shipment as any).manualTrackingNumber;
-        const afsBarkod = (shipment as any).afsBarkod;
+        const trackingNum = shipment.carrierTrackingNumber || '';
+        const manualTrackingNum = (shipment as any).manualTrackingNumber || '';
+        const afsBarkod = (shipment as any).afsBarkod || '';
+
+        // Skip if no tracking number at all
+        if (!trackingNum && !manualTrackingNum && !afsBarkod) {
+          console.log(`[TRACKING SCHEDULER] Skipping shipment ${shipment.id} - no tracking number found`);
+          continue;
+        }
 
         // Determine actual carrier from tracking number format
         let actualCarrier = carrierType;
-        let actualTrackingNumber = trackingNum;
+        // Use best available tracking number
+        let actualTrackingNumber = trackingNum || manualTrackingNum || afsBarkod;
 
-        // If tracking number starts with 1Z, it's UPS regardless of selectedService
-        if (trackingNum.startsWith('1Z') || (manualTrackingNum && manualTrackingNum.startsWith('1Z'))) {
+        // If any tracking number starts with 1Z, it's UPS
+        if (trackingNum.startsWith('1Z') || manualTrackingNum.startsWith('1Z')) {
           actualCarrier = 'UPS';
           actualTrackingNumber = trackingNum.startsWith('1Z') ? trackingNum : manualTrackingNum;
         }
-        // If tracking number starts with 003, it's AFS
-        else if (trackingNum.startsWith('003') || (afsBarkod && afsBarkod.startsWith('003'))) {
+        // If tracking number starts with 003 or afsBarkod exists, it's AFS
+        else if (trackingNum.startsWith('003') || afsBarkod.startsWith('003') || afsBarkod) {
           actualCarrier = 'AFS';
           actualTrackingNumber = afsBarkod || trackingNum;
         }
-        // 10-digit numbers are typically DHL
-        else if (/^\d{10}$/.test(trackingNum)) {
+        // 9-10 digit numbers are typically DHL
+        else if (/^\d{9,10}$/.test(actualTrackingNumber)) {
           actualCarrier = 'DHL';
+        }
+        // 11-12 digit numbers starting with 50 are GLS
+        else if (/^50\d{9,10}$/.test(actualTrackingNumber)) {
+          actualCarrier = 'GLS';
+        }
+        // 12 digit numbers are typically FedEx
+        else if (/^\d{12}$/.test(actualTrackingNumber)) {
+          actualCarrier = 'FEDEX';
         }
 
         if (actualCarrier !== carrierType) {
