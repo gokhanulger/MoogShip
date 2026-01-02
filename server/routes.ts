@@ -4104,9 +4104,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "./services/moogship-pricing"
       );
 
-      // Get user's price multiplier (use 1.0 as fallback - NOT system default)
+      // Get user's price multiplier (every user has one, defaults to 1.45 on creation)
       const user = req.user;
-      const userPriceMultiplier = user.priceMultiplier || 1.0;
+      const userPriceMultiplier = user.priceMultiplier;
 
       console.log(
         `Bulk pricing for user ${user.username} with multiplier ${userPriceMultiplier}`,
@@ -4331,9 +4331,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get user's price multiplier (use 1.0 as fallback - NOT system default)
+      // Get user's price multiplier (every user has one, defaults to 1.45 on creation)
       const user = authenticatedUser;
-      const userPriceMultiplier = user?.priceMultiplier || 1.0;
+      const userPriceMultiplier = user?.priceMultiplier;
 
       console.log(
         `💰 Using price multiplier: ${userPriceMultiplier} for user ${user.username}`,
@@ -12080,8 +12080,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user multiplier based on role and context
       // ADMIN: Always sees COST prices (multiplier = 1) unless creating for a specific customer
-      // USER: Gets their own multiplier (default 1.0 if not set - NOT system default)
-      let userMultiplier = 1.0; // Default to cost price (no markup)
+      // USER: Gets their own multiplier (every user has one, defaults to 1.45 on creation)
+      let userMultiplier = 1.0;
       let skipMultiplier = false;
 
       if (req.user?.role === 'admin') {
@@ -12089,14 +12089,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Admin creating for a specific customer - use customer's multiplier
           try {
             const user = await storage.getUser(userId);
-            if (user && user.priceMultiplier) {
-              userMultiplier = user.priceMultiplier;
+            if (user) {
+              userMultiplier = user.priceMultiplier; // User always has a multiplier (default 1.45)
               console.log(`💰 Admin: Using customer multiplier: ${userMultiplier} for user ID ${userId}`);
-            } else {
-              console.log(`💰 Admin: Customer ${userId} has no multiplier, using 1.0 (cost)`);
             }
           } catch (err) {
-            console.log(`⚠️ Could not get user multiplier for user ${userId}, using 1.0`);
+            console.log(`⚠️ Could not get user for ${userId}`);
           }
         } else {
           // Admin checking prices for themselves - show COST prices (no multiplier)
@@ -12105,8 +12103,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`💰 Admin: Showing COST prices (skipMultiplier=true)`);
         }
       } else {
-        // Regular user - use their own multiplier (1.0 if not explicitly set)
-        userMultiplier = req.user?.priceMultiplier || 1.0;
+        // Regular user - use their own multiplier (every user has one set at creation)
+        userMultiplier = req.user?.priceMultiplier;
         console.log(`💰 Using user multiplier: ${userMultiplier} for user ${req.user?.username}`);
       }
 
