@@ -11342,6 +11342,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // FedEx Token Cache Clear endpoint (admin only) - use after updating API key permissions
+  app.post("/api/fedex/clear-token-cache", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const { clearTokenCache } = await import("./services/fedex");
+      await clearTokenCache();
+      res.json({ success: true, message: "FedEx token cache cleared. Next API call will use a fresh token." });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to clear token cache", error: (error as Error).message });
+    }
+  });
+
   // FedEx Postal Code Validation endpoint
   app.post("/api/fedex/validate-postal-code", authenticateToken, async (req, res) => {
     try {

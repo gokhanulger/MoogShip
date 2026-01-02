@@ -825,11 +825,12 @@ function generateUUID(): string {
 }
 
 /**
- * Clear token cache (for 401 retry mechanism)
+ * Clear token cache (for 401 retry mechanism or permission updates)
  */
-async function clearTokenCache(): Promise<void> {
-  // In-memory cache clearing - token will be refetched
-  console.log('[FEDEX AUTH] Clearing token cache for retry...');
+export async function clearTokenCache(): Promise<void> {
+  console.log('[FEDEX AUTH] Clearing token cache...');
+  cachedToken = null;
+  tokenExpiry = 0;
 }
 
 /**
