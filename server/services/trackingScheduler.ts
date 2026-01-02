@@ -194,14 +194,15 @@ export async function syncAllTrackingData() {
         // Add delay between requests to avoid rate limiting (200ms is enough)
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        // Use carrier from shipment data if available, otherwise auto-detect
-        let carrierType = shipment.carrierName ? mapCarrierNameToType(shipment.carrierName) : null;
+        // Use carrier from shipment data if available (check both carrierName and manualCarrierName)
+        const carrierNameFromDb = shipment.carrierName || (shipment as any).manualCarrierName;
+        let carrierType = carrierNameFromDb ? mapCarrierNameToType(carrierNameFromDb) : null;
         if (!carrierType || carrierType === 'UNKNOWN') {
           const detectedCarrier = detectCarrierFromNumber(shipment.carrierTrackingNumber!);
           // detectCarrierFromNumber returns uppercase types: 'FEDEX', 'UPS', 'DHL', 'GLS', 'AFS', 'ROYAL', 'UNKNOWN'
           carrierType = detectedCarrier as 'UPS' | 'DHL' | 'AFS' | 'GLS' | 'FEDEX' | 'ROYAL' | 'UNKNOWN';
         }
-        console.log(`[TRACKING SCHEDULER] Processing ${carrierType} shipment ${shipment.id} (carrier: ${shipment.carrierName || 'auto-detected'}) with tracking: ${shipment.carrierTrackingNumber}`);
+        console.log(`[TRACKING SCHEDULER] Processing ${carrierType} shipment ${shipment.id} (carrier: ${carrierNameFromDb || 'auto-detected'}) with tracking: ${shipment.carrierTrackingNumber}`);
         
         let trackingData;
         if (carrierType === 'UPS') {

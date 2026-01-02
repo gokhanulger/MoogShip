@@ -2457,7 +2457,7 @@ export class DatabaseStorage {
           s.manual_tracking_link as "manualTrackingLink",
           s.tracking_info as "trackingInfo",
           s.tracking_closed as "trackingClosed",
-          s.carrier_name as "carrier",
+          s.carrier_name as "carrierName",
           s.bizimhesap_invoice_id as "bizimHesapInvoiceId",
           s.selected_service as "selectedService",
           s.shipping_terms as "shippingTerms",
