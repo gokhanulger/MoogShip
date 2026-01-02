@@ -206,10 +206,39 @@ export async function syncAllTrackingData() {
         }
         console.log(`[TRACKING SCHEDULER] Processing ${carrierType} shipment ${shipment.id} (carrier: ${carrierNameFromDb || 'auto-detected'}) with tracking: ${shipment.carrierTrackingNumber}`);
         
+        // Smart tracking: Check actual tracking number format to use correct API
+        // Some shipments have multiple tracking numbers (AFS internal + UPS/DHL carrier)
+        const trackingNum = shipment.carrierTrackingNumber!;
+        const manualTrackingNum = (shipment as any).manualTrackingNumber;
+        const afsBarkod = (shipment as any).afsBarkod;
+
+        // Determine actual carrier from tracking number format
+        let actualCarrier = carrierType;
+        let actualTrackingNumber = trackingNum;
+
+        // If tracking number starts with 1Z, it's UPS regardless of selectedService
+        if (trackingNum.startsWith('1Z') || (manualTrackingNum && manualTrackingNum.startsWith('1Z'))) {
+          actualCarrier = 'UPS';
+          actualTrackingNumber = trackingNum.startsWith('1Z') ? trackingNum : manualTrackingNum;
+        }
+        // If tracking number starts with 003, it's AFS
+        else if (trackingNum.startsWith('003') || (afsBarkod && afsBarkod.startsWith('003'))) {
+          actualCarrier = 'AFS';
+          actualTrackingNumber = afsBarkod || trackingNum;
+        }
+        // 10-digit numbers are typically DHL
+        else if (/^\d{10}$/.test(trackingNum)) {
+          actualCarrier = 'DHL';
+        }
+
+        if (actualCarrier !== carrierType) {
+          console.log(`[TRACKING SCHEDULER] Carrier override: ${carrierType} → ${actualCarrier} based on tracking number format`);
+        }
+
         let trackingData;
-        if (carrierType === 'UPS') {
+        if (actualCarrier === 'UPS') {
           const { trackPackage } = await import('../services/ups.js');
-          trackingData = await trackPackage(shipment.carrierTrackingNumber!);
+          trackingData = await trackPackage(actualTrackingNumber);
           
           // Check for customs charges and send notification if detected
           // BUT ONLY if the package is NOT already delivered
@@ -253,22 +282,20 @@ export async function syncAllTrackingData() {
           } else if ((trackingData as any).customsChargesDue && trackingData.status === 'DELIVERED') {
             console.log(`[TRACKING SCHEDULER] Skipping customs charges notification for shipment ${shipment.id} - package already delivered`);
           }
-        } else if (carrierType === 'DHL') {
+        } else if (actualCarrier === 'DHL') {
           const { trackPackage } = await import('../services/dhl.js');
-          trackingData = await trackPackage(shipment.carrierTrackingNumber!);
-        } else if (carrierType === 'AFS') {
+          trackingData = await trackPackage(actualTrackingNumber);
+        } else if (actualCarrier === 'AFS') {
           const { trackAFS } = await import('../services/afstransport.js');
-          // Use AFS barkod if available, otherwise try carrier tracking number
-          const trackingNumber = shipment.afsBarkod || shipment.carrierTrackingNumber!;
-          trackingData = await trackAFS(trackingNumber);
-        } else if (carrierType === 'GLS') {
+          trackingData = await trackAFS(actualTrackingNumber);
+        } else if (actualCarrier === 'GLS') {
           const { trackPackage } = await import('../services/gls.js');
-          trackingData = await trackPackage(shipment.carrierTrackingNumber!);
-        } else if (carrierType === 'FEDEX') {
+          trackingData = await trackPackage(actualTrackingNumber);
+        } else if (actualCarrier === 'FEDEX') {
           const { trackPackage } = await import('../services/fedex.js');
-          trackingData = await trackPackage(shipment.carrierTrackingNumber!);
+          trackingData = await trackPackage(actualTrackingNumber);
         } else {
-          console.log(`[TRACKING SCHEDULER] Skipping unsupported carrier ${carrierType} for tracking: ${shipment.carrierTrackingNumber}`);
+          console.log(`[TRACKING SCHEDULER] Skipping unsupported carrier ${actualCarrier} for tracking: ${actualTrackingNumber}`);
           skippedUnknownCarrier++;
           continue;
         }
