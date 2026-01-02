@@ -1318,7 +1318,8 @@ export default function ManageUsers() {
     postalCode: "",
     country: "",
     shipmentCapacity: "",
-    priceMultiplier: ""
+    priceMultiplier: "",
+    pricingMethod: "default" // 'default' | 'weight_based' | 'country_based'
   });
   
   // New user form state
@@ -1675,7 +1676,7 @@ export default function ManageUsers() {
   const updateUserMutation = useMutation({
     mutationFn: async () => {
       if (!selectedUser) return;
-      
+
       const userData = {
         username: editUserData.username,
         name: editUserData.name,
@@ -1693,7 +1694,8 @@ export default function ManageUsers() {
         postalCode: editUserData.postalCode || null,
         country: editUserData.country || null,
         shipmentCapacity: editUserData.shipmentCapacity ? parseInt(editUserData.shipmentCapacity) : null,
-        priceMultiplier: editUserData.priceMultiplier ? parseFloat(editUserData.priceMultiplier) : 1
+        priceMultiplier: editUserData.priceMultiplier ? parseFloat(editUserData.priceMultiplier) : 1,
+        pricingMethod: editUserData.pricingMethod || "default"
       };
       
       const res = await apiRequest("PATCH", `/api/users/${selectedUser.id}`, userData);
@@ -2302,7 +2304,8 @@ export default function ManageUsers() {
       postalCode: userData.postalCode || "",
       country: userData.country || "",
       shipmentCapacity: userData.shipmentCapacity ? String(userData.shipmentCapacity) : "",
-      priceMultiplier: userData.priceMultiplier ? String(userData.priceMultiplier) : "1"
+      priceMultiplier: userData.priceMultiplier ? String(userData.priceMultiplier) : "1",
+      pricingMethod: (userData as any).pricingMethod || "default"
     });
     setIsEditUserDialogOpen(true);
   };
@@ -4205,8 +4208,29 @@ export default function ManageUsers() {
                   className="h-9"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Sets a multiplier for this user's shipping prices. Default is 1.0 (100% of base price). 
+                  Sets a multiplier for this user's shipping prices. Default is 1.0 (100% of base price).
                   Lower values give discounts (e.g., 0.9 = 10% off).
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-3">
+              <Label htmlFor="edit_pricingMethod" className="text-right text-sm">
+                Pricing Method
+              </Label>
+              <div className="col-span-3">
+                <select
+                  id="edit_pricingMethod"
+                  name="pricingMethod"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={editUserData.pricingMethod}
+                  onChange={handleEditUserInputChange}
+                >
+                  <option value="default">Default (Only User Multiplier)</option>
+                  <option value="weight_based">Weight-Based Pricing</option>
+                  <option value="country_based">Country-Based Pricing</option>
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select the pricing method for this user. User-specific rules (in Pricing Rules) will apply based on this selection.
                 </p>
               </div>
             </div>

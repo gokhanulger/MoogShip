@@ -198,16 +198,22 @@ async function getShipentegraAccessToken(): Promise<string | null> {
 }
 
 /**
- * Calculate combined price multiplier from user, country, and weight-based multipliers
- * Now supports user-specific pricing rules that override global rules
- * @param userId - Optional user ID for user-specific pricing rules
+ * Calculate price multiplier based on user's pricing method setting
+ * Simplified: Only uses user-specific rules, no global rules
+ *
+ * pricingMethod options:
+ * - 'default': Only user's base priceMultiplier is applied
+ * - 'weight_based': User's weight rules are applied
+ * - 'country_based': User's country rules are applied (multiplier or fixed price)
+ *
+ * Formula: (Cargo + Fuel) × multiplier + additionalFee
  */
 async function calculateCombinedMultiplier(
   userMultiplier: number,
   receiverCountry: string,
   packageWeight: number,
   skipMultiplier: boolean = false,
-  userId?: number // Optional: for user-specific pricing rules
+  userId?: number
 ): Promise<{
   combinedMultiplier: number;
   countryMultiplier: number | null;
@@ -217,7 +223,10 @@ async function calculateCombinedMultiplier(
   weightRuleSource: 'user_specific' | 'global' | null;
   countryRuleDetails: any;
   weightRuleDetails: any;
+  fixedPriceAdjustment: number; // For fixed discounts/markups
+  pricingMethod: string;
 }> {
+  // Default return for admin pricing (skip multiplier)
   if (skipMultiplier) {
     return {
       combinedMultiplier: 1,
@@ -228,10 +237,12 @@ async function calculateCombinedMultiplier(
       weightRuleSource: null,
       countryRuleDetails: null,
       weightRuleDetails: null,
+      fixedPriceAdjustment: 0,
+      pricingMethod: 'admin',
     };
   }
 
-  const appliedMultipliers: string[] = [`user_${userMultiplier}`];
+  const appliedMultipliers: string[] = [`user_base_${userMultiplier}`];
   let combinedMultiplier = userMultiplier;
   let countryMultiplier: number | null = null;
   let weightRangeMultiplier: number | null = null;
@@ -239,78 +250,28 @@ async function calculateCombinedMultiplier(
   let weightRuleSource: 'user_specific' | 'global' | null = null;
   let countryRuleDetails: any = null;
   let weightRuleDetails: any = null;
+  let fixedPriceAdjustment = 0; // Positive for markup, negative for discount
+  let pricingMethod = 'default';
 
   try {
-    // Normalize country code to 2-letter format
     const countryCode = normalizeCountryCode(receiverCountry);
 
-    // ============================================
-    // Country-based multiplier (user-specific first, then global)
-    // ============================================
-    let countryRuleApplied = false;
-
-    // Check for user-specific country pricing rule first
+    // Get user's pricing method if userId is provided
     if (userId) {
-      const userCountryRule = await storage.getUserCountryPricingRule(userId, countryCode);
-      if (userCountryRule) {
-        // Apply user-specific country rule
-        countryRuleSource = 'user_specific';
-        countryRuleDetails = {
-          ruleId: userCountryRule.id,
-          countryCode: userCountryRule.countryCode,
-          priceMultiplier: userCountryRule.priceMultiplier,
-          fixedDiscount: userCountryRule.fixedDiscount,
-          fixedMarkup: userCountryRule.fixedMarkup,
-          notes: userCountryRule.notes,
-        };
-        if (userCountryRule.priceMultiplier) {
-          countryMultiplier = userCountryRule.priceMultiplier;
-          combinedMultiplier *= countryMultiplier;
-          appliedMultipliers.push(`user_country_${countryCode}_${countryMultiplier}`);
-          countryRuleApplied = true;
-        } else if (userCountryRule.fixedDiscount) {
-          // Fixed discount will be applied at the final price level, not here
-          appliedMultipliers.push(`user_country_${countryCode}_fixed_discount_${userCountryRule.fixedDiscount}`);
-          countryRuleApplied = true;
-        } else if (userCountryRule.fixedMarkup) {
-          appliedMultipliers.push(`user_country_${countryCode}_fixed_markup_${userCountryRule.fixedMarkup}`);
-          countryRuleApplied = true;
-        }
+      const user = await storage.getUser(userId);
+      if (user) {
+        pricingMethod = (user as any).pricingMethod || 'default';
+        console.log(`💰 User ${userId} pricing method: ${pricingMethod}`);
       }
     }
 
-    // Fall back to global country multiplier if no user-specific rule
-    if (!countryRuleApplied) {
-      const countryMultipliers = await storage.getAllCountryPriceMultipliers();
-      const countryMatch = countryMultipliers.find(
-        cm => cm.countryCode === countryCode && cm.isActive
-      );
-
-      if (countryMatch) {
-        countryMultiplier = countryMatch.priceMultiplier;
-        combinedMultiplier *= countryMultiplier;
-        appliedMultipliers.push(`country_${countryCode}_${countryMultiplier}`);
-        countryRuleSource = 'global';
-        countryRuleDetails = {
-          ruleId: countryMatch.id,
-          countryCode: countryMatch.countryCode,
-          countryName: countryMatch.countryName,
-          priceMultiplier: countryMatch.priceMultiplier,
-          isActive: countryMatch.isActive,
-        };
-      }
-    }
-
-    // ============================================
-    // Weight-based multiplier (user-specific first, then global)
-    // ============================================
-    let weightRuleApplied = false;
-
-    // Check for user-specific weight pricing rule first
-    if (userId) {
+    // Apply pricing based on user's selected method
+    if (pricingMethod === 'weight_based' && userId) {
+      // ============================================
+      // Weight-based pricing (user-specific only)
+      // ============================================
       const userWeightRule = await storage.getUserWeightPricingRule(userId, packageWeight);
       if (userWeightRule) {
-        // Apply user-specific weight rule
         weightRuleSource = 'user_specific';
         weightRuleDetails = {
           ruleId: userWeightRule.id,
@@ -324,59 +285,73 @@ async function calculateCombinedMultiplier(
           fixedMarkup: userWeightRule.fixedMarkup,
           notes: userWeightRule.notes,
         };
+
         if (userWeightRule.priceMultiplier) {
           weightRangeMultiplier = userWeightRule.priceMultiplier;
           combinedMultiplier *= weightRangeMultiplier;
-          appliedMultipliers.push(`user_weight_${userWeightRule.ruleName}_${weightRangeMultiplier}`);
-          weightRuleApplied = true;
-        } else if (userWeightRule.perKgDiscount || userWeightRule.perKgMarkup) {
-          // Per-kg adjustments will be applied at the final price level
-          appliedMultipliers.push(`user_weight_${userWeightRule.ruleName}_per_kg`);
-          weightRuleApplied = true;
-        } else if (userWeightRule.fixedDiscount || userWeightRule.fixedMarkup) {
-          appliedMultipliers.push(`user_weight_${userWeightRule.ruleName}_fixed`);
-          weightRuleApplied = true;
+          appliedMultipliers.push(`weight_multiplier_${weightRangeMultiplier}`);
+        } else if (userWeightRule.perKgDiscount) {
+          // Per-kg discount: subtract (perKgDiscount × weight) from final price
+          fixedPriceAdjustment -= userWeightRule.perKgDiscount * packageWeight;
+          appliedMultipliers.push(`weight_per_kg_discount_${userWeightRule.perKgDiscount}`);
+        } else if (userWeightRule.perKgMarkup) {
+          // Per-kg markup: add (perKgMarkup × weight) to final price
+          fixedPriceAdjustment += userWeightRule.perKgMarkup * packageWeight;
+          appliedMultipliers.push(`weight_per_kg_markup_${userWeightRule.perKgMarkup}`);
+        } else if (userWeightRule.fixedDiscount) {
+          fixedPriceAdjustment -= userWeightRule.fixedDiscount;
+          appliedMultipliers.push(`weight_fixed_discount_${userWeightRule.fixedDiscount}`);
+        } else if (userWeightRule.fixedMarkup) {
+          fixedPriceAdjustment += userWeightRule.fixedMarkup;
+          appliedMultipliers.push(`weight_fixed_markup_${userWeightRule.fixedMarkup}`);
+        }
+      }
+
+    } else if (pricingMethod === 'country_based' && userId) {
+      // ============================================
+      // Country-based pricing (user-specific only)
+      // ============================================
+      const userCountryRule = await storage.getUserCountryPricingRule(userId, countryCode);
+      if (userCountryRule) {
+        countryRuleSource = 'user_specific';
+        countryRuleDetails = {
+          ruleId: userCountryRule.id,
+          countryCode: userCountryRule.countryCode,
+          priceMultiplier: userCountryRule.priceMultiplier,
+          fixedDiscount: userCountryRule.fixedDiscount,
+          fixedMarkup: userCountryRule.fixedMarkup,
+          notes: userCountryRule.notes,
+        };
+
+        if (userCountryRule.priceMultiplier) {
+          countryMultiplier = userCountryRule.priceMultiplier;
+          combinedMultiplier *= countryMultiplier;
+          appliedMultipliers.push(`country_multiplier_${countryCode}_${countryMultiplier}`);
+        } else if (userCountryRule.fixedDiscount) {
+          fixedPriceAdjustment -= userCountryRule.fixedDiscount;
+          appliedMultipliers.push(`country_fixed_discount_${countryCode}_${userCountryRule.fixedDiscount}`);
+        } else if (userCountryRule.fixedMarkup) {
+          fixedPriceAdjustment += userCountryRule.fixedMarkup;
+          appliedMultipliers.push(`country_fixed_markup_${countryCode}_${userCountryRule.fixedMarkup}`);
         }
       }
     }
+    // For 'default' method, only userMultiplier is applied (already set above)
 
-    // Fall back to global weight multiplier if no user-specific rule
-    if (!weightRuleApplied) {
-      const weightRangeMultipliers = await storage.getAllWeightRangePriceMultipliers();
-      const weightMatch = weightRangeMultipliers.find(wrm => {
-        const inRange = wrm.minWeight <= packageWeight &&
-                        (wrm.maxWeight === null || packageWeight <= wrm.maxWeight) &&
-                        wrm.isActive;
-        return inRange;
-      });
-
-      if (weightMatch) {
-        weightRangeMultiplier = weightMatch.priceMultiplier;
-        combinedMultiplier *= weightRangeMultiplier;
-        appliedMultipliers.push(`weight_${weightMatch.rangeName}_${weightRangeMultiplier}`);
-        weightRuleSource = 'global';
-        weightRuleDetails = {
-          ruleId: weightMatch.id,
-          rangeName: weightMatch.rangeName,
-          minWeight: weightMatch.minWeight,
-          maxWeight: weightMatch.maxWeight,
-          priceMultiplier: weightMatch.priceMultiplier,
-          isActive: weightMatch.isActive,
-        };
-      }
-    }
-
-    console.log(`💰 Combined multiplier calculation:
-      - User: ${userMultiplier}
-      - UserId: ${userId || 'none (using global rules)'}
-      - Country (${countryCode}): ${countryMultiplier || 'none'}
-      - Weight (${packageWeight}kg): ${weightRangeMultiplier || 'none'}
-      - Combined: ${combinedMultiplier}
+    console.log(`💰 Pricing calculation:
+      - User Multiplier: ${userMultiplier}
+      - UserId: ${userId || 'none'}
+      - Pricing Method: ${pricingMethod}
+      - Country: ${countryCode}
+      - Weight: ${packageWeight}kg
+      - Country Multiplier: ${countryMultiplier || 'none'}
+      - Weight Multiplier: ${weightRangeMultiplier || 'none'}
+      - Combined Multiplier: ${combinedMultiplier}
+      - Fixed Adjustment: ${fixedPriceAdjustment} cents
       - Applied: ${appliedMultipliers.join(', ')}`);
 
   } catch (error) {
-    console.error("Error calculating combined multiplier:", error);
-    // Fall back to user multiplier only if there's an error
+    console.error("Error calculating multiplier:", error);
   }
 
   return {
@@ -388,6 +363,8 @@ async function calculateCombinedMultiplier(
     weightRuleSource,
     countryRuleDetails,
     weightRuleDetails,
+    fixedPriceAdjustment,
+    pricingMethod,
   };
 }
 
@@ -655,91 +632,49 @@ export async function calculateMoogShipPricing(
         const isAFSOption = (option as any).isAFSOption === true;
         const isAramexOption = (option as any).isAramexOption === true;
 
-        if (isAFSOption || isAramexOption) {
-          // AFS/Aramex options come as cost prices, apply combined multiplier to get customer prices
-          // Calculate price with multiplier applied to base costs only
-          // Additional fee is passed through without markup
-          const multipliedCargoPrice = Math.round(option.cargoPrice * multiplierData.combinedMultiplier);
-          const multipliedFuelCost = Math.round(option.fuelCost * multiplierData.combinedMultiplier);
-          const additionalFee = option.additionalFee || 0; // Pass through at cost
-          const newTotalPrice = multipliedCargoPrice + multipliedFuelCost + additionalFee;
-          
-          if (additionalFee > 0) {
-            console.log("💰 APPLYING MULTIPLIER WITH ADDITIONAL FEE:", {
-              serviceName: option.serviceName,
-              originalCargoPrice: option.cargoPrice,
-              originalFuelCost: option.fuelCost,
-              additionalFee: additionalFee,
-              multiplier: multiplierData.combinedMultiplier,
-              multipliedCargoPrice: multipliedCargoPrice,
-              multipliedFuelCost: multipliedFuelCost,
-              finalTotalPrice: newTotalPrice
-            });
-          }
-          
-          return {
-            ...option,
-            cargoPrice: multipliedCargoPrice,
-            fuelCost: multipliedFuelCost,
-            additionalFee: additionalFee, // Pass through without markup
-            totalPrice: newTotalPrice, // Recalculated with additionalFee
-            // Store original cost prices for admin visibility
-            originalCargoPrice: option.cargoPrice,
-            originalFuelCost: option.fuelCost,
-            originalAdditionalFee: additionalFee,
-            originalTotalPrice: option.totalPrice,
-            appliedMultiplier: multiplierData.combinedMultiplier,
-            appliedMultipliers: multiplierData.appliedMultipliers,
-            countryMultiplier: multiplierData.countryMultiplier,
-            weightRangeMultiplier: multiplierData.weightRangeMultiplier,
-            countryRuleSource: multiplierData.countryRuleSource,
-            weightRuleSource: multiplierData.weightRuleSource,
-            countryRuleDetails: multiplierData.countryRuleDetails,
-            weightRuleDetails: multiplierData.weightRuleDetails,
-          };
-        } else {
-          // Apply combined multiplier to Shipentegra options
-          // Calculate price with multiplier applied to base costs only
-          // Additional fee is passed through without markup
-          const multipliedCargoPrice = Math.round(option.cargoPrice * multiplierData.combinedMultiplier);
-          const multipliedFuelCost = Math.round(option.fuelCost * multiplierData.combinedMultiplier);
-          const additionalFee = option.additionalFee || 0; // Pass through at cost
-          const newTotalPrice = multipliedCargoPrice + multipliedFuelCost + additionalFee;
-          
-          if (additionalFee > 0) {
-            console.log("💰 APPLYING MULTIPLIER WITH ADDITIONAL FEE:", {
-              serviceName: option.serviceName,
-              originalCargoPrice: option.cargoPrice,
-              originalFuelCost: option.fuelCost,
-              additionalFee: additionalFee,
-              multiplier: multiplierData.combinedMultiplier,
-              multipliedCargoPrice: multipliedCargoPrice,
-              multipliedFuelCost: multipliedFuelCost,
-              finalTotalPrice: newTotalPrice
-            });
-          }
-          
-          return {
-            ...option,
-            cargoPrice: multipliedCargoPrice,
-            fuelCost: multipliedFuelCost,
-            additionalFee: additionalFee, // Pass through without markup
-            totalPrice: newTotalPrice, // Recalculated with additionalFee
-            // Store original cost prices for admin visibility
-            originalCargoPrice: option.cargoPrice,
-            originalFuelCost: option.fuelCost,
-            originalAdditionalFee: additionalFee,
-            originalTotalPrice: option.totalPrice,
-            appliedMultiplier: multiplierData.combinedMultiplier,
-            appliedMultipliers: multiplierData.appliedMultipliers,
-            countryMultiplier: multiplierData.countryMultiplier,
-            weightRangeMultiplier: multiplierData.weightRangeMultiplier,
-            countryRuleSource: multiplierData.countryRuleSource,
-            weightRuleSource: multiplierData.weightRuleSource,
-            countryRuleDetails: multiplierData.countryRuleDetails,
-            weightRuleDetails: multiplierData.weightRuleDetails,
-          };
-        }
+        // Apply pricing: (Cargo + Fuel) × multiplier + additionalFee + fixedAdjustment
+        const multipliedCargoPrice = Math.round(option.cargoPrice * multiplierData.combinedMultiplier);
+        const multipliedFuelCost = Math.round(option.fuelCost * multiplierData.combinedMultiplier);
+        const additionalFee = option.additionalFee || 0;
+        const fixedAdjustment = multiplierData.fixedPriceAdjustment || 0;
+        // Ensure price doesn't go below zero after adjustments
+        const newTotalPrice = Math.max(0, multipliedCargoPrice + multipliedFuelCost + additionalFee + fixedAdjustment);
+
+        console.log("💰 PRICE CALCULATION:", {
+          serviceName: option.serviceName,
+          originalCargoPrice: option.cargoPrice,
+          originalFuelCost: option.fuelCost,
+          additionalFee,
+          multiplier: multiplierData.combinedMultiplier,
+          fixedAdjustment,
+          pricingMethod: multiplierData.pricingMethod,
+          multipliedCargoPrice,
+          multipliedFuelCost,
+          finalTotalPrice: newTotalPrice
+        });
+
+        return {
+          ...option,
+          cargoPrice: multipliedCargoPrice,
+          fuelCost: multipliedFuelCost,
+          additionalFee,
+          totalPrice: newTotalPrice,
+          // Store original cost prices for admin visibility
+          originalCargoPrice: option.cargoPrice,
+          originalFuelCost: option.fuelCost,
+          originalAdditionalFee: additionalFee,
+          originalTotalPrice: option.totalPrice,
+          appliedMultiplier: multiplierData.combinedMultiplier,
+          appliedMultipliers: multiplierData.appliedMultipliers,
+          countryMultiplier: multiplierData.countryMultiplier,
+          weightRangeMultiplier: multiplierData.weightRangeMultiplier,
+          countryRuleSource: multiplierData.countryRuleSource,
+          weightRuleSource: multiplierData.weightRuleSource,
+          countryRuleDetails: multiplierData.countryRuleDetails,
+          weightRuleDetails: multiplierData.weightRuleDetails,
+          fixedPriceAdjustment: fixedAdjustment,
+          pricingMethod: multiplierData.pricingMethod,
+        };
       });
 
       // CRITICAL FIX: Deduplicate Express services to prevent multiple selection bug

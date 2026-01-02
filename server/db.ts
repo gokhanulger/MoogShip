@@ -158,6 +158,13 @@ async function ensureTablesExist(): Promise<void> {
       ADD COLUMN IF NOT EXISTS api_responses JSONB
     `);
     console.log('[DB] Ensured api_responses column exists');
+
+    // Add pricing_method column to users table if it doesn't exist
+    await db.execute(sql`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS pricing_method TEXT NOT NULL DEFAULT 'default'
+    `);
+    console.log('[DB] Ensured pricing_method column exists in users table');
   } catch (error) {
     console.error('[DB] Error ensuring tables exist:', error);
   }

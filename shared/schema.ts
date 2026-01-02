@@ -14,7 +14,8 @@ export const users = pgTable("users", {
   
   // Pricing configuration
   priceMultiplier: real("price_multiplier").notNull().default(1), // Default to 1.0 (100% of base price)
-  
+  pricingMethod: text("pricing_method").notNull().default("default"), // 'default' | 'weight_based' | 'country_based'
+
   // Company information
   companyName: text("company_name"),
   companyType: text("company_type"), // 'company' or 'individual'
