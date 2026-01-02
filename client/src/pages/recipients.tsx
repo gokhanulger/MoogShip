@@ -483,9 +483,10 @@ export default function RecipientsPage() {
   const editWatchedAddress = editForm.watch("address");
   const editWatchedCity = editForm.watch("city");
 
-  // Auto-validate postal code when country, state, and postal code are filled
+  // Auto-validate postal code when country, state, and postal code are filled (Add form only)
   useEffect(() => {
-    if (watchedPostalCode && watchedCountry && 
+    if (!isAddDialogOpen) return; // Only validate when add dialog is open
+    if (watchedPostalCode && watchedCountry &&
         watchedPostalCode.trim() && watchedCountry.trim()) {
       const timer = setTimeout(() => {
         validateCurrentPostalCode({
@@ -497,11 +498,12 @@ export default function RecipientsPage() {
 
       return () => clearTimeout(timer);
     }
-  }, [watchedPostalCode, watchedCountry, watchedState]);
+  }, [watchedPostalCode, watchedCountry, watchedState, isAddDialogOpen]);
 
-  // Auto-validate for edit form
+  // Auto-validate postal code for edit form (Edit dialog only)
   useEffect(() => {
-    if (editWatchedPostalCode && editWatchedCountry && 
+    if (!isEditDialogOpen) return; // Only validate when edit dialog is open
+    if (editWatchedPostalCode && editWatchedCountry &&
         editWatchedPostalCode.trim() && editWatchedCountry.trim()) {
       const timer = setTimeout(() => {
         validateCurrentPostalCode({
@@ -513,11 +515,12 @@ export default function RecipientsPage() {
 
       return () => clearTimeout(timer);
     }
-  }, [editWatchedPostalCode, editWatchedCountry, editWatchedState]);
+  }, [editWatchedPostalCode, editWatchedCountry, editWatchedState, isEditDialogOpen]);
 
-  // Auto-validate address when address, city, and country are filled (Add form)
+  // Auto-validate address when address, city, and country are filled (Add form only)
   useEffect(() => {
-    if (watchedAddress && watchedCity && watchedCountry && 
+    if (!isAddDialogOpen) return; // Only validate when add dialog is open
+    if (watchedAddress && watchedCity && watchedCountry &&
         watchedAddress.trim() && watchedCity.trim() && watchedCountry.trim()) {
       const timer = setTimeout(() => {
         validateCurrentAddress({
@@ -531,11 +534,12 @@ export default function RecipientsPage() {
 
       return () => clearTimeout(timer);
     }
-  }, [watchedAddress, watchedCity, watchedCountry, watchedState, watchedPostalCode]);
+  }, [watchedAddress, watchedCity, watchedCountry, watchedState, watchedPostalCode, isAddDialogOpen]);
 
-  // Auto-validate address when address, city, and country are filled (Edit form)
+  // Auto-validate address when address, city, and country are filled (Edit form only)
   useEffect(() => {
-    if (editWatchedAddress && editWatchedCity && editWatchedCountry && 
+    if (!isEditDialogOpen) return; // Only validate when edit dialog is open
+    if (editWatchedAddress && editWatchedCity && editWatchedCountry &&
         editWatchedAddress.trim() && editWatchedCity.trim() && editWatchedCountry.trim()) {
       const timer = setTimeout(() => {
         validateCurrentAddress({
@@ -549,7 +553,7 @@ export default function RecipientsPage() {
 
       return () => clearTimeout(timer);
     }
-  }, [editWatchedAddress, editWatchedCity, editWatchedCountry, editWatchedState, editWatchedPostalCode]);
+  }, [editWatchedAddress, editWatchedCity, editWatchedCountry, editWatchedState, editWatchedPostalCode, isEditDialogOpen]);
 
   function onAddSubmit(data: RecipientFormValues) {
     createRecipientMutation.mutate(data);
