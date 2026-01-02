@@ -140,6 +140,7 @@ async function ensureTablesExist(): Promise<void> {
         country_rule_source TEXT,
         weight_rule_source TEXT,
         applied_rules JSONB,
+        api_responses JSONB,
         base_price INTEGER,
         final_price INTEGER,
         selected_service TEXT,
@@ -150,6 +151,13 @@ async function ensureTablesExist(): Promise<void> {
       )
     `);
     console.log('[DB] Ensured pricing_calculation_logs table exists');
+
+    // Add api_responses column if it doesn't exist (for existing tables)
+    await db.execute(sql`
+      ALTER TABLE pricing_calculation_logs
+      ADD COLUMN IF NOT EXISTS api_responses JSONB
+    `);
+    console.log('[DB] Ensured api_responses column exists');
   } catch (error) {
     console.error('[DB] Error ensuring tables exist:', error);
   }

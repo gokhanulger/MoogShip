@@ -68,6 +68,21 @@ export interface MoogShipPriceResponse {
   options: MoogShipPriceOption[];
   bestOption?: string;
   currency: string;
+  error?: string;
+  // Raw API responses for logging
+  rawApiResponses?: {
+    shipentegra?: any;
+    aramex?: any;
+    afs?: any;
+    timestamp: string;
+    requestParams: {
+      packageLength: number;
+      packageWidth: number;
+      packageHeight: number;
+      packageWeight: number;
+      receiverCountry: string;
+    };
+  };
 }
 
 // Shipentegra API response interfaces
@@ -198,13 +213,21 @@ async function calculateCombinedMultiplier(
   countryMultiplier: number | null;
   weightRangeMultiplier: number | null;
   appliedMultipliers: string[];
+  countryRuleSource: 'user_specific' | 'global' | null;
+  weightRuleSource: 'user_specific' | 'global' | null;
+  countryRuleDetails: any;
+  weightRuleDetails: any;
 }> {
   if (skipMultiplier) {
     return {
       combinedMultiplier: 1,
       countryMultiplier: null,
       weightRangeMultiplier: null,
-      appliedMultipliers: ["admin_pricing"]
+      appliedMultipliers: ["admin_pricing"],
+      countryRuleSource: null,
+      weightRuleSource: null,
+      countryRuleDetails: null,
+      weightRuleDetails: null,
     };
   }
 
@@ -212,6 +235,10 @@ async function calculateCombinedMultiplier(
   let combinedMultiplier = userMultiplier;
   let countryMultiplier: number | null = null;
   let weightRangeMultiplier: number | null = null;
+  let countryRuleSource: 'user_specific' | 'global' | null = null;
+  let weightRuleSource: 'user_specific' | 'global' | null = null;
+  let countryRuleDetails: any = null;
+  let weightRuleDetails: any = null;
 
   try {
     // Normalize country code to 2-letter format
@@ -227,6 +254,15 @@ async function calculateCombinedMultiplier(
       const userCountryRule = await storage.getUserCountryPricingRule(userId, countryCode);
       if (userCountryRule) {
         // Apply user-specific country rule
+        countryRuleSource = 'user_specific';
+        countryRuleDetails = {
+          ruleId: userCountryRule.id,
+          countryCode: userCountryRule.countryCode,
+          priceMultiplier: userCountryRule.priceMultiplier,
+          fixedDiscount: userCountryRule.fixedDiscount,
+          fixedMarkup: userCountryRule.fixedMarkup,
+          notes: userCountryRule.notes,
+        };
         if (userCountryRule.priceMultiplier) {
           countryMultiplier = userCountryRule.priceMultiplier;
           combinedMultiplier *= countryMultiplier;
@@ -254,6 +290,14 @@ async function calculateCombinedMultiplier(
         countryMultiplier = countryMatch.priceMultiplier;
         combinedMultiplier *= countryMultiplier;
         appliedMultipliers.push(`country_${countryCode}_${countryMultiplier}`);
+        countryRuleSource = 'global';
+        countryRuleDetails = {
+          ruleId: countryMatch.id,
+          countryCode: countryMatch.countryCode,
+          countryName: countryMatch.countryName,
+          priceMultiplier: countryMatch.priceMultiplier,
+          isActive: countryMatch.isActive,
+        };
       }
     }
 
@@ -267,6 +311,19 @@ async function calculateCombinedMultiplier(
       const userWeightRule = await storage.getUserWeightPricingRule(userId, packageWeight);
       if (userWeightRule) {
         // Apply user-specific weight rule
+        weightRuleSource = 'user_specific';
+        weightRuleDetails = {
+          ruleId: userWeightRule.id,
+          ruleName: userWeightRule.ruleName,
+          minWeight: userWeightRule.minWeight,
+          maxWeight: userWeightRule.maxWeight,
+          priceMultiplier: userWeightRule.priceMultiplier,
+          perKgDiscount: userWeightRule.perKgDiscount,
+          perKgMarkup: userWeightRule.perKgMarkup,
+          fixedDiscount: userWeightRule.fixedDiscount,
+          fixedMarkup: userWeightRule.fixedMarkup,
+          notes: userWeightRule.notes,
+        };
         if (userWeightRule.priceMultiplier) {
           weightRangeMultiplier = userWeightRule.priceMultiplier;
           combinedMultiplier *= weightRangeMultiplier;
@@ -297,6 +354,15 @@ async function calculateCombinedMultiplier(
         weightRangeMultiplier = weightMatch.priceMultiplier;
         combinedMultiplier *= weightRangeMultiplier;
         appliedMultipliers.push(`weight_${weightMatch.rangeName}_${weightRangeMultiplier}`);
+        weightRuleSource = 'global';
+        weightRuleDetails = {
+          ruleId: weightMatch.id,
+          rangeName: weightMatch.rangeName,
+          minWeight: weightMatch.minWeight,
+          maxWeight: weightMatch.maxWeight,
+          priceMultiplier: weightMatch.priceMultiplier,
+          isActive: weightMatch.isActive,
+        };
       }
     }
 
@@ -317,7 +383,11 @@ async function calculateCombinedMultiplier(
     combinedMultiplier,
     countryMultiplier,
     weightRangeMultiplier,
-    appliedMultipliers
+    appliedMultipliers,
+    countryRuleSource,
+    weightRuleSource,
+    countryRuleDetails,
+    weightRuleDetails,
   };
 }
 
@@ -334,6 +404,18 @@ export async function calculateMoogShipPricing(
   skipMultiplier: boolean = false, // New parameter to skip multiplier for admin pricing
   userId?: number, // Optional: for user-specific pricing rules (overrides global rules)
 ): Promise<MoogShipPriceResponse> {
+  // Initialize raw API responses object
+  const rawApiResponses: MoogShipPriceResponse['rawApiResponses'] = {
+    timestamp: new Date().toISOString(),
+    requestParams: {
+      packageLength,
+      packageWidth,
+      packageHeight,
+      packageWeight,
+      receiverCountry,
+    },
+  };
+
   try {
     // Validate country parameter before proceeding
     if (
@@ -341,7 +423,7 @@ export async function calculateMoogShipPricing(
       typeof receiverCountry !== "string" ||
       receiverCountry.trim() === ""
     ) {
-      return generateFallbackPricing();
+      return { ...generateFallbackPricing(), rawApiResponses };
     }
 
     // Calculate Shipentegra, AFS Transport, and Aramex pricing in parallel
@@ -374,6 +456,58 @@ export async function calculateMoogShipPricing(
     console.log(
       "🚀 MULTI-PROVIDER PRICING: API calls completed, processing results...",
     );
+
+    // Capture raw API responses for logging
+    rawApiResponses.shipentegra = shipentegraResult.status === "fulfilled"
+      ? {
+          success: shipentegraResult.value.success,
+          optionsCount: shipentegraResult.value.options?.length || 0,
+          options: shipentegraResult.value.options?.map(o => ({
+            serviceName: o.serviceName,
+            displayName: o.displayName,
+            cargoPrice: o.cargoPrice,
+            fuelCost: o.fuelCost,
+            additionalFee: o.additionalFee || 0,
+            totalPrice: o.totalPrice,
+            serviceType: o.serviceType,
+            deliveryTime: o.deliveryTime,
+          })),
+        }
+      : { error: shipentegraResult.reason?.message || 'Request failed' };
+
+    rawApiResponses.aramex = aramexResult.status === "fulfilled"
+      ? {
+          success: aramexResult.value.success,
+          optionsCount: aramexResult.value.options?.length || 0,
+          options: aramexResult.value.options?.map(o => ({
+            serviceName: o.serviceName,
+            displayName: o.displayName,
+            cargoPrice: o.cargoPrice,
+            fuelCost: o.fuelCost,
+            totalPrice: o.totalPrice,
+            serviceType: o.serviceType,
+            deliveryTime: o.deliveryTime,
+          })),
+          error: aramexResult.value.error,
+        }
+      : { error: aramexResult.reason?.message || 'Request failed' };
+
+    rawApiResponses.afs = afsResult.status === "fulfilled"
+      ? {
+          success: afsResult.value.success,
+          optionsCount: afsResult.value.options?.length || 0,
+          options: afsResult.value.options?.map(o => ({
+            serviceName: o.serviceName,
+            displayName: o.displayName,
+            cargoPrice: o.cargoPrice,
+            fuelCost: o.fuelCost,
+            totalPrice: o.totalPrice,
+            serviceType: o.serviceType,
+            deliveryTime: o.deliveryTime,
+          })),
+          error: afsResult.value.error,
+        }
+      : { error: afsResult.reason?.message || 'Request failed' };
 
     // Debug AFS Transport result status
     if (afsResult.status === "fulfilled") {
@@ -510,6 +644,10 @@ export async function calculateMoogShipPricing(
             originalTotalPrice: option.totalPrice,
             appliedMultiplier: 1, // No multiplier applied
             appliedMultipliers: multiplierData.appliedMultipliers,
+            countryRuleSource: multiplierData.countryRuleSource,
+            weightRuleSource: multiplierData.weightRuleSource,
+            countryRuleDetails: multiplierData.countryRuleDetails,
+            weightRuleDetails: multiplierData.weightRuleDetails,
           };
         }
 
@@ -554,6 +692,10 @@ export async function calculateMoogShipPricing(
             appliedMultipliers: multiplierData.appliedMultipliers,
             countryMultiplier: multiplierData.countryMultiplier,
             weightRangeMultiplier: multiplierData.weightRangeMultiplier,
+            countryRuleSource: multiplierData.countryRuleSource,
+            weightRuleSource: multiplierData.weightRuleSource,
+            countryRuleDetails: multiplierData.countryRuleDetails,
+            weightRuleDetails: multiplierData.weightRuleDetails,
           };
         } else {
           // Apply combined multiplier to Shipentegra options
@@ -592,6 +734,10 @@ export async function calculateMoogShipPricing(
             appliedMultipliers: multiplierData.appliedMultipliers,
             countryMultiplier: multiplierData.countryMultiplier,
             weightRangeMultiplier: multiplierData.weightRangeMultiplier,
+            countryRuleSource: multiplierData.countryRuleSource,
+            weightRuleSource: multiplierData.weightRuleSource,
+            countryRuleDetails: multiplierData.countryRuleDetails,
+            weightRuleDetails: multiplierData.weightRuleDetails,
           };
         }
       });
@@ -653,13 +799,14 @@ export async function calculateMoogShipPricing(
         options: finalOptions,
         bestOption: finalOptions[0]?.id,
         currency: "USD",
+        rawApiResponses,
       };
     }
 
     // If both providers failed, return fallback pricing
-    return generateFallbackPricing();
+    return { ...generateFallbackPricing(), rawApiResponses };
   } catch (error) {
-    return generateFallbackPricing();
+    return { ...generateFallbackPricing(), rawApiResponses };
   }
 }
 

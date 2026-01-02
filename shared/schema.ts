@@ -1716,6 +1716,9 @@ export const pricingCalculationLogs = pgTable("pricing_calculation_logs", {
   // Applied rules details (JSON for flexibility)
   appliedRules: json("applied_rules"), // Array of applied rule descriptions
 
+  // Raw API responses from pricing providers
+  apiResponses: json("api_responses"), // Raw responses from Shipentegra, Aramex, etc.
+
   // Pricing results
   basePrice: integer("base_price"), // Base price before multiplier (in cents)
   finalPrice: integer("final_price"), // Final price after multiplier (in cents)

@@ -12356,8 +12356,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Log pricing calculation for admin visibility (async, non-blocking)
         try {
-          const firstOption = pricingResult.options?.[0];
+          const firstOption = responseOptions?.[0] as any; // Use responseOptions which includes insurance
           const volWeight = (parseFloat(packageLength) * parseFloat(packageWidth) * parseFloat(packageHeight)) / 5000;
+
+          // Extract detailed rule information from pricing options
+          const countryMultiplier = firstOption?.countryMultiplier || null;
+          const weightMultiplier = firstOption?.weightRangeMultiplier || null;
+          const combinedMultiplier = firstOption?.appliedMultiplier || userMultiplier;
+          const countryRuleSource = firstOption?.countryRuleSource || null;
+          const weightRuleSource = firstOption?.weightRuleSource || null;
+          const appliedMultipliers = firstOption?.appliedMultipliers || [];
+          const countryRuleDetails = firstOption?.countryRuleDetails || null;
+          const weightRuleDetails = firstOption?.weightRuleDetails || null;
+
           const logData: InsertPricingCalculationLog = {
             userId: effectiveUserId || null,
             username: req.user?.username || null,
@@ -12369,16 +12380,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
             billableWeight: Math.max(parseFloat(packageWeight), volWeight),
             receiverCountry: receiverCountry,
             userMultiplier: userMultiplier,
-            countryMultiplier: null,
-            weightMultiplier: null,
-            combinedMultiplier: userMultiplier,
-            countryRuleSource: null,
-            weightRuleSource: null,
-            appliedRules: null,
-            basePrice: firstOption?.cargoPrice || null,
+            countryMultiplier: countryMultiplier,
+            weightMultiplier: weightMultiplier,
+            combinedMultiplier: combinedMultiplier,
+            countryRuleSource: countryRuleSource,
+            weightRuleSource: weightRuleSource,
+            appliedRules: {
+              appliedMultipliers,
+              countryRuleDetails,
+              weightRuleDetails,
+              // Additional fees and charges
+              fees: {
+                insuranceCost: insuranceCost || 0,
+                insuranceValue: insuranceValue || 0,
+                hasInsurance: insuranceCost > 0,
+                additionalFee: firstOption?.additionalFee || 0,
+                originalAdditionalFee: firstOption?.originalAdditionalFee || 0,
+              },
+              // Duties and taxes (for US shipments)
+              duties: dutiesData ? {
+                available: dutiesData.available,
+                tax: dutiesData.tax || 0,
+                duty: dutiesData.duty || 0,
+                total: dutiesData.total || 0,
+                message: dutiesData.message || null,
+              } : null,
+              // Price breakdown for first option
+              priceBreakdown: {
+                originalCargoPrice: firstOption?.originalCargoPrice || null,
+                originalFuelCost: firstOption?.originalFuelCost || null,
+                originalTotalPrice: firstOption?.originalTotalPrice || null,
+                cargoPrice: firstOption?.cargoPrice || null,
+                fuelCost: firstOption?.fuelCost || null,
+                additionalFee: firstOption?.additionalFee || 0,
+                insuranceCost: firstOption?.insuranceCost || 0,
+                totalPrice: firstOption?.totalPrice || null,
+              },
+            },
+            basePrice: firstOption?.originalCargoPrice || firstOption?.cargoPrice || null,
             finalPrice: firstOption?.totalPrice || null,
             selectedService: firstOption?.displayName || null,
-            pricingOptions: pricingResult.options || null,
+            pricingOptions: responseOptions || null, // Use responseOptions which includes insurance
+            apiResponses: pricingResult.rawApiResponses || null, // Raw API responses from providers
             requestSource: 'price_calculator',
             ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || null,
           };
