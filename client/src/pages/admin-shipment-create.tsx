@@ -953,14 +953,19 @@ export default function AdminShipmentCreate() {
                             </div>
                             
                             {/* Show cost price for admin */}
-                            {option.originalBasePrice && (
-                              <p style={{ 
-                                fontSize: '12px', 
-                                color: '#6b7280', 
+                            {option.originalTotalPrice && (
+                              <p style={{
+                                fontSize: '12px',
+                                color: '#ef4444',
                                 margin: 0,
-                                fontStyle: 'italic'
+                                fontWeight: '500'
                               }}>
-                                Cost: ${(option.originalBasePrice / 100).toFixed(2)}
+                                Cost: ${(option.originalTotalPrice / 100).toFixed(2)}
+                                {option.totalPrice && option.originalTotalPrice !== option.totalPrice && (
+                                  <span style={{ color: '#16a34a', marginLeft: '8px' }}>
+                                    (Margin: ${((option.totalPrice - option.originalTotalPrice) / 100).toFixed(2)})
+                                  </span>
+                                )}
                               </p>
                             )}
                             
