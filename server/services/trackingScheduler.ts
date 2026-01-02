@@ -350,9 +350,10 @@ export async function syncAllTrackingData() {
           } else {
             console.log(`[TRACKING SCHEDULER] Package ${shipment.id} already ${shipment.status}, tracking shows IN_TRANSIT (${carrierType})`);
           }
-        } else if (trackingData.status === 'PRE_TRANSIT') {
-          // Only label creation events - keep status as approved
-          console.log(`[TRACKING SCHEDULER] Package ${shipment.id} still PRE_TRANSIT (label created, not picked up yet) (${carrierType})`);
+        } else if (trackingData.status === 'PRE_TRANSIT' || trackingData.status === 'TRACKING_AVAILABLE') {
+          // Label created but not yet picked up - this is normal for pre-transit
+          // GLS returns TRACKING_AVAILABLE for this state
+          console.log(`[TRACKING SCHEDULER] Package ${shipment.id} still ${trackingData.status} (label created, not picked up yet) (${actualCarrier})`);
         } else if (trackingData.status === 'EXCEPTION') {
           // Handle exceptions - send delivery issue notification
           console.log(`[TRACKING SCHEDULER] Package ${shipment.id} has exception status: ${trackingData.statusDescription} (${carrierType})`);
