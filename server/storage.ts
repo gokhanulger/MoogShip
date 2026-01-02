@@ -23,6 +23,8 @@ import {
   emailCampaignRecipients,
   countryPriceMultipliers,
   weightRangePriceMultipliers,
+  countryPricingRules,
+  weightPricingRules,
   advisorConversations,
   etsyConnections,
   etsyOrders,
@@ -67,6 +69,10 @@ import {
   type InsertCountryPriceMultiplier,
   type WeightRangePriceMultiplier,
   type InsertWeightRangePriceMultiplier,
+  type CountryPricingRule,
+  type InsertCountryPricingRule,
+  type WeightPricingRule,
+  type InsertWeightPricingRule,
   type AdvisorConversation,
   type InsertAdvisorConversation,
   type EtsyConnection,
@@ -517,6 +523,20 @@ export interface IStorage {
   createWeightRangePriceMultiplier(data: InsertWeightRangePriceMultiplier): Promise<WeightRangePriceMultiplier>;
   updateWeightRangePriceMultiplier(id: number, data: Partial<WeightRangePriceMultiplier>): Promise<WeightRangePriceMultiplier | undefined>;
   deleteWeightRangePriceMultiplier(id: number): Promise<WeightRangePriceMultiplier | undefined>;
+
+  // User-specific Country Pricing Rules (overrides global rules)
+  getUserCountryPricingRules(userId: number): Promise<schema.CountryPricingRule[]>;
+  getUserCountryPricingRule(userId: number, countryCode: string): Promise<schema.CountryPricingRule | undefined>;
+  createCountryPricingRule(data: schema.InsertCountryPricingRule): Promise<schema.CountryPricingRule>;
+  updateCountryPricingRule(id: number, data: Partial<schema.CountryPricingRule>): Promise<schema.CountryPricingRule | undefined>;
+  deleteCountryPricingRule(id: number): Promise<schema.CountryPricingRule | undefined>;
+
+  // User-specific Weight Pricing Rules (overrides global rules)
+  getUserWeightPricingRules(userId: number): Promise<schema.WeightPricingRule[]>;
+  getUserWeightPricingRule(userId: number, weight: number): Promise<schema.WeightPricingRule | undefined>;
+  createWeightPricingRule(data: schema.InsertWeightPricingRule): Promise<schema.WeightPricingRule>;
+  updateWeightPricingRule(id: number, data: Partial<schema.WeightPricingRule>): Promise<schema.WeightPricingRule | undefined>;
+  deleteWeightPricingRule(id: number): Promise<schema.WeightPricingRule | undefined>;
 
   // Recipient operations
   getRecipients(userId: number): Promise<schema.Recipient[]>;
@@ -4831,6 +4851,48 @@ export class DatabaseOnlyStorage implements IStorage {
     return dbStorage.deleteWeightRangePriceMultiplier(id);
   }
 
+  // User-specific Country Pricing Rules
+  async getUserCountryPricingRules(userId: number): Promise<CountryPricingRule[]> {
+    return dbStorage.getUserCountryPricingRules(userId);
+  }
+
+  async getUserCountryPricingRule(userId: number, countryCode: string): Promise<CountryPricingRule | undefined> {
+    return dbStorage.getUserCountryPricingRule(userId, countryCode);
+  }
+
+  async createCountryPricingRule(data: InsertCountryPricingRule): Promise<CountryPricingRule> {
+    return dbStorage.createCountryPricingRule(data);
+  }
+
+  async updateCountryPricingRule(id: number, data: Partial<CountryPricingRule>): Promise<CountryPricingRule | undefined> {
+    return dbStorage.updateCountryPricingRule(id, data);
+  }
+
+  async deleteCountryPricingRule(id: number): Promise<CountryPricingRule | undefined> {
+    return dbStorage.deleteCountryPricingRule(id);
+  }
+
+  // User-specific Weight Pricing Rules
+  async getUserWeightPricingRules(userId: number): Promise<WeightPricingRule[]> {
+    return dbStorage.getUserWeightPricingRules(userId);
+  }
+
+  async getUserWeightPricingRule(userId: number, weight: number): Promise<WeightPricingRule | undefined> {
+    return dbStorage.getUserWeightPricingRule(userId, weight);
+  }
+
+  async createWeightPricingRule(data: InsertWeightPricingRule): Promise<WeightPricingRule> {
+    return dbStorage.createWeightPricingRule(data);
+  }
+
+  async updateWeightPricingRule(id: number, data: Partial<WeightPricingRule>): Promise<WeightPricingRule | undefined> {
+    return dbStorage.updateWeightPricingRule(id, data);
+  }
+
+  async deleteWeightPricingRule(id: number): Promise<WeightPricingRule | undefined> {
+    return dbStorage.deleteWeightPricingRule(id);
+  }
+
   // Forward all operations to the database storage implementation
   async getUser(id: number): Promise<User | undefined> {
     return dbStorage.getUser(id);
@@ -6233,10 +6295,202 @@ export class DatabaseOnlyStorage implements IStorage {
         .delete(weightRangePriceMultipliers)
         .where(eq(weightRangePriceMultipliers.id, id))
         .returning();
-      
+
       return multiplier;
     } catch (error) {
       console.error("Error deleting weight range price multiplier:", error);
+      return undefined;
+    }
+  }
+
+  // ============================================
+  // User-specific Country Pricing Rules
+  // ============================================
+
+  async getUserCountryPricingRules(userId: number): Promise<CountryPricingRule[]> {
+    try {
+      const rules = await db
+        .select()
+        .from(countryPricingRules)
+        .where(and(
+          eq(countryPricingRules.userId, userId),
+          eq(countryPricingRules.isActive, true)
+        ))
+        .orderBy(desc(countryPricingRules.priority));
+
+      return rules;
+    } catch (error) {
+      console.error("Error getting user country pricing rules:", error);
+      return [];
+    }
+  }
+
+  async getUserCountryPricingRule(userId: number, countryCode: string): Promise<CountryPricingRule | undefined> {
+    try {
+      const [rule] = await db
+        .select()
+        .from(countryPricingRules)
+        .where(and(
+          eq(countryPricingRules.userId, userId),
+          eq(countryPricingRules.countryCode, countryCode.toUpperCase()),
+          eq(countryPricingRules.isActive, true)
+        ))
+        .orderBy(desc(countryPricingRules.priority))
+        .limit(1);
+
+      return rule;
+    } catch (error) {
+      console.error("Error getting user country pricing rule:", error);
+      return undefined;
+    }
+  }
+
+  async createCountryPricingRule(data: InsertCountryPricingRule): Promise<CountryPricingRule> {
+    try {
+      const now = new Date();
+      const [rule] = await db
+        .insert(countryPricingRules)
+        .values({
+          ...data,
+          countryCode: data.countryCode.toUpperCase(),
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      return rule;
+    } catch (error) {
+      console.error("Error creating country pricing rule:", error);
+      throw error;
+    }
+  }
+
+  async updateCountryPricingRule(id: number, data: Partial<CountryPricingRule>): Promise<CountryPricingRule | undefined> {
+    try {
+      const [rule] = await db
+        .update(countryPricingRules)
+        .set({
+          ...data,
+          countryCode: data.countryCode?.toUpperCase(),
+          updatedAt: new Date(),
+        })
+        .where(eq(countryPricingRules.id, id))
+        .returning();
+
+      return rule;
+    } catch (error) {
+      console.error("Error updating country pricing rule:", error);
+      return undefined;
+    }
+  }
+
+  async deleteCountryPricingRule(id: number): Promise<CountryPricingRule | undefined> {
+    try {
+      const [rule] = await db
+        .delete(countryPricingRules)
+        .where(eq(countryPricingRules.id, id))
+        .returning();
+
+      return rule;
+    } catch (error) {
+      console.error("Error deleting country pricing rule:", error);
+      return undefined;
+    }
+  }
+
+  // ============================================
+  // User-specific Weight Pricing Rules
+  // ============================================
+
+  async getUserWeightPricingRules(userId: number): Promise<WeightPricingRule[]> {
+    try {
+      const rules = await db
+        .select()
+        .from(weightPricingRules)
+        .where(and(
+          eq(weightPricingRules.userId, userId),
+          eq(weightPricingRules.isActive, true)
+        ))
+        .orderBy(desc(weightPricingRules.priority));
+
+      return rules;
+    } catch (error) {
+      console.error("Error getting user weight pricing rules:", error);
+      return [];
+    }
+  }
+
+  async getUserWeightPricingRule(userId: number, weight: number): Promise<WeightPricingRule | undefined> {
+    try {
+      const [rule] = await db
+        .select()
+        .from(weightPricingRules)
+        .where(and(
+          eq(weightPricingRules.userId, userId),
+          eq(weightPricingRules.isActive, true),
+          lte(weightPricingRules.minWeight, weight),
+          or(
+            isNull(weightPricingRules.maxWeight),
+            gte(weightPricingRules.maxWeight, weight)
+          )
+        ))
+        .orderBy(desc(weightPricingRules.priority))
+        .limit(1);
+
+      return rule;
+    } catch (error) {
+      console.error("Error getting user weight pricing rule:", error);
+      return undefined;
+    }
+  }
+
+  async createWeightPricingRule(data: InsertWeightPricingRule): Promise<WeightPricingRule> {
+    try {
+      const now = new Date();
+      const [rule] = await db
+        .insert(weightPricingRules)
+        .values({
+          ...data,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      return rule;
+    } catch (error) {
+      console.error("Error creating weight pricing rule:", error);
+      throw error;
+    }
+  }
+
+  async updateWeightPricingRule(id: number, data: Partial<WeightPricingRule>): Promise<WeightPricingRule | undefined> {
+    try {
+      const [rule] = await db
+        .update(weightPricingRules)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(weightPricingRules.id, id))
+        .returning();
+
+      return rule;
+    } catch (error) {
+      console.error("Error updating weight pricing rule:", error);
+      return undefined;
+    }
+  }
+
+  async deleteWeightPricingRule(id: number): Promise<WeightPricingRule | undefined> {
+    try {
+      const [rule] = await db
+        .delete(weightPricingRules)
+        .where(eq(weightPricingRules.id, id))
+        .returning();
+
+      return rule;
+    } catch (error) {
+      console.error("Error deleting weight pricing rule:", error);
       return undefined;
     }
   }

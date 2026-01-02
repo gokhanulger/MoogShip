@@ -184,12 +184,15 @@ async function getShipentegraAccessToken(): Promise<string | null> {
 
 /**
  * Calculate combined price multiplier from user, country, and weight-based multipliers
+ * Now supports user-specific pricing rules that override global rules
+ * @param userId - Optional user ID for user-specific pricing rules
  */
 async function calculateCombinedMultiplier(
   userMultiplier: number,
   receiverCountry: string,
   packageWeight: number,
-  skipMultiplier: boolean = false
+  skipMultiplier: boolean = false,
+  userId?: number // Optional: for user-specific pricing rules
 ): Promise<{
   combinedMultiplier: number;
   countryMultiplier: number | null;
@@ -213,36 +216,93 @@ async function calculateCombinedMultiplier(
   try {
     // Normalize country code to 2-letter format
     const countryCode = normalizeCountryCode(receiverCountry);
-    
-    // Fetch country-based multiplier
-    const countryMultipliers = await storage.getAllCountryPriceMultipliers();
-    const countryMatch = countryMultipliers.find(
-      cm => cm.countryCode === countryCode && cm.isActive
-    );
-    
-    if (countryMatch) {
-      countryMultiplier = countryMatch.priceMultiplier;
-      combinedMultiplier *= countryMultiplier;
-      appliedMultipliers.push(`country_${countryCode}_${countryMultiplier}`);
+
+    // ============================================
+    // Country-based multiplier (user-specific first, then global)
+    // ============================================
+    let countryRuleApplied = false;
+
+    // Check for user-specific country pricing rule first
+    if (userId) {
+      const userCountryRule = await storage.getUserCountryPricingRule(userId, countryCode);
+      if (userCountryRule) {
+        // Apply user-specific country rule
+        if (userCountryRule.priceMultiplier) {
+          countryMultiplier = userCountryRule.priceMultiplier;
+          combinedMultiplier *= countryMultiplier;
+          appliedMultipliers.push(`user_country_${countryCode}_${countryMultiplier}`);
+          countryRuleApplied = true;
+        } else if (userCountryRule.fixedDiscount) {
+          // Fixed discount will be applied at the final price level, not here
+          appliedMultipliers.push(`user_country_${countryCode}_fixed_discount_${userCountryRule.fixedDiscount}`);
+          countryRuleApplied = true;
+        } else if (userCountryRule.fixedMarkup) {
+          appliedMultipliers.push(`user_country_${countryCode}_fixed_markup_${userCountryRule.fixedMarkup}`);
+          countryRuleApplied = true;
+        }
+      }
     }
 
-    // Fetch weight range-based multiplier
-    const weightRangeMultipliers = await storage.getAllWeightRangePriceMultipliers();
-    const weightMatch = weightRangeMultipliers.find(wrm => {
-      const inRange = wrm.minWeight <= packageWeight && 
-                      (wrm.maxWeight === null || packageWeight <= wrm.maxWeight) &&
-                      wrm.isActive;
-      return inRange;
-    });
+    // Fall back to global country multiplier if no user-specific rule
+    if (!countryRuleApplied) {
+      const countryMultipliers = await storage.getAllCountryPriceMultipliers();
+      const countryMatch = countryMultipliers.find(
+        cm => cm.countryCode === countryCode && cm.isActive
+      );
 
-    if (weightMatch) {
-      weightRangeMultiplier = weightMatch.priceMultiplier;
-      combinedMultiplier *= weightRangeMultiplier;
-      appliedMultipliers.push(`weight_${weightMatch.rangeName}_${weightRangeMultiplier}`);
+      if (countryMatch) {
+        countryMultiplier = countryMatch.priceMultiplier;
+        combinedMultiplier *= countryMultiplier;
+        appliedMultipliers.push(`country_${countryCode}_${countryMultiplier}`);
+      }
+    }
+
+    // ============================================
+    // Weight-based multiplier (user-specific first, then global)
+    // ============================================
+    let weightRuleApplied = false;
+
+    // Check for user-specific weight pricing rule first
+    if (userId) {
+      const userWeightRule = await storage.getUserWeightPricingRule(userId, packageWeight);
+      if (userWeightRule) {
+        // Apply user-specific weight rule
+        if (userWeightRule.priceMultiplier) {
+          weightRangeMultiplier = userWeightRule.priceMultiplier;
+          combinedMultiplier *= weightRangeMultiplier;
+          appliedMultipliers.push(`user_weight_${userWeightRule.ruleName}_${weightRangeMultiplier}`);
+          weightRuleApplied = true;
+        } else if (userWeightRule.perKgDiscount || userWeightRule.perKgMarkup) {
+          // Per-kg adjustments will be applied at the final price level
+          appliedMultipliers.push(`user_weight_${userWeightRule.ruleName}_per_kg`);
+          weightRuleApplied = true;
+        } else if (userWeightRule.fixedDiscount || userWeightRule.fixedMarkup) {
+          appliedMultipliers.push(`user_weight_${userWeightRule.ruleName}_fixed`);
+          weightRuleApplied = true;
+        }
+      }
+    }
+
+    // Fall back to global weight multiplier if no user-specific rule
+    if (!weightRuleApplied) {
+      const weightRangeMultipliers = await storage.getAllWeightRangePriceMultipliers();
+      const weightMatch = weightRangeMultipliers.find(wrm => {
+        const inRange = wrm.minWeight <= packageWeight &&
+                        (wrm.maxWeight === null || packageWeight <= wrm.maxWeight) &&
+                        wrm.isActive;
+        return inRange;
+      });
+
+      if (weightMatch) {
+        weightRangeMultiplier = weightMatch.priceMultiplier;
+        combinedMultiplier *= weightRangeMultiplier;
+        appliedMultipliers.push(`weight_${weightMatch.rangeName}_${weightRangeMultiplier}`);
+      }
     }
 
     console.log(`💰 Combined multiplier calculation:
       - User: ${userMultiplier}
+      - UserId: ${userId || 'none (using global rules)'}
       - Country (${countryCode}): ${countryMultiplier || 'none'}
       - Weight (${packageWeight}kg): ${weightRangeMultiplier || 'none'}
       - Combined: ${combinedMultiplier}
@@ -272,6 +332,7 @@ export async function calculateMoogShipPricing(
   receiverCountry: string,
   userMultiplier: number = 1.0,
   skipMultiplier: boolean = false, // New parameter to skip multiplier for admin pricing
+  userId?: number, // Optional: for user-specific pricing rules (overrides global rules)
 ): Promise<MoogShipPriceResponse> {
   try {
     // Validate country parameter before proceeding
@@ -428,11 +489,13 @@ export async function calculateMoogShipPricing(
     // If we have options from either provider, return them
     if (allOptions.length > 0) {
       // Calculate combined multiplier (user + country + weight-based)
+      // If userId is provided, user-specific pricing rules will override global rules
       const multiplierData = await calculateCombinedMultiplier(
         userMultiplier,
         receiverCountry,
         packageWeight,
-        skipMultiplier
+        skipMultiplier,
+        userId
       );
 
       // CRITICAL FIX: Apply combined multiplier only when not skipped (for admin pricing)

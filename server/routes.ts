@@ -4140,6 +4140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             // Use the same MoogShip pricing service as shipment-create with user multiplier
+            // Pass userId for user-specific pricing rules (overrides global rules)
             const pricingResult = await calculateMoogShipPricing(
               length,
               width,
@@ -4147,6 +4148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               billableWeight,
               shipment.receiverCountry,
               userPriceMultiplier,
+              false, // skipMultiplier
+              user.id, // userId for user-specific pricing rules
             );
 
             // No additional multiplier needed - calculateMoogShipPricing already applies it
@@ -4361,12 +4364,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             // Call the unified pricing system that includes both Shipentegra and AFS Transport
+            // Pass userPriceMultiplier and userId for user-specific pricing rules
             const pricingResult = await calculateMoogShipPricing(
               length,
               width,
               height,
               billableWeight,
               shipment.receiverCountry,
+              userPriceMultiplier,
+              false, // skipMultiplier
+              user.id, // userId for user-specific pricing rules
             );
 
             // Calculate insurance cost for this shipment if insurance is enabled
@@ -10418,6 +10425,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // User-specific Country Pricing Rules (Admin Only)
+  // These override global country multipliers for specific users
+  // ============================================
+
+  // Get all country pricing rules for a user
+  app.get("/api/users/:userId/pricing-rules/countries", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      const rules = await storage.getUserCountryPricingRules(userId);
+      res.json(rules);
+    } catch (error: unknown) {
+      console.error("Error getting user country pricing rules:", error);
+      res.status(500).json({ message: "Error getting pricing rules", error: (error as Error).message });
+    }
+  });
+
+  // Create a country pricing rule for a user
+  app.post("/api/users/:userId/pricing-rules/countries", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const { countryCode, countryName, priceMultiplier, fixedDiscount, fixedMarkup, ruleName, description, priority } = req.body;
+
+      if (!countryCode || !countryName || !ruleName) {
+        return res.status(400).json({ message: "countryCode, countryName, and ruleName are required" });
+      }
+
+      const rule = await storage.createCountryPricingRule({
+        userId,
+        countryCode,
+        countryName,
+        priceMultiplier: priceMultiplier || null,
+        fixedDiscount: fixedDiscount || null,
+        fixedMarkup: fixedMarkup || null,
+        ruleName,
+        description: description || null,
+        priority: priority || 1,
+        isActive: true,
+        createdBy: req.user!.id,
+      });
+
+      res.status(201).json(rule);
+    } catch (error: unknown) {
+      console.error("Error creating country pricing rule:", error);
+      res.status(500).json({ message: "Error creating pricing rule", error: (error as Error).message });
+    }
+  });
+
+  // Update a country pricing rule
+  app.put("/api/pricing-rules/countries/:id", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid rule ID" });
+      }
+
+      const rule = await storage.updateCountryPricingRule(id, req.body);
+      if (!rule) {
+        return res.status(404).json({ message: "Pricing rule not found" });
+      }
+      res.json(rule);
+    } catch (error: unknown) {
+      console.error("Error updating country pricing rule:", error);
+      res.status(500).json({ message: "Error updating pricing rule", error: (error as Error).message });
+    }
+  });
+
+  // Delete a country pricing rule
+  app.delete("/api/pricing-rules/countries/:id", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid rule ID" });
+      }
+
+      const rule = await storage.deleteCountryPricingRule(id);
+      if (!rule) {
+        return res.status(404).json({ message: "Pricing rule not found" });
+      }
+      res.json({ success: true, message: "Country pricing rule deleted" });
+    } catch (error: unknown) {
+      console.error("Error deleting country pricing rule:", error);
+      res.status(500).json({ message: "Error deleting pricing rule", error: (error as Error).message });
+    }
+  });
+
+  // ============================================
+  // User-specific Weight Pricing Rules (Admin Only)
+  // These override global weight multipliers for specific users
+  // ============================================
+
+  // Get all weight pricing rules for a user
+  app.get("/api/users/:userId/pricing-rules/weights", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      const rules = await storage.getUserWeightPricingRules(userId);
+      res.json(rules);
+    } catch (error: unknown) {
+      console.error("Error getting user weight pricing rules:", error);
+      res.status(500).json({ message: "Error getting pricing rules", error: (error as Error).message });
+    }
+  });
+
+  // Create a weight pricing rule for a user
+  app.post("/api/users/:userId/pricing-rules/weights", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const { minWeight, maxWeight, priceMultiplier, fixedDiscount, fixedMarkup, perKgDiscount, perKgMarkup, ruleName, description, priority } = req.body;
+
+      if (minWeight === undefined || !ruleName) {
+        return res.status(400).json({ message: "minWeight and ruleName are required" });
+      }
+
+      const rule = await storage.createWeightPricingRule({
+        userId,
+        minWeight,
+        maxWeight: maxWeight || null,
+        priceMultiplier: priceMultiplier || null,
+        fixedDiscount: fixedDiscount || null,
+        fixedMarkup: fixedMarkup || null,
+        perKgDiscount: perKgDiscount || null,
+        perKgMarkup: perKgMarkup || null,
+        ruleName,
+        description: description || null,
+        priority: priority || 1,
+        isActive: true,
+        createdBy: req.user!.id,
+      });
+
+      res.status(201).json(rule);
+    } catch (error: unknown) {
+      console.error("Error creating weight pricing rule:", error);
+      res.status(500).json({ message: "Error creating pricing rule", error: (error as Error).message });
+    }
+  });
+
+  // Update a weight pricing rule
+  app.put("/api/pricing-rules/weights/:id", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid rule ID" });
+      }
+
+      const rule = await storage.updateWeightPricingRule(id, req.body);
+      if (!rule) {
+        return res.status(404).json({ message: "Pricing rule not found" });
+      }
+      res.json(rule);
+    } catch (error: unknown) {
+      console.error("Error updating weight pricing rule:", error);
+      res.status(500).json({ message: "Error updating pricing rule", error: (error as Error).message });
+    }
+  });
+
+  // Delete a weight pricing rule
+  app.delete("/api/pricing-rules/weights/:id", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid rule ID" });
+      }
+
+      const rule = await storage.deleteWeightPricingRule(id);
+      if (!rule) {
+        return res.status(404).json({ message: "Pricing rule not found" });
+      }
+      res.json({ success: true, message: "Weight pricing rule deleted" });
+    } catch (error: unknown) {
+      console.error("Error deleting weight pricing rule:", error);
+      res.status(500).json({ message: "Error deleting pricing rule", error: (error as Error).message });
+    }
+  });
+
   // Set user-specific minimum balance (admin only)
   app.post(
     "/api/users/:userId/min-balance",
@@ -11860,14 +12055,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Calculate pricing options
+      // Determine the effective userId for user-specific pricing rules
+      // Admin creating for customer: use customer's userId
+      // User creating for self: use their own id
+      const effectiveUserId = (req.user?.role === 'admin' && userId)
+        ? userId
+        : req.user?.id;
+
+      // Calculate pricing options with user-specific rules
       const pricingResult = await calculateMoogShipPricing(
         parseFloat(packageLength),
         parseFloat(packageWidth),
         parseFloat(packageHeight),
         parseFloat(packageWeight),
         receiverCountry,
-        userMultiplier
+        userMultiplier,
+        false, // skipMultiplier
+        effectiveUserId // userId for user-specific pricing rules
       );
 
       console.log('💰 MoogShip pricing result:', pricingResult.success, 'options:', pricingResult.options?.length);

@@ -4994,41 +4994,30 @@ export const validateBulkShipments = async (req: FileRequest, res: Response) => 
             productItems: shipment.productItems || []
           }];
           
+          // Call calculateMoogShipPricing with user multiplier and userId for user-specific rules
+          // calculateMoogShipPricing already applies the multiplier, so no manual multiplication needed
           const pricingData = await calculateMoogShipPricing(
             shipment.length,
             shipment.width,
             shipment.height,
             shipment.weight,
-            shipment.receiverCountry
+            shipment.receiverCountry,
+            userPriceMultiplier,
+            false, // skipMultiplier
+            user?.id // userId for user-specific pricing rules
           );
-          
+
           const pricingOptions = pricingData.success ? pricingData.options : [];
-          
+
           console.log(`💰 Got ${pricingOptions?.length || 0} pricing options for shipment to ${shipment.receiverName}`);
-          
+
           if (pricingOptions && pricingOptions.length > 0) {
-            // Apply user multiplier to each pricing option
-            const multipliedPricingOptions = pricingOptions.map(option => {
-              // Apply multiplier to base costs only, additionalFee is pass-through
-              const multipliedCargoPrice = Math.round(option.cargoPrice * userPriceMultiplier);
-              const multipliedFuelCost = Math.round(option.fuelCost * userPriceMultiplier);
-              const additionalFee = option.additionalFee || 0; // Pass through without markup
-              const newTotalPrice = multipliedCargoPrice + multipliedFuelCost + additionalFee;
-              
-              return {
-                ...option,
-                cargoPrice: multipliedCargoPrice,
-                fuelCost: multipliedFuelCost,
-                additionalFee: additionalFee,
-                totalPrice: newTotalPrice
-              };
-            });
-            
-            // Add multiplied pricing options to the shipment
-            shipment.pricingOptions = multipliedPricingOptions;
-            
+            // Pricing options already have multiplier applied by calculateMoogShipPricing
+            // Add pricing options directly to the shipment
+            shipment.pricingOptions = pricingOptions;
+
             // Set the first (cheapest) option as default
-            const defaultOption = multipliedPricingOptions[0];
+            const defaultOption = pricingOptions[0];
             shipment.selectedServiceOption = defaultOption;
             shipment.basePrice = defaultOption.cargoPrice;
             shipment.totalPrice = defaultOption.totalPrice;
