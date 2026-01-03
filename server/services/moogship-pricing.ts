@@ -279,8 +279,9 @@ async function calculateCombinedMultiplier(
 
         if (userCountryRule.priceMultiplier) {
           countryMultiplier = userCountryRule.priceMultiplier;
-          combinedMultiplier *= countryMultiplier;
-          appliedMultipliers.push(`country_multiplier_${countryCode}_${countryMultiplier}`);
+          // OVERRIDE: Country rule replaces base multiplier entirely (not multiplicative)
+          combinedMultiplier = countryMultiplier;
+          appliedMultipliers.push(`country_override_${countryCode}_${countryMultiplier}`);
         } else if (userCountryRule.fixedDiscount) {
           fixedPriceAdjustment -= userCountryRule.fixedDiscount;
           appliedMultipliers.push(`country_fixed_discount_${countryCode}_${userCountryRule.fixedDiscount}`);
@@ -317,8 +318,9 @@ async function calculateCombinedMultiplier(
 
         if (userWeightRule.priceMultiplier) {
           weightRangeMultiplier = userWeightRule.priceMultiplier;
-          combinedMultiplier *= weightRangeMultiplier;
-          appliedMultipliers.push(`weight_multiplier_${weightRangeMultiplier}`);
+          // OVERRIDE: Weight rule replaces base multiplier entirely (not multiplicative)
+          combinedMultiplier = weightRangeMultiplier;
+          appliedMultipliers.push(`weight_override_${weightRangeMultiplier}`);
         } else if (userWeightRule.perKgDiscount) {
           // Per-kg discount: subtract (perKgDiscount × weight) from final price
           fixedPriceAdjustment -= userWeightRule.perKgDiscount * packageWeight;
