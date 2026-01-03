@@ -88,6 +88,8 @@ import { Redirect, Link } from "wouter";
 import { formatDate } from "@/lib/shipment-utils";
 import UserTable from "@/components/user-table";
 import InsuranceRangeManagement from "@/components/insurance-range-management";
+import { CountrySelect } from "@/components/ui/country-select";
+import { COUNTRIES } from "@/lib/countries";
 
 // Country Pricing Dialog Component
 function CountryPricingDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
@@ -906,18 +908,6 @@ function UserPricingRulesDialog({
     }
   });
 
-  // Country code to name mapping for common countries
-  const countryNames: Record<string, string> = {
-    US: "United States", GB: "United Kingdom", DE: "Germany", FR: "France",
-    IT: "Italy", ES: "Spain", NL: "Netherlands", BE: "Belgium", AT: "Austria",
-    CH: "Switzerland", CA: "Canada", AU: "Australia", JP: "Japan", CN: "China",
-    KR: "South Korea", TR: "Turkey", RU: "Russia", BR: "Brazil", MX: "Mexico",
-    IN: "India", AE: "United Arab Emirates", SA: "Saudi Arabia", SE: "Sweden",
-    NO: "Norway", DK: "Denmark", FI: "Finland", PL: "Poland", CZ: "Czech Republic",
-    PT: "Portugal", GR: "Greece", IE: "Ireland", NZ: "New Zealand", SG: "Singapore",
-    HK: "Hong Kong", MY: "Malaysia", TH: "Thailand", ID: "Indonesia", PH: "Philippines"
-  };
-
   const handleSubmitCountryRule = () => {
     if (!newCountryRule.countryCode) {
       toast({ title: "Error", description: "Please select a country", variant: "destructive" });
@@ -934,7 +924,8 @@ function UserPricingRulesDialog({
     }
 
     const code = newCountryRule.countryCode.toUpperCase();
-    const countryName = countryNames[code] || code;
+    const country = COUNTRIES.find(c => c.code === code);
+    const countryName = country?.name || code;
 
     createCountryRuleMutation.mutate({
       countryCode: code,
@@ -1008,16 +999,12 @@ function UserPricingRulesDialog({
             <div className="grid grid-cols-5 gap-2 items-end">
               <div>
                 <Label className="text-xs">Country</Label>
-                <select
+                <CountrySelect
                   value={newCountryRule.countryCode}
-                  onChange={(e) => setNewCountryRule({ ...newCountryRule, countryCode: e.target.value })}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <option value="">Select...</option>
-                  {Object.entries(countryNames).sort((a, b) => a[1].localeCompare(b[1])).map(([code, name]) => (
-                    <option key={code} value={code}>{name}</option>
-                  ))}
-                </select>
+                  onChange={(code) => setNewCountryRule({ ...newCountryRule, countryCode: code })}
+                  placeholder="Select country..."
+                  className="h-9"
+                />
               </div>
               <div>
                 <Label className="text-xs">Multiplier</Label>
