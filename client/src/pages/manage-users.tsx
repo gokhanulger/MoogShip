@@ -906,6 +906,18 @@ function UserPricingRulesDialog({
     }
   });
 
+  // Country code to name mapping for common countries
+  const countryNames: Record<string, string> = {
+    US: "United States", GB: "United Kingdom", DE: "Germany", FR: "France",
+    IT: "Italy", ES: "Spain", NL: "Netherlands", BE: "Belgium", AT: "Austria",
+    CH: "Switzerland", CA: "Canada", AU: "Australia", JP: "Japan", CN: "China",
+    KR: "South Korea", TR: "Turkey", RU: "Russia", BR: "Brazil", MX: "Mexico",
+    IN: "India", AE: "United Arab Emirates", SA: "Saudi Arabia", SE: "Sweden",
+    NO: "Norway", DK: "Denmark", FI: "Finland", PL: "Poland", CZ: "Czech Republic",
+    PT: "Portugal", GR: "Greece", IE: "Ireland", NZ: "New Zealand", SG: "Singapore",
+    HK: "Hong Kong", MY: "Malaysia", TH: "Thailand", ID: "Indonesia", PH: "Philippines"
+  };
+
   const handleSubmitCountryRule = () => {
     if (!newCountryRule.countryCode) {
       toast({ title: "Error", description: "Please enter a country code", variant: "destructive" });
@@ -921,8 +933,13 @@ function UserPricingRulesDialog({
       return;
     }
 
+    const code = newCountryRule.countryCode.toUpperCase();
+    const countryName = countryNames[code] || code;
+
     createCountryRuleMutation.mutate({
-      countryCode: newCountryRule.countryCode.toUpperCase(),
+      countryCode: code,
+      countryName: countryName,
+      ruleName: `${countryName} Pricing Rule`,
       priceMultiplier: multiplier,
       fixedDiscount: fixedDiscount,
       fixedMarkup: fixedMarkup
