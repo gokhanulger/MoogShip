@@ -12009,6 +12009,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Calculate billable weight (max of actual and volumetric)
+      // This is important for weight-based pricing rules
+      const length = parseFloat(packageLength);
+      const width = parseFloat(packageWidth);
+      const height = parseFloat(packageHeight);
+      const actualWeight = parseFloat(packageWeight);
+      const volumetricWeight = (length * width * height) / 5000;
+      const billableWeight = Math.max(actualWeight, volumetricWeight);
+
+      console.log(`💰 Weight calculation: actual=${actualWeight}kg, volumetric=${volumetricWeight.toFixed(2)}kg, billable=${billableWeight.toFixed(2)}kg`);
+
       // Import the pricing service
       const { calculateMoogShipPricing } = await import('./services/moogship-pricing');
 
@@ -12077,11 +12088,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : req.user?.id;
 
       // Calculate pricing options with user-specific rules
+      // Use billableWeight for weight-based pricing rules (max of actual and volumetric)
       const pricingResult = await calculateMoogShipPricing(
-        parseFloat(packageLength),
-        parseFloat(packageWidth),
-        parseFloat(packageHeight),
-        parseFloat(packageWeight),
+        length,
+        width,
+        height,
+        billableWeight, // Use billable weight for pricing rules
         receiverCountry,
         userMultiplier,
         skipMultiplier, // Admin sees cost prices when not creating for a customer
@@ -12424,19 +12436,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Calculate billable weight (max of actual and volumetric)
+      const length = parseFloat(packageLength);
+      const width = parseFloat(packageWidth);
+      const height = parseFloat(packageHeight);
+      const actualWeight = parseFloat(packageWeight);
+      const volumetricWeight = (length * width * height) / 5000;
+      const billableWeight = Math.max(actualWeight, volumetricWeight);
+
       // Import the pricing service
       const { calculateMoogShipPricing } = await import('./services/moogship-pricing');
-      
+
       // Use 1.0 multiplier for public pricing (no markup)
       const userMultiplier = 1.0;
-      console.log(`💰 Using public multiplier: ${userMultiplier}`);
+      console.log(`💰 Public pricing: actual=${actualWeight}kg, volumetric=${volumetricWeight.toFixed(2)}kg, billable=${billableWeight.toFixed(2)}kg`);
 
-      // Calculate pricing options
+      // Calculate pricing options with billable weight
       const pricingResult = await calculateMoogShipPricing(
-        parseFloat(packageLength),
-        parseFloat(packageWidth),
-        parseFloat(packageHeight),
-        parseFloat(packageWeight),
+        length,
+        width,
+        height,
+        billableWeight,
         receiverCountry,
         userMultiplier
       );
