@@ -2841,11 +2841,12 @@ function ShipmentCreate() {
         </div>
 
         {/* Progress indicator */}
-        <div className="mb-8">
+        <div className="mb-8 bg-white rounded-xl shadow-md border-2 border-gray-100 p-6">
           <div className="relative">
-            <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+            {/* Progress Bar */}
+            <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-100 shadow-inner">
               <div
-                className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500 ease-in-out`}
+                className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transition-all duration-500 ease-in-out rounded-full"
                 style={{
                   width: `${
                     (isSectionComplete("recipient") ? 33 : 0) +
@@ -2856,26 +2857,75 @@ function ShipmentCreate() {
               ></div>
             </div>
 
-            <div className="flex justify-between mt-2 text-sm text-gray-500">
+            {/* Step Labels */}
+            <div className="flex justify-between mt-4">
               <div
-                className={`flex items-center gap-1 ${isSectionComplete("recipient") ? "text-primary font-semibold" : ""}`}
+                className={`flex flex-col items-center gap-2 ${
+                  isSectionComplete("recipient") ? "text-blue-600" : "text-gray-400"
+                }`}
               >
-                {isSectionComplete("recipient") && (
-                  <Check className="h-4 w-4" />
-                )}
-                {t("createShipment.sections.recipient")}
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${
+                  isSectionComplete("recipient")
+                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                    : expandedSections.includes("recipient")
+                      ? "bg-blue-100 text-blue-600 ring-2 ring-blue-300"
+                      : "bg-gray-100 text-gray-400"
+                }`}>
+                  {isSectionComplete("recipient") ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <MapPin className="h-5 w-5" />
+                  )}
+                </div>
+                <span className={`text-sm font-medium ${isSectionComplete("recipient") ? "text-blue-600" : ""}`}>
+                  {t("createShipment.sections.recipient")}
+                </span>
               </div>
+
               <div
-                className={`flex items-center gap-1 ${isSectionComplete("package") ? "text-primary font-semibold" : ""}`}
+                className={`flex flex-col items-center gap-2 ${
+                  isSectionComplete("package") ? "text-orange-600" : "text-gray-400"
+                }`}
               >
-                {isSectionComplete("package") && <Check className="h-4 w-4" />}
-                {t("createShipment.sections.package")}
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${
+                  isSectionComplete("package")
+                    ? "bg-gradient-to-br from-orange-500 to-amber-600 text-white"
+                    : expandedSections.includes("package")
+                      ? "bg-orange-100 text-orange-600 ring-2 ring-orange-300"
+                      : "bg-gray-100 text-gray-400"
+                }`}>
+                  {isSectionComplete("package") ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <Box className="h-5 w-5" />
+                  )}
+                </div>
+                <span className={`text-sm font-medium ${isSectionComplete("package") ? "text-orange-600" : ""}`}>
+                  {t("createShipment.sections.package")}
+                </span>
               </div>
+
               <div
-                className={`flex items-center gap-1 ${isSectionComplete("price") ? "text-primary font-semibold" : ""}`}
+                className={`flex flex-col items-center gap-2 ${
+                  isSectionComplete("price") ? "text-green-600" : "text-gray-400"
+                }`}
               >
-                {isSectionComplete("price") && <Check className="h-4 w-4" />}
-                {t("createShipment.sections.price")}
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${
+                  isSectionComplete("price")
+                    ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
+                    : expandedSections.includes("price")
+                      ? "bg-green-100 text-green-600 ring-2 ring-green-300"
+                      : "bg-gray-100 text-gray-400"
+                }`}>
+                  {isSectionComplete("price") ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <TruckIcon className="h-5 w-5" />
+                  )}
+                </div>
+                <span className={`text-sm font-medium ${isSectionComplete("price") ? "text-green-600" : ""}`}>
+                  {t("createShipment.sections.price")}
+                </span>
               </div>
             </div>
           </div>
@@ -2883,18 +2933,18 @@ function ShipmentCreate() {
 
         {/* Previous Shipments Section */}
         <div className="mb-6">
-          <Card>
+          <Card className="shadow-md border-2 border-gray-200 hover:shadow-lg transition-shadow duration-200">
             <CardHeader
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              className="cursor-pointer hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 transition-all duration-200"
               onClick={() => setShowPreviousShipments(!showPreviousShipments)}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                    <Sparkles className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">
+                    <CardTitle className="text-lg font-semibold">
                       {t(
                         "createShipment.previousShipments.title",
                         "Copy from Previous Shipment",
@@ -3037,19 +3087,33 @@ function ShipmentCreate() {
         </div>
 
         {/* Expandable sections */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* 1. Recipient Information Section */}
           <Card
-            className={`${expandedSections.includes("recipient") ? "border-primary" : ""}`}
+            className={`shadow-md border-2 hover:shadow-lg transition-all duration-200 ${
+              expandedSections.includes("recipient")
+                ? "border-blue-400 ring-2 ring-blue-100"
+                : "border-gray-200"
+            }`}
           >
             <CardHeader
-              className={`cursor-pointer ${isSectionComplete("recipient") ? "bg-green-50" : ""}`}
+              className={`cursor-pointer transition-all duration-200 ${
+                isSectionComplete("recipient")
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50"
+                  : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50"
+              }`}
               onClick={() => toggleSection("recipient")}
             >
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-sm ${
+                    isSectionComplete("recipient")
+                      ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                      : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                  }`}>
+                    <MapPin className="h-5 w-5 text-white" />
+                  </div>
+                  <CardTitle className="text-lg font-semibold">
                     {t("createShipment.recipientInfo.title")}
                   </CardTitle>
                   {isSectionComplete("recipient") && (
@@ -3788,16 +3852,30 @@ function ShipmentCreate() {
 
           {/* 2. Package Details Section */}
           <Card
-            className={`${expandedSections.includes("package") ? "border-primary" : ""}`}
+            className={`shadow-md border-2 hover:shadow-lg transition-all duration-200 ${
+              expandedSections.includes("package")
+                ? "border-orange-400 ring-2 ring-orange-100"
+                : "border-gray-200"
+            }`}
           >
             <CardHeader
-              className={`cursor-pointer ${isSectionComplete("package") ? "bg-green-50" : ""}`}
+              className={`cursor-pointer transition-all duration-200 ${
+                isSectionComplete("package")
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50"
+                  : "hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50"
+              }`}
               onClick={() => toggleSection("package")}
             >
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Box className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-sm ${
+                    isSectionComplete("package")
+                      ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                      : "bg-gradient-to-br from-orange-500 to-amber-600"
+                  }`}>
+                    <Box className="h-5 w-5 text-white" />
+                  </div>
+                  <CardTitle className="text-lg font-semibold">
                     {t("createShipment.packageDetails.title")}
                   </CardTitle>
                   {isSectionComplete("package") && (
@@ -4481,16 +4559,30 @@ function ShipmentCreate() {
           {/* 3. Price Section */}
           <Card
             id="price-section"
-            className={`${expandedSections.includes("price") ? "border-primary" : ""}`}
+            className={`shadow-md border-2 hover:shadow-lg transition-all duration-200 ${
+              expandedSections.includes("price")
+                ? "border-green-400 ring-2 ring-green-100"
+                : "border-gray-200"
+            }`}
           >
             <CardHeader
-              className={`cursor-pointer ${isSectionComplete("price") ? "bg-green-50" : ""}`}
+              className={`cursor-pointer transition-all duration-200 ${
+                isSectionComplete("price")
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50"
+                  : "hover:bg-gradient-to-r hover:from-green-50 hover:to-teal-50"
+              }`}
               onClick={() => toggleSection("price")}
             >
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <TruckIcon className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-sm ${
+                    isSectionComplete("price")
+                      ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                      : "bg-gradient-to-br from-green-500 to-teal-600"
+                  }`}>
+                    <TruckIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <CardTitle className="text-lg font-semibold">
                     {t("createShipment.sections.priceAndShipping")}
                   </CardTitle>
                   {isSectionComplete("price") && (

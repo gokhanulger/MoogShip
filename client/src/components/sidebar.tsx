@@ -42,7 +42,7 @@ import {
   Store
 } from "lucide-react";
 import { SiInstagram, SiWhatsapp } from "react-icons/si";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -53,18 +53,20 @@ import {
 
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isProductMenuOpen, setIsProductMenuOpen] = useState(
     location === "/products" || location === "/package-templates" || location === "/recipients"
   );
   const [isOfficePopoverOpen, setIsOfficePopoverOpen] = useState(false);
   const { isExpanded, setIsExpanded } = useSidebar();
-  
+
   // Initialize translation hook
   const { t } = useTranslation();
-  
-  // Fetch user balance for display
+
+  // Use auth context for user data - prevents double fetching
+  const { user, isLoading, logoutMutation: authLogout } = useAuth();
+
+  // Fetch user balance for display (only for non-admin users)
+  const isAdmin = user?.role === "admin";
   const { data: balanceData } = useQuery({
     queryKey: ['/api/balance'],
     queryFn: async () => {
@@ -76,77 +78,16 @@ export default function Sidebar() {
       }
       return response.json();
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
     staleTime: 10000,
+    enabled: !!user && !isAdmin, // Only fetch for non-admin users
   });
-  
-  // Fetch the current user data with more frequent updates
-  useEffect(() => {
-    async function fetchUserData() {
-      try {
-        // First try the regular endpoint
-        let response = await fetch('/api/user', {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          // If we got user role but expected admin, try the admin endpoint
-          if (userData.role === 'user' && window.location.pathname.includes('admin')) {
-            try {
-              const adminResponse = await fetch('/api/admin/user', {
-                credentials: 'include'
-              });
-              
-              if (adminResponse.ok) {
-                const adminUserData = await adminResponse.json();
-                setUser(adminUserData);
-                return;
-              }
-            } catch (adminError) {
-              console.log("Sidebar: Admin endpoint failed, using regular user data");
-            }
-          }
-          
-          setUser(userData);
-        }
-      } catch (error) {
-        // Error fetching user data
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    // Fetch immediately on mount
-    fetchUserData();
-    
-    return () => {
-      // clearInterval(intervalId); // DISABLED for Chrome performance
-    };
-  }, [location]); // Re-run this effect when location changes
-  
-  // Use the proper logout from auth context for proper cache clearing
-  const { logoutMutation: authLogout } = useAuth();
-  
+
   const logoutMutation = {
     mutate: () => {
       authLogout.mutate();
     }
   };
-  
-  // Determine admin status - check role field for admin access
-  const isAdmin = user?.role === "admin";
-  
-  // Debug admin status (temporary)
-  // console.log('🔍 SIDEBAR DEBUG:', { isAdmin, userRole: user?.role, userId: user?.id });
-  
-  // Debug user object for bell component (development only)
-  // console.log('🔧 Sidebar user object debug:', { isAdmin, userExists: !!user });
-  
-  // Admin status checking
-  useEffect(() => {
-    // Silent admin status validation
-  }, [user, isAdmin]);
   
   const handleLogout = () => {
     logoutMutation.mutate();
