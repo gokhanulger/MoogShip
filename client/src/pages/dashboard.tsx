@@ -145,72 +145,70 @@ function DashboardContent({ user }: DashboardProps) {
             )}
           </div>
         
-{/* Customer Balance Card - Only for non-admin users */}
+{/* Customer Balance Bar - Compact */}
         {user?.role !== 'admin' && (
-          <Card className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-white rounded-full shadow-sm">
-                    <Wallet className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">{t('dashboard.yourBalance', 'Bakiyeniz')}</p>
-                    {isLoadingBalance ? (
-                      <Skeleton className="h-8 w-24" />
-                    ) : (
-                      <p className={`text-2xl font-bold ${
-                        balanceData && balanceData.balance > 0
-                          ? 'text-green-600'
-                          : balanceData && balanceData.balance < 0
-                            ? 'text-red-600'
-                            : 'text-gray-900'
-                      }`}>
-                        {balanceData?.formattedBalance || '$0.00'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button asChild variant="outline" size="sm" className="border-blue-300 hover:bg-blue-100">
-                    <Link href="/my-balance">
-                      <CreditCard className="h-4 w-4 mr-1" />
-                      {t('dashboard.addBalance', 'Bakiye Ekle')}
-                    </Link>
-                  </Button>
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href="/transactions">
-                      {t('dashboard.viewTransactions', 'İşlemleri Gör')}
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            {/* Balance */}
+            <div className="flex items-center gap-2">
+              <Wallet className={`h-4 w-4 ${
+                balanceData && balanceData.balance > 0 ? 'text-green-600' :
+                balanceData && balanceData.balance < 0 ? 'text-red-500' : 'text-blue-600'
+              }`} />
+              <span className="text-xs text-gray-500">{t('dashboard.yourBalance', 'Bakiye')}:</span>
+              {isLoadingBalance ? (
+                <Skeleton className="h-5 w-16" />
+              ) : (
+                <span className={`text-sm font-bold ${
+                  balanceData && balanceData.balance > 0 ? 'text-green-600' :
+                  balanceData && balanceData.balance < 0 ? 'text-red-500' : 'text-gray-900'
+                }`}>
+                  {balanceData?.formattedBalance || '$0.00'}
+                </span>
+              )}
+            </div>
 
-              {/* Quick Stats for Customer */}
-              <div className="mt-4 pt-4 border-t border-blue-200 grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-xs text-gray-500">{t('dashboard.thisMonth', 'Bu Ay')}</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {shipments.filter(s => {
-                      const shipmentDate = new Date(s.createdAt);
-                      const now = new Date();
-                      return shipmentDate.getMonth() === now.getMonth() &&
-                             shipmentDate.getFullYear() === now.getFullYear();
-                    }).length} {t('dashboard.shipments', 'Gönderi')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">{t('dashboard.pending', 'Bekleyen')}</p>
-                  <p className="text-lg font-semibold text-yellow-600">{stats.pending}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">{t('dashboard.delivered', 'Teslim')}</p>
-                  <p className="text-lg font-semibold text-green-600">{stats.completed}</p>
-                </div>
+            <div className="h-4 w-px bg-blue-200 hidden sm:block" />
+
+            {/* Quick Stats */}
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <span className="text-gray-500">{t('dashboard.thisMonth', 'Bu Ay')}:</span>
+                <span className="font-semibold text-gray-700">
+                  {shipments.filter(s => {
+                    const d = new Date(s.createdAt);
+                    const now = new Date();
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                  }).length}
+                </span>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-1">
+                <span className="text-gray-500">{t('dashboard.pending', 'Bekleyen')}:</span>
+                <span className="font-semibold text-yellow-600">{stats.pending}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-gray-500">{t('dashboard.delivered', 'Teslim')}:</span>
+                <span className="font-semibold text-green-600">{stats.completed}</span>
+              </div>
+            </div>
+
+            <div className="flex-1" />
+
+            {/* Actions */}
+            <div className="flex items-center gap-1">
+              <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-100">
+                <Link href="/my-balance">
+                  <CreditCard className="h-3 w-3 mr-1" />
+                  {t('dashboard.addBalance', 'Bakiye Ekle')}
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-600 hover:text-gray-700">
+                <Link href="/transactions">
+                  {t('dashboard.viewTransactions', 'İşlemler')}
+                  <ChevronRight className="h-3 w-3 ml-0.5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Quick Actions */}
