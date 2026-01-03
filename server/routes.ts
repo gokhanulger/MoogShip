@@ -5586,6 +5586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         country,
         shipmentCapacity,
         priceMultiplier,
+        pricingMethod, // 'default' | 'weight_based' | 'country_based'
       } = req.body;
 
       // Validate required fields
@@ -5638,6 +5639,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           priceMultiplier !== undefined
             ? parseFloat(priceMultiplier)
             : currentUser.priceMultiplier,
+        pricingMethod:
+          pricingMethod !== undefined
+            ? pricingMethod
+            : (currentUser as any).pricingMethod || 'default',
       };
 
       // Update the user
