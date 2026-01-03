@@ -198,13 +198,15 @@ async function getShipentegraAccessToken(): Promise<string | null> {
 }
 
 /**
- * Calculate price multiplier based on user's pricing method setting
- * Simplified: Only uses user-specific rules, no global rules
+ * Calculate price multiplier using HYBRID priority system
  *
- * pricingMethod options:
- * - 'default': Only user's base priceMultiplier is applied
- * - 'weight_based': User's weight rules are applied
- * - 'country_based': User's country rules are applied (multiplier or fixed price)
+ * Priority order:
+ * 1. Country rule (if exists for this country) → Use country pricing
+ * 2. Weight rule (if exists for this weight range) → Use weight pricing
+ * 3. Base multiplier only (fallback)
+ *
+ * This allows flexible per-country OR per-weight pricing for the same user.
+ * Example: USA → weight-based, Germany → fixed 1.3x, UK → weight-based
  *
  * Formula: (Cargo + Fuel) × multiplier + additionalFee
  */
@@ -251,27 +253,54 @@ async function calculateCombinedMultiplier(
   let countryRuleDetails: any = null;
   let weightRuleDetails: any = null;
   let fixedPriceAdjustment = 0; // Positive for markup, negative for discount
-  let pricingMethod = 'default';
+  let pricingMethod = 'default'; // Will be set to 'country' or 'weight' based on what's applied
 
   try {
     const countryCode = normalizeCountryCode(receiverCountry);
+    let ruleApplied = false;
 
-    // Get user's pricing method if userId is provided
-    if (userId) {
-      const user = await storage.getUser(userId);
-      if (user) {
-        pricingMethod = (user as any).pricingMethod || 'default';
-        console.log(`💰 User ${userId} pricing method: ${pricingMethod}`);
+    // ============================================
+    // HYBRID SYSTEM: Priority 1 - Check Country Rules First
+    // ============================================
+    if (userId && !ruleApplied) {
+      const userCountryRule = await storage.getUserCountryPricingRule(userId, countryCode);
+      if (userCountryRule) {
+        ruleApplied = true;
+        pricingMethod = 'country';
+        countryRuleSource = 'user_specific';
+        countryRuleDetails = {
+          ruleId: userCountryRule.id,
+          countryCode: userCountryRule.countryCode,
+          priceMultiplier: userCountryRule.priceMultiplier,
+          fixedDiscount: userCountryRule.fixedDiscount,
+          fixedMarkup: userCountryRule.fixedMarkup,
+          notes: userCountryRule.notes,
+        };
+
+        if (userCountryRule.priceMultiplier) {
+          countryMultiplier = userCountryRule.priceMultiplier;
+          combinedMultiplier *= countryMultiplier;
+          appliedMultipliers.push(`country_multiplier_${countryCode}_${countryMultiplier}`);
+        } else if (userCountryRule.fixedDiscount) {
+          fixedPriceAdjustment -= userCountryRule.fixedDiscount;
+          appliedMultipliers.push(`country_fixed_discount_${countryCode}_${userCountryRule.fixedDiscount}`);
+        } else if (userCountryRule.fixedMarkup) {
+          fixedPriceAdjustment += userCountryRule.fixedMarkup;
+          appliedMultipliers.push(`country_fixed_markup_${countryCode}_${userCountryRule.fixedMarkup}`);
+        }
+
+        console.log(`💰 HYBRID: Country rule found for ${countryCode} → using country pricing`);
       }
     }
 
-    // Apply pricing based on user's selected method
-    if (pricingMethod === 'weight_based' && userId) {
-      // ============================================
-      // Weight-based pricing (user-specific only)
-      // ============================================
+    // ============================================
+    // HYBRID SYSTEM: Priority 2 - Check Weight Rules (if no country rule)
+    // ============================================
+    if (userId && !ruleApplied) {
       const userWeightRule = await storage.getUserWeightPricingRule(userId, packageWeight);
       if (userWeightRule) {
+        ruleApplied = true;
+        pricingMethod = 'weight';
         weightRuleSource = 'user_specific';
         weightRuleDetails = {
           ruleId: userWeightRule.id,
@@ -305,43 +334,22 @@ async function calculateCombinedMultiplier(
           fixedPriceAdjustment += userWeightRule.fixedMarkup;
           appliedMultipliers.push(`weight_fixed_markup_${userWeightRule.fixedMarkup}`);
         }
-      }
 
-    } else if (pricingMethod === 'country_based' && userId) {
-      // ============================================
-      // Country-based pricing (user-specific only)
-      // ============================================
-      const userCountryRule = await storage.getUserCountryPricingRule(userId, countryCode);
-      if (userCountryRule) {
-        countryRuleSource = 'user_specific';
-        countryRuleDetails = {
-          ruleId: userCountryRule.id,
-          countryCode: userCountryRule.countryCode,
-          priceMultiplier: userCountryRule.priceMultiplier,
-          fixedDiscount: userCountryRule.fixedDiscount,
-          fixedMarkup: userCountryRule.fixedMarkup,
-          notes: userCountryRule.notes,
-        };
-
-        if (userCountryRule.priceMultiplier) {
-          countryMultiplier = userCountryRule.priceMultiplier;
-          combinedMultiplier *= countryMultiplier;
-          appliedMultipliers.push(`country_multiplier_${countryCode}_${countryMultiplier}`);
-        } else if (userCountryRule.fixedDiscount) {
-          fixedPriceAdjustment -= userCountryRule.fixedDiscount;
-          appliedMultipliers.push(`country_fixed_discount_${countryCode}_${userCountryRule.fixedDiscount}`);
-        } else if (userCountryRule.fixedMarkup) {
-          fixedPriceAdjustment += userCountryRule.fixedMarkup;
-          appliedMultipliers.push(`country_fixed_markup_${countryCode}_${userCountryRule.fixedMarkup}`);
-        }
+        console.log(`💰 HYBRID: No country rule for ${countryCode}, weight rule found → using weight pricing`);
       }
     }
-    // For 'default' method, only userMultiplier is applied (already set above)
 
-    console.log(`💰 Pricing calculation:
+    // ============================================
+    // HYBRID SYSTEM: Priority 3 - Base Multiplier Only (fallback)
+    // ============================================
+    if (!ruleApplied) {
+      console.log(`💰 HYBRID: No country/weight rules found → using base multiplier only`);
+    }
+
+    console.log(`💰 Pricing calculation (HYBRID):
       - User Multiplier: ${userMultiplier}
       - UserId: ${userId || 'none'}
-      - Pricing Method: ${pricingMethod}
+      - Applied Method: ${pricingMethod}
       - Country: ${countryCode}
       - Weight: ${packageWeight}kg
       - Country Multiplier: ${countryMultiplier || 'none'}

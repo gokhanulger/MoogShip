@@ -4223,27 +4223,6 @@ export default function ManageUsers() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-3">
-              <Label htmlFor="edit_pricingMethod" className="text-right text-sm">
-                Pricing Method
-              </Label>
-              <div className="col-span-3">
-                <select
-                  id="edit_pricingMethod"
-                  name="pricingMethod"
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={editUserData.pricingMethod}
-                  onChange={handleEditUserInputChange}
-                >
-                  <option value="default">Default (Only User Multiplier)</option>
-                  <option value="weight_based">Weight-Based Pricing</option>
-                  <option value="country_based">Country-Based Pricing</option>
-                </select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Select the pricing method for this user. User-specific rules (in Pricing Rules) will apply based on this selection.
-                </p>
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button
