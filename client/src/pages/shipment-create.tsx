@@ -2840,94 +2840,74 @@ function ShipmentCreate() {
           </p>
         </div>
 
-        {/* Progress indicator */}
-        <div className="mb-8 bg-white rounded-xl shadow-md border-2 border-gray-100 p-6">
-          <div className="relative">
-            {/* Progress Bar */}
-            <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-100 shadow-inner">
-              <div
-                className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transition-all duration-500 ease-in-out rounded-full"
-                style={{
-                  width: `${
-                    (isSectionComplete("recipient") ? 33 : 0) +
-                    (isSectionComplete("package") ? 33 : 0) +
-                    (isSectionComplete("price") ? 34 : 0)
-                  }%`,
-                }}
-              ></div>
-            </div>
-
-            {/* Step Labels */}
-            <div className="flex justify-between mt-4">
-              <div
-                className={`flex flex-col items-center gap-2 ${
-                  isSectionComplete("recipient") ? "text-blue-600" : "text-gray-400"
-                }`}
-              >
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${
-                  isSectionComplete("recipient")
-                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                    : expandedSections.includes("recipient")
-                      ? "bg-blue-100 text-blue-600 ring-2 ring-blue-300"
-                      : "bg-gray-100 text-gray-400"
-                }`}>
-                  {isSectionComplete("recipient") ? (
-                    <Check className="h-5 w-5" />
-                  ) : (
-                    <MapPin className="h-5 w-5" />
-                  )}
-                </div>
-                <span className={`text-sm font-medium ${isSectionComplete("recipient") ? "text-blue-600" : ""}`}>
-                  {t("createShipment.sections.recipient")}
-                </span>
+        {/* Progress indicator - Compact Stepper */}
+        <div className="mb-6">
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
+            {/* Step 1 - Recipient */}
+            <button
+              type="button"
+              onClick={() => toggleSection("recipient")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
+                isSectionComplete("recipient")
+                  ? "bg-blue-500 text-white shadow-sm"
+                  : expandedSections.includes("recipient")
+                    ? "bg-blue-50 text-blue-600 ring-1 ring-blue-300"
+                    : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                isSectionComplete("recipient") ? "bg-white/20" : "bg-white shadow-sm"
+              }`}>
+                {isSectionComplete("recipient") ? <Check className="w-3 h-3" /> : "1"}
               </div>
+              <span className="hidden sm:inline">{t("createShipment.sections.recipient")}</span>
+            </button>
 
-              <div
-                className={`flex flex-col items-center gap-2 ${
-                  isSectionComplete("package") ? "text-orange-600" : "text-gray-400"
-                }`}
-              >
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${
-                  isSectionComplete("package")
-                    ? "bg-gradient-to-br from-orange-500 to-amber-600 text-white"
-                    : expandedSections.includes("package")
-                      ? "bg-orange-100 text-orange-600 ring-2 ring-orange-300"
-                      : "bg-gray-100 text-gray-400"
-                }`}>
-                  {isSectionComplete("package") ? (
-                    <Check className="h-5 w-5" />
-                  ) : (
-                    <Box className="h-5 w-5" />
-                  )}
-                </div>
-                <span className={`text-sm font-medium ${isSectionComplete("package") ? "text-orange-600" : ""}`}>
-                  {t("createShipment.sections.package")}
-                </span>
-              </div>
+            {/* Connector */}
+            <div className={`w-6 sm:w-10 h-0.5 rounded ${isSectionComplete("recipient") ? "bg-blue-300" : "bg-gray-200"}`} />
 
-              <div
-                className={`flex flex-col items-center gap-2 ${
-                  isSectionComplete("price") ? "text-green-600" : "text-gray-400"
-                }`}
-              >
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${
-                  isSectionComplete("price")
-                    ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
-                    : expandedSections.includes("price")
-                      ? "bg-green-100 text-green-600 ring-2 ring-green-300"
-                      : "bg-gray-100 text-gray-400"
-                }`}>
-                  {isSectionComplete("price") ? (
-                    <Check className="h-5 w-5" />
-                  ) : (
-                    <TruckIcon className="h-5 w-5" />
-                  )}
-                </div>
-                <span className={`text-sm font-medium ${isSectionComplete("price") ? "text-green-600" : ""}`}>
-                  {t("createShipment.sections.price")}
-                </span>
+            {/* Step 2 - Package */}
+            <button
+              type="button"
+              onClick={() => toggleSection("package")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
+                isSectionComplete("package")
+                  ? "bg-orange-500 text-white shadow-sm"
+                  : expandedSections.includes("package")
+                    ? "bg-orange-50 text-orange-600 ring-1 ring-orange-300"
+                    : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                isSectionComplete("package") ? "bg-white/20" : "bg-white shadow-sm"
+              }`}>
+                {isSectionComplete("package") ? <Check className="w-3 h-3" /> : "2"}
               </div>
-            </div>
+              <span className="hidden sm:inline">{t("createShipment.sections.package")}</span>
+            </button>
+
+            {/* Connector */}
+            <div className={`w-6 sm:w-10 h-0.5 rounded ${isSectionComplete("package") ? "bg-orange-300" : "bg-gray-200"}`} />
+
+            {/* Step 3 - Price */}
+            <button
+              type="button"
+              onClick={() => toggleSection("price")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
+                isSectionComplete("price")
+                  ? "bg-green-500 text-white shadow-sm"
+                  : expandedSections.includes("price")
+                    ? "bg-green-50 text-green-600 ring-1 ring-green-300"
+                    : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                isSectionComplete("price") ? "bg-white/20" : "bg-white shadow-sm"
+              }`}>
+                {isSectionComplete("price") ? <Check className="w-3 h-3" /> : "3"}
+              </div>
+              <span className="hidden sm:inline">{t("createShipment.sections.price")}</span>
+            </button>
           </div>
         </div>
 
