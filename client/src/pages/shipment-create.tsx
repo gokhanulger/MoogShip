@@ -2911,159 +2911,99 @@ function ShipmentCreate() {
           </div>
         </div>
 
-        {/* Previous Shipments Section */}
-        <div className="mb-6">
-          <Card className="shadow-md border-2 border-gray-200 hover:shadow-lg transition-shadow duration-200">
-            <CardHeader
-              className="cursor-pointer hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 transition-all duration-200"
-              onClick={() => setShowPreviousShipments(!showPreviousShipments)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                    <Sparkles className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg font-semibold">
-                      {t(
-                        "createShipment.previousShipments.title",
-                        "Copy from Previous Shipment",
-                      )}
-                    </CardTitle>
-                    <p className="text-base text-muted-foreground">
-                      {t(
-                        "createShipment.previousShipments.description",
-                        "Quickly copy data from your recent shipments",
-                      )}
-                    </p>
-                  </div>
-                </div>
-                {showPreviousShipments ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </div>
-            </CardHeader>
-
-            {showPreviousShipments && (
-              <CardContent className="pt-0">
-                {isLoadingPreviousShipments ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    <span className="text-base">
-                      {t(
-                        "createShipment.previousShipments.loading",
-                        "Loading previous shipments...",
-                      )}
-                    </span>
-                  </div>
-                ) : previousShipments && previousShipments.length > 0 ? (
-                  <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    <div className="space-y-2 pr-2">
-                      {previousShipments.map((shipment: any) => (
-                        <div
-                          key={shipment.id}
-                          className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-base">
-                                #{shipment.id}
-                              </span>
-                              <span className="text-sm px-2 py-1 rounded-full bg-muted text-muted-foreground">
-                                {shipment.status}
-                              </span>
-                            </div>
-                            <p className="text-base text-muted-foreground">
-                              To: {shipment.receiverName} -{" "}
-                              {shipment.receiverCity},{" "}
-                              {shipment.receiverCountry}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(
-                                shipment.createdAt,
-                              ).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2 ml-2">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => copyAddressOnly(shipment)}
-                                    className="text-sm"
-                                  >
-                                    <MapPin className="h-3 w-3 mr-1" />
-                                    {t(
-                                      "createShipment.previousShipments.copyAddress",
-                                      "Address",
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="text-sm max-w-xs">
-                                    <div className="font-medium mb-1">
-                                      Sadece alıcı adresini kopyalar:
-                                    </div>
-                                    <div>• Ad, telefon, e-posta</div>
-                                    <div>• Adres, şehir, ülke</div>
-                                    <div>• Eyalet ve posta kodu</div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => copyEverything(shipment)}
-                                    className="text-sm"
-                                  >
-                                    <Box className="h-3 w-3 mr-1" />
-                                    {t(
-                                      "createShipment.previousShipments.copyEverything",
-                                      "Everything",
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="text-sm max-w-xs">
-                                    <div className="font-medium mb-1">
-                                      Tüm gönderi verilerini kopyalar:
-                                    </div>
-                                    <div>• Tüm alıcı adres detayları</div>
-                                    <div>• Paket boyutları ve ağırlığı</div>
-                                    <div>• Ürünler ve açıklamalar</div>
-                                    <div>• Servis seviyesi tercihleri</div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-base">
-                      {t(
-                        "createShipment.previousShipments.noShipments",
-                        "No previous shipments found",
-                      )}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
+        {/* Previous Shipments Section - Compact */}
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => setShowPreviousShipments(!showPreviousShipments)}
+            className="w-full flex items-center justify-between px-4 py-2 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 rounded-lg border border-purple-200 transition-all duration-200"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-purple-500" />
+              <span className="text-sm font-medium text-purple-700">
+                {t("createShipment.previousShipments.title", "Önceki Gönderilerden Kopyala")}
+              </span>
+            </div>
+            {showPreviousShipments ? (
+              <ChevronUp className="h-4 w-4 text-purple-500" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-purple-500" />
             )}
-          </Card>
+          </button>
+
+          {showPreviousShipments && (
+            <div className="mt-2 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+              {isLoadingPreviousShipments ? (
+                <div className="flex items-center justify-center py-3">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2 text-purple-500" />
+                  <span className="text-sm text-gray-500">
+                    {t("createShipment.previousShipments.loading", "Yükleniyor...")}
+                  </span>
+                </div>
+              ) : previousShipments && previousShipments.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto space-y-1.5">
+                  {previousShipments.map((shipment: any) => (
+                    <div
+                      key={shipment.id}
+                      className="flex items-center justify-between p-2 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-gray-700">#{shipment.id}</span>
+                          <span className="text-xs text-gray-500 truncate">
+                            {shipment.receiverName} - {shipment.receiverCity}, {shipment.receiverCountry}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 ml-2 flex-shrink-0">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyAddressOnly(shipment)}
+                                className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <MapPin className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p className="text-xs">Sadece adresi kopyala</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyEverything(shipment)}
+                                className="h-7 px-2 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                              >
+                                <Box className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p className="text-xs">Tümünü kopyala</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-3 text-gray-400">
+                  <Package className="h-5 w-5 mx-auto mb-1 opacity-50" />
+                  <p className="text-xs">
+                    {t("createShipment.previousShipments.noShipments", "Önceki gönderi bulunamadı")}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Expandable sections */}
