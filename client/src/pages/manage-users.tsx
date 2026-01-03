@@ -558,9 +558,14 @@ function WeightRangePricingDialog({ open, onOpenChange }: { open: boolean; onOpe
                     />
                   </div>
                 </div>
+                <div className="bg-yellow-50 p-2 rounded-md border border-yellow-100 mb-2">
+                  <p className="text-xs text-yellow-700">
+                    Uses <strong>billable weight</strong> = max(actual, volumetric). Volumetric = (L×W×H) / 5000
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="minWeight">Minimum Weight (kg)</Label>
+                    <Label htmlFor="minWeight">Min Billable Weight (kg)</Label>
                     <Input
                       id="minWeight"
                       type="number"
@@ -571,7 +576,7 @@ function WeightRangePricingDialog({ open, onOpenChange }: { open: boolean; onOpe
                     />
                   </div>
                   <div>
-                    <Label htmlFor="maxWeight">Maximum Weight (kg) - Optional</Label>
+                    <Label htmlFor="maxWeight">Max Billable Weight (kg) - Optional</Label>
                     <Input
                       id="maxWeight"
                       type="number"
@@ -605,8 +610,8 @@ function WeightRangePricingDialog({ open, onOpenChange }: { open: boolean; onOpe
               <TableHeader>
                 <TableRow>
                   <TableHead>Range Name</TableHead>
-                  <TableHead>Min Weight (kg)</TableHead>
-                  <TableHead>Max Weight (kg)</TableHead>
+                  <TableHead>Min Billable (kg)</TableHead>
+                  <TableHead>Max Billable (kg)</TableHead>
                   <TableHead>Price Multiplier</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -1108,7 +1113,9 @@ function UserPricingRulesDialog({
           <TabsContent value="weights" className="space-y-4">
             <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100">
               <p className="text-xs text-yellow-700">
-                Weight-based pricing rules override global weight multipliers for this user.
+                Weight-based pricing rules use <strong>billable weight</strong> (max of actual weight and volumetric weight).
+                <br />
+                <span className="text-yellow-600">Volumetric = (L×W×H) / 5000</span>
               </p>
             </div>
 
@@ -1124,7 +1131,7 @@ function UserPricingRulesDialog({
                 />
               </div>
               <div>
-                <Label className="text-xs">Min kg</Label>
+                <Label className="text-xs">Min Billable (kg)</Label>
                 <Input
                   type="number"
                   placeholder="0"
@@ -1136,7 +1143,7 @@ function UserPricingRulesDialog({
                 />
               </div>
               <div>
-                <Label className="text-xs">Max kg</Label>
+                <Label className="text-xs">Max Billable (kg)</Label>
                 <Input
                   type="number"
                   placeholder="∞"
@@ -1187,8 +1194,8 @@ function UserPricingRulesDialog({
                 <TableHeader className="sticky top-0 bg-background">
                   <TableRow>
                     <TableHead>Rule Name</TableHead>
-                    <TableHead>Min kg</TableHead>
-                    <TableHead>Max kg</TableHead>
+                    <TableHead>Min Billable</TableHead>
+                    <TableHead>Max Billable</TableHead>
                     <TableHead>Multiplier</TableHead>
                     <TableHead>$/kg</TableHead>
                     <TableHead className="w-24">Actions</TableHead>
