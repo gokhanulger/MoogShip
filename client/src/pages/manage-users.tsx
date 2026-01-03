@@ -920,7 +920,7 @@ function UserPricingRulesDialog({
 
   const handleSubmitCountryRule = () => {
     if (!newCountryRule.countryCode) {
-      toast({ title: "Error", description: "Please enter a country code", variant: "destructive" });
+      toast({ title: "Error", description: "Please select a country", variant: "destructive" });
       return;
     }
 
@@ -1007,14 +1007,17 @@ function UserPricingRulesDialog({
             {/* Add new country rule */}
             <div className="grid grid-cols-5 gap-2 items-end">
               <div>
-                <Label className="text-xs">Country Code</Label>
-                <Input
-                  placeholder="US, DE, GB..."
+                <Label className="text-xs">Country</Label>
+                <select
                   value={newCountryRule.countryCode}
-                  onChange={(e) => setNewCountryRule({ ...newCountryRule, countryCode: e.target.value.toUpperCase() })}
-                  maxLength={2}
-                  className="h-9"
-                />
+                  onChange={(e) => setNewCountryRule({ ...newCountryRule, countryCode: e.target.value })}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">Select...</option>
+                  {Object.entries(countryNames).sort((a, b) => a[1].localeCompare(b[1])).map(([code, name]) => (
+                    <option key={code} value={code}>{name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label className="text-xs">Multiplier</Label>
