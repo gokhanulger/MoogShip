@@ -70,7 +70,9 @@ import {
   MinusCircle,
   Mail,
   Download,
-  Bell
+  Bell,
+  Globe,
+  Scale
 } from "lucide-react";
 import EmailVerificationManager from "@/components/admin/email-verification-manager";
 import { useVerificationManager } from "@/hooks/use-verification-manager";
@@ -2529,14 +2531,6 @@ export default function ManageUsers() {
     });
   };
 
-  const handleOpenCountryPricingDialog = () => {
-    setIsCountryPricingDialogOpen(true);
-  };
-
-  const handleOpenWeightRangePricingDialog = () => {
-    setIsWeightRangePricingDialogOpen(true);
-  };
-
   const handleOpenUserPricingRulesDialog = (user: User) => {
     setSelectedUser(user);
     setIsUserPricingRulesDialogOpen(true);
@@ -2732,10 +2726,34 @@ export default function ManageUsers() {
 
         <Card>
           <CardHeader>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>
-              Manage users, account balances, and perform administrative actions
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>
+                  Manage users, account balances, and perform administrative actions
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCountryPricingDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Globe className="h-4 w-4 text-green-500" />
+                  Global Country Pricing
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsWeightRangePricingDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Scale className="h-4 w-4 text-yellow-500" />
+                  Global Weight Pricing
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs
@@ -2921,14 +2939,6 @@ export default function ManageUsers() {
                       <DropdownMenuItem onClick={() => handleOpenUserPricingRulesDialog(user)}>
                         <Settings className="mr-2 h-4 w-4 text-emerald-500" />
                         User Pricing Rules
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleOpenCountryPricingDialog()}>
-                        <Calculator className="mr-2 h-4 w-4 text-green-500" />
-                        Manage Country Pricing
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleOpenWeightRangePricingDialog()}>
-                        <Calculator className="mr-2 h-4 w-4 text-yellow-500" />
-                        Manage Weight Range Pricing
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleOpenUserMinBalanceDialog(user)}>
                         <MinusCircle className="mr-2 h-4 w-4 text-purple-500" />
