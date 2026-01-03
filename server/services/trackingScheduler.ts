@@ -537,11 +537,12 @@ export async function syncAllTrackingData() {
 
 /**
  * Process pending tracking update batches and send consolidated emails
+ * @param sendAdminEmail - If true, also send admin tracking report (default: false)
  */
-export async function processPendingTrackingNotifications(): Promise<void> {
+export async function processPendingTrackingNotifications(sendAdminEmail: boolean = false): Promise<void> {
   try {
-    console.log('[BATCH PROCESSOR] Starting processing of pending tracking notifications...');
-    await trackingBatchProcessor.processTrackingUpdateBatches();
+    console.log(`[BATCH PROCESSOR] Starting processing of pending tracking notifications (admin email: ${sendAdminEmail})...`);
+    await trackingBatchProcessor.processTrackingUpdateBatches(sendAdminEmail);
     console.log('[BATCH PROCESSOR] Completed processing of pending tracking notifications');
   } catch (error) {
     console.error('[BATCH PROCESSOR] Error processing pending tracking notifications:', error);
@@ -550,24 +551,49 @@ export async function processPendingTrackingNotifications(): Promise<void> {
 
 /**
  * Start batch processing scheduler for consolidated tracking emails
+ * User notifications: every 15 minutes
+ * Admin notifications: once daily at 7:00 Turkey time
  */
 export function startBatchProcessingScheduler(): void {
   console.log('[BATCH PROCESSOR] Starting batch processing scheduler...');
-  
-  // New batch processing every 15 minutes
+
+  // User batch processing every 15 minutes (no admin email)
   const batchProcessingInterval = setInterval(async () => {
-    console.log('[BATCH PROCESSOR] Running scheduled batch processing...');
-    await processPendingTrackingNotifications();
+    console.log('[BATCH PROCESSOR] Running scheduled batch processing (user notifications only)...');
+    await processPendingTrackingNotifications(false);
   }, 15 * 60 * 1000); // 15 minutes
-  
+
   // Store interval for cleanup
   trackingIntervals.push(batchProcessingInterval);
-  
-  console.log('[BATCH PROCESSOR] Batch processing scheduler started - running every 15 minutes');
-  
-  // Run initial batch processing after 2 minutes to catch any pending notifications
+
+  console.log('[BATCH PROCESSOR] User batch processing scheduler started - running every 15 minutes');
+
+  // Schedule daily admin report at 7:00 Turkey time
+  scheduleDailyAdminReport();
+
+  // Run initial batch processing after 2 minutes to catch any pending notifications (no admin email)
   setTimeout(async () => {
     console.log('[BATCH PROCESSOR] Running initial batch processing...');
-    await processPendingTrackingNotifications();
+    await processPendingTrackingNotifications(false);
   }, 2 * 60 * 1000); // 2 minutes delay
+}
+
+/**
+ * Schedule daily admin tracking report at 7:00 Turkey time
+ */
+function scheduleDailyAdminReport(): void {
+  const delay = getMillisecondsUntilTurkeyTime(7); // 7:00 AM Turkey time
+
+  const timeout = setTimeout(async () => {
+    console.log('[BATCH PROCESSOR] Running daily admin tracking report at 7:00 Turkey time...');
+    await processPendingTrackingNotifications(true); // Include admin email
+
+    // Schedule next occurrence (24 hours later)
+    scheduleDailyAdminReport();
+  }, delay);
+
+  trackingIntervals.push(timeout);
+
+  const scheduleTime = new Date(Date.now() + delay);
+  console.log(`[BATCH PROCESSOR] Daily admin report scheduled for: ${scheduleTime.toLocaleString("en-US", {timeZone: "Europe/Istanbul"})} (7:00 Turkey time)`);
 }

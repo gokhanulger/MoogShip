@@ -211,47 +211,47 @@ function DashboardContent({ user }: DashboardProps) {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <Button 
-            variant="outline" 
-            className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-primary/5 border-primary/20"
+        {/* Quick Actions - Compact */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+          <Button
+            variant="outline"
+            className="h-10 flex items-center justify-center gap-2 hover:bg-primary/5 border-primary/20"
             onClick={() => setIsPriceCalculatorOpen(true)}
           >
-            <Calculator className="h-6 w-6 text-primary" />
-            <span className="text-sm font-medium">{t('dashboard.quickActions.priceCalculator')}</span>
+            <Calculator className="h-4 w-4 text-primary" />
+            <span className="text-xs font-medium">{t('dashboard.quickActions.priceCalculator')}</span>
           </Button>
-          
-          <Button 
-            asChild 
-            variant="outline" 
-            className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-green-50 border-green-200"
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-10 flex items-center justify-center gap-2 hover:bg-green-50 border-green-200"
           >
             <Link href="/shipment-create">
-              <PlusIcon className="h-6 w-6 text-green-600" />
-              <span className="text-sm font-medium">{t('dashboard.quickActions.newShipment')}</span>
+              <PlusIcon className="h-4 w-4 text-green-600" />
+              <span className="text-xs font-medium">{t('dashboard.quickActions.newShipment')}</span>
             </Link>
           </Button>
-          
-          <Button 
-            asChild 
-            variant="outline" 
-            className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 border-blue-200"
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-10 flex items-center justify-center gap-2 hover:bg-blue-50 border-blue-200"
           >
             <Link href="/us-customs-calculator">
-              <Globe className="h-6 w-6 text-blue-600" />
-              <span className="text-sm font-medium">{t('dashboard.quickActions.customsCalculator')}</span>
+              <Globe className="h-4 w-4 text-blue-600" />
+              <span className="text-xs font-medium">{t('dashboard.quickActions.customsCalculator')}</span>
             </Link>
           </Button>
-          
-          <Button 
-            asChild 
-            variant="outline" 
-            className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-purple-50 border-purple-200"
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-10 flex items-center justify-center gap-2 hover:bg-purple-50 border-purple-200"
           >
             <Link href="/tracking">
-              <TruckIcon className="h-6 w-6 text-purple-600" />
-              <span className="text-sm font-medium">{t('dashboard.quickActions.trackShipment')}</span>
+              <TruckIcon className="h-4 w-4 text-purple-600" />
+              <span className="text-xs font-medium">{t('dashboard.quickActions.trackShipment')}</span>
             </Link>
           </Button>
         </div>

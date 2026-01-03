@@ -10,8 +10,9 @@ export class TrackingBatchProcessor {
 
   /**
    * Process all unprocessed tracking updates and send consolidated emails
+   * @param sendAdminEmail - If true, also send admin tracking report (default: false for scheduled runs)
    */
-  async processTrackingUpdateBatches(): Promise<void> {
+  async processTrackingUpdateBatches(sendAdminEmail: boolean = false): Promise<void> {
     // Prevent concurrent processing
     if (this.isProcessing) {
       console.log("⏳ Tracking batch processing already in progress, skipping...");
@@ -41,8 +42,10 @@ export class TrackingBatchProcessor {
       // Send consolidated emails to users
       await this.sendUserNotifications(updatesByUser);
 
-      // Send consolidated admin notification with all updates
-      await this.sendAdminNotification(enrichedUpdates);
+      // Send consolidated admin notification only if explicitly requested (once daily)
+      if (sendAdminEmail) {
+        await this.sendAdminNotification(enrichedUpdates);
+      }
 
       // Mark all updates as processed
       const updateIds = unprocessedUpdates.map(update => update.id);
