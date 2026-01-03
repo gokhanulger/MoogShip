@@ -514,9 +514,16 @@ export default function ShipmentTable({
       return response.json();
     },
     onSuccess: (data) => {
+      const isPending = data.shipment.status === 'pending';
+      const balanceMessage = data.shipment.balanceAdjustment !== 0
+        ? `Balance adjusted by $${(Math.abs(data.shipment.balanceAdjustment) / 100).toFixed(2)}`
+        : isPending
+          ? 'Balance will be updated upon approval'
+          : 'No balance adjustment needed.';
+
       toast({
         title: "Price Updated",
-        description: `Price updated successfully. ${data.shipment.balanceAdjustment !== 0 ? `Balance adjusted by $${(Math.abs(data.shipment.balanceAdjustment) / 100).toFixed(2)}` : 'No balance adjustment needed.'}`,
+        description: `Price updated successfully. ${balanceMessage}`,
       });
       setEditingPriceId(null);
       setEditedPrice("");

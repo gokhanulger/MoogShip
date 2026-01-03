@@ -13037,13 +13037,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to update shipment price" });
       }
 
-      // Create transaction and adjust user balance if there's a price difference
-      if (priceDifference !== 0) {
+      // Only adjust balance for non-pending shipments
+      // Pending shipments should not affect balance until approval
+      const isApprovedShipment = shipment.status === 'approved' ||
+                                 shipment.status === 'pre_transit' ||
+                                 shipment.status === 'in_transit' ||
+                                 shipment.status === 'delivered';
+
+      // Create transaction and adjust user balance only for approved shipments
+      if (priceDifference !== 0 && isApprovedShipment) {
         // If price decreased (priceDifference is negative), user gets a refund (positive amount)
         // If price increased (priceDifference is positive), user gets charged (negative amount)
         const balanceAdjustment = -priceDifference;
-        
-        const transactionDescription = priceDifference > 0 
+
+        const transactionDescription = priceDifference > 0
           ? `Admin price increase for shipment ${shipmentId} (+$${(priceDifference / 100).toFixed(2)})`
           : `Admin price decrease refund for shipment ${shipmentId} (+$${(Math.abs(priceDifference) / 100).toFixed(2)})`;
 
@@ -13063,18 +13070,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           balanceAdjustment,
           description: transactionDescription
         });
+      } else if (priceDifference !== 0 && !isApprovedShipment) {
+        console.log('[API] Skipping balance adjustment for pending shipment:', {
+          shipmentId,
+          status: shipment.status,
+          priceDifference
+        });
       }
 
       console.log(`Admin ${req.user?.username} adjusted price for shipment ${shipmentId} from $${(currentTotalPrice / 100).toFixed(2)} to $${(newPriceCents / 100).toFixed(2)}`);
-      
-      res.json({ 
-        success: true, 
-        message: `Price updated for shipment ${shipmentId}`,
+
+      // Only show balance adjustment for approved shipments
+      const actualBalanceAdjustment = (priceDifference !== 0 && isApprovedShipment) ? -priceDifference : 0;
+
+      res.json({
+        success: true,
+        message: isApprovedShipment
+          ? `Price updated for shipment ${shipmentId}`
+          : `Price updated for pending shipment ${shipmentId} (no balance adjustment until approval)`,
         shipment: {
           id: updatedShipment.id,
           totalPrice: updatedShipment.totalPrice,
           priceDifference: priceDifference,
-          balanceAdjustment: priceDifference !== 0 ? -priceDifference : 0
+          balanceAdjustment: actualBalanceAdjustment,
+          status: shipment.status
         }
       });
     } catch (error) {

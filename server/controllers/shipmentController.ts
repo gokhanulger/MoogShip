@@ -2429,30 +2429,41 @@ export const editShipment = async (req: Request, res: Response) => {
         return res.status(404).json({ message: 'Shipment not found' });
       }
       
-      // CHECK FOR BALANCE ADJUSTMENT: Price change on approved shipments
-      // Check if this is an approved shipment where balance was already deducted and price is being changed
-      const isApprovedShipment = existingShipment.status === 'approved' || 
-                                 existingShipment.status === 'pre_transit' || 
-                                 existingShipment.status === 'in_transit' || 
+      // CHECK FOR BALANCE ADJUSTMENT: Price change on approved shipments ONLY
+      // CRITICAL: Pending shipments should NEVER affect user balance
+      // Balance is only deducted when shipment is first approved
+      // After approval, price changes should adjust the balance accordingly
+      const isPendingShipment = existingShipment.status === 'pending';
+      const isApprovedShipment = existingShipment.status === 'approved' ||
+                                 existingShipment.status === 'pre_transit' ||
+                                 existingShipment.status === 'in_transit' ||
                                  existingShipment.status === 'delivered';
-      
+
       // Only perform balance adjustment if this is a complete shipment update (not just price calculation)
       // Check if this is a price-only update (recalculation) vs full shipment update
       const isPriceOnlyUpdate = finalShipmentData.__priceUpdate === true;
+
+      // CRITICAL LOG: Track pending shipment balance protection
+      if (isPendingShipment) {
+        console.log(`🛡️ PENDING SHIPMENT PROTECTION: Shipment #${shipmentId} is PENDING - NO balance adjustment will be made regardless of price changes`);
+      }
       
       console.log(`💰 BALANCE ADJUSTMENT LOGIC CHECK:`, {
         shipmentId,
         status: existingShipment.status,
+        isPendingShipment,
         isApprovedShipment,
         isPriceOnlyUpdate,
         hasTotalPrice: finalShipmentData.totalPrice !== undefined,
         priceChanged: existingShipment.totalPrice !== finalShipmentData.totalPrice,
         oldPrice: existingShipment.totalPrice,
         newPrice: finalShipmentData.totalPrice,
-        willAdjustBalance: isApprovedShipment && finalShipmentData.totalPrice !== undefined && existingShipment.totalPrice !== finalShipmentData.totalPrice && !isPriceOnlyUpdate
+        willAdjustBalance: !isPendingShipment && isApprovedShipment && finalShipmentData.totalPrice !== undefined && existingShipment.totalPrice !== finalShipmentData.totalPrice && !isPriceOnlyUpdate
       });
-      
-      if (isApprovedShipment && finalShipmentData.totalPrice !== undefined && existingShipment.totalPrice !== finalShipmentData.totalPrice && !isPriceOnlyUpdate) {
+
+      // CRITICAL: Only adjust balance for NON-PENDING shipments that are already approved
+      // Pending shipments should NEVER trigger balance adjustments
+      if (!isPendingShipment && isApprovedShipment && finalShipmentData.totalPrice !== undefined && existingShipment.totalPrice !== finalShipmentData.totalPrice && !isPriceOnlyUpdate) {
         const oldTotalPrice = existingShipment.totalPrice || 0;
         const newTotalPrice = finalShipmentData.totalPrice;
         const priceDifference = newTotalPrice - oldTotalPrice;
