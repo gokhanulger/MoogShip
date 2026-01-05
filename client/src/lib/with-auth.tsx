@@ -186,7 +186,8 @@ export function withAuth<P extends object>(
             
             // No stored admin data or not an admin route - redirect to login
             console.log('Unauthorized, redirecting to login');
-            setLocation('/auth');
+            const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+            setLocation(isCapacitorApp ? '/mobile-auth' : '/auth');
             return;
           } 
           else {

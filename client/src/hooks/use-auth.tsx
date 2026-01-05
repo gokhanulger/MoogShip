@@ -702,10 +702,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // For mobile browsers (but NOT Capacitor app), redirect to external mobile auth URL
       const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
 
-      if (isMobile && !isCapacitorApp) {
+      if (isCapacitorApp) {
+        // Capacitor app - redirect to mobile-auth
+        setLocation('/mobile-auth');
+      } else if (isMobile) {
         window.location.href = 'https://www.moogship.com/mobile-auth';
       } else {
-        // Redirect to /auth directly (works for both web and Capacitor)
+        // Desktop - redirect to /auth
         setLocation('/auth');
       }
     }
