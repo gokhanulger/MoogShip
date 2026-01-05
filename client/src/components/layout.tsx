@@ -531,10 +531,10 @@ export default function Layout({ children, hideMobileActions = false, user }: La
         </TooltipProvider>
       </div>
       {/* Main content - ensure it doesn't interfere with clickable elements */}
-      <main className={`flex-1 ${isExpanded ? 'md:ml-64' : 'md:ml-20'} overflow-y-auto pb-24 md:pb-0 px-0 md:px-8 pt-20 md:pt-6 relative z-[5] md:z-auto transition-all duration-300 ease-in-out`}>
-        
-        <div 
-          className="max-w-7xl mx-auto pt-0 md:pt-14 mt-0 md:mt-0 relative z-[5]" 
+      <main className={`flex-1 ${isExpanded ? 'md:ml-64' : 'md:ml-20'} overflow-y-auto pb-24 md:pb-0 px-0 md:px-8 pt-16 md:pt-6 relative z-[5] md:z-auto transition-all duration-300 ease-in-out`}>
+
+        <div
+          className="max-w-7xl mx-auto pt-1 md:pt-14 mt-0 md:mt-0 relative z-[5]" 
           style={{ pointerEvents: 'auto' }} 
           aria-label={t('layout.mainContentArea')}>
           {/* Mobile Quick Actions and Balance Display - Only show on main dashboard */}
