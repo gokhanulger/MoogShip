@@ -158,6 +158,17 @@ export default function MobileAuthPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // Store user data for Capacitor/mobile apps
+        if (data.user) {
+          try {
+            localStorage.setItem('moogship_auth_user', JSON.stringify(data.user));
+            localStorage.setItem('moogship_session_user', JSON.stringify(data.user));
+            sessionStorage.setItem('moogship_session_user', JSON.stringify(data.user));
+          } catch (e) {
+            console.warn('Could not store user data:', e);
+          }
+        }
+
         toast({
           title: i18n.language === 'tr' ? "Giris basarili" : "Login successful",
           description: i18n.language === 'tr' ? "Hosgeldiniz!" : "Welcome back!",

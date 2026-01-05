@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import Layout from '@/components/layout';
 import { Loader2 } from 'lucide-react';
 import { PageTransitionLoader } from '@/components/video-loader';
+import { getApiUrl } from '@/lib/queryClient';
 
 /**
  * A Higher Order Component (HOC) that handles authentication and authorization.
@@ -90,7 +91,7 @@ export function withAuth<P extends object>(
               setIsLoading(false);
               
               // Try to verify session in background without blocking UI
-              fetch('/api/user', {
+              fetch(getApiUrl('/api/user'), {
                 credentials: 'include',
                 headers: {
                   'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -109,7 +110,7 @@ export function withAuth<P extends object>(
           }
           
           // First try server authentication
-          const response = await fetch('/api/user', {
+          const response = await fetch(getApiUrl('/api/user'), {
             credentials: 'include',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -134,7 +135,7 @@ export function withAuth<P extends object>(
               
               // Also refresh admin session to keep it active
               try {
-                await fetch('/api/refresh-admin-session', {
+                await fetch(getApiUrl('/api/refresh-admin-session'), {
                   method: 'POST',
                   credentials: 'include',
                   headers: {
@@ -157,7 +158,7 @@ export function withAuth<P extends object>(
               
               // Try to refresh the admin session in the background
               try {
-                const refreshResponse = await fetch('/api/refresh-admin-session', {
+                const refreshResponse = await fetch(getApiUrl('/api/refresh-admin-session'), {
                   method: 'POST',
                   credentials: 'include',
                   headers: {

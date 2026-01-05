@@ -4,7 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getApiUrl } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -417,7 +417,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // For desktop or when no mobile session exists, try server validation
         // Add timestamp to force cache bypass for return system field updates
         const timestamp = Date.now();
-        const res = await fetch(`/api/user?t=${timestamp}`, {
+        const res = await fetch(getApiUrl(`/api/user?t=${timestamp}`), {
           credentials: "include",
           cache: "no-store",
           headers: {
@@ -472,10 +472,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
 
               
-              const refreshResponse = await fetch("/api/refresh-admin-session", {
+              const refreshResponse = await fetch(getApiUrl("/api/refresh-admin-session"), {
                 method: "POST",
                 credentials: "include",
-                headers: { 
+                headers: {
                   "Content-Type": "application/json",
                   "Cache-Control": "no-cache, no-store, must-revalidate"
                 },
@@ -759,7 +759,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // STEP 6: Force logout any existing server session
       try {
         console.log("[AUTH] Forcing logout of any existing server session...");
-        await fetch("/api/force-logout", {
+        await fetch(getApiUrl("/api/force-logout"), {
           method: "POST",
           credentials: "include",
           cache: "no-store"
@@ -782,7 +782,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       
       console.log("[AUTH] Making login request for new user...");
-      const res = await fetch("/api/login", fetchOptions);
+      const res = await fetch(getApiUrl("/api/login"), fetchOptions);
       
       if (!res.ok) {
         const errorText = await res.text();
@@ -951,7 +951,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Even if the server logout fails, we'll still clear local state
       try {
-        const res = await fetch("/api/logout", {
+        const res = await fetch(getApiUrl("/api/logout"), {
           method: "POST",
           credentials: "include",
           cache: "no-store"

@@ -105,11 +105,8 @@ export const getQueryFn: <T>(options: {
       
       const isCriticalEndpoint = criticalEndpoints.some(endpoint => url.includes(endpoint));
       
-      // Capacitor apps don't need credentials for cross-origin requests
-      const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
-
       const res = await fetch(url, {
-        credentials: isCapacitorApp ? "omit" : "include",
+        credentials: "include",
         signal: controller.signal,
         cache: isCriticalEndpoint ? 'no-store' : 'default',
         keepalive: true,
