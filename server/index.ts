@@ -157,7 +157,8 @@ app.use((req, res, next) => {
     'https://moogship.onrender.com',
     'capacitor://localhost',
     'ionic://localhost',
-    'http://localhost'
+    'http://localhost',
+    'https://localhost'
   ];
 
   // In development, also allow localhost
