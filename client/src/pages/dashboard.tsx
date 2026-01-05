@@ -115,17 +115,17 @@ function DashboardContent({ user }: DashboardProps) {
 
   return (
     <Layout user={user}>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-3 md:py-6">
         {/* Welcome Section with User Context */}
-          <div className="mb-8 flex justify-between items-start">
+          <div className="mb-4 md:mb-8 flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                {user 
-                  ? t('dashboard.welcomeUser', { name: user.name }) 
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+                {user
+                  ? t('dashboard.welcomeUser', { name: user.name })
                   : t('dashboard.welcomeGuest')
                 }
               </h1>
-              <p className="mt-2 text-lg text-gray-600">
+              <p className="mt-1 md:mt-2 text-sm md:text-lg text-gray-600">
                 {t('dashboard.summary')}
               </p>
             </div>

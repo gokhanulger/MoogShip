@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { AlertCircle, AlertOctagon, BellRing, Info } from "lucide-react";
+import { getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 
 const getPriorityIcon = (priority: string | null) => {
   switch (priority) {
@@ -94,7 +95,10 @@ export const AnnouncementsDisplay = ({
   const { data: announcements, isLoading, error } = useQuery<Announcement[]>({
     queryKey: ["/api/announcements"],
     queryFn: async () => {
-      const response = await fetch("/api/announcements");
+      const response = await fetch(getApiUrl("/api/announcements"), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch announcements");
       }

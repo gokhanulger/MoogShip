@@ -39,51 +39,7 @@ export function MobileAppWrapper({ children }: MobileAppWrapperProps) {
     };
   }, [isMobile, isIOS]);
   
-  // Apply special styling for mobile
-  if (isMobile) {
-    return (
-      <div className="mobile-app-container bg-background min-h-screen pt-[var(--safe-area-top)] pb-[var(--safe-area-bottom)]">
-        {/* Mobile App Header */}
-        <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
-          <div className="flex h-14 items-center px-4">
-            <div className="flex items-center justify-between w-full">
-              <h2 className="text-lg font-semibold tracking-tight">MoogShip</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                  {mobileConfig.app.version}
-                </span>
-              </div>
-            </div>
-          </div>
-        </header>
-        
-        {/* Content Area */}
-        <main className="flex-1 p-4 overflow-auto">
-          {children}
-        </main>
-        
-        {/* Navigation Footer */}
-        <footer className="sticky bottom-0 z-40 w-full border-t bg-background/80 backdrop-blur-sm">
-          <Separator />
-          <div className="flex h-16 items-center justify-around">
-            <button className="flex flex-col items-center justify-center w-1/4">
-              <span className="text-xs font-medium">Home</span>
-            </button>
-            <button className="flex flex-col items-center justify-center w-1/4">
-              <span className="text-xs font-medium">Shipments</span>
-            </button>
-            <button className="flex flex-col items-center justify-center w-1/4">
-              <span className="text-xs font-medium">Track</span>
-            </button>
-            <button className="flex flex-col items-center justify-center w-1/4">
-              <span className="text-xs font-medium">Profile</span>
-            </button>
-          </div>
-        </footer>
-      </div>
-    );
-  }
-  
-  // Default rendering for web
+  // For mobile, just render children without extra header/footer
+  // The Layout component already has its own header
   return <>{children}</>;
 }
