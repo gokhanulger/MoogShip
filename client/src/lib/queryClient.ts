@@ -120,17 +120,21 @@ export const getQueryFn: <T>(options: {
       const storedUser = localStorage.getItem('moogship_auth_user');
       const headers: Record<string, string> = {};
 
+      console.log('[API] Stored user data:', storedUser ? 'found' : 'not found');
+
       if (storedUser) {
         try {
           const userData = JSON.parse(storedUser);
+          console.log('[API] User ID from storage:', userData.id);
           if (userData.id) {
             headers['X-User-Id'] = String(userData.id);
           }
           if (userData.sessionId) {
             headers['X-Session-Id'] = userData.sessionId;
           }
+          console.log('[API] Headers being sent:', headers);
         } catch (e) {
-          console.warn('Could not parse stored user data');
+          console.warn('Could not parse stored user data:', e);
         }
       }
 
