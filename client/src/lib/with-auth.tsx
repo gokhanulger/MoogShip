@@ -70,11 +70,12 @@ export function withAuth<P extends object>(
           // Check if we have stored admin data and this is an admin route
           const storedAdminData = adminOnly ? getStoredAdminData() : null;
           
-          // For mobile Safari, check stored user data first
+          // For mobile Safari or Capacitor, check stored user data first
           const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
           const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-          
-          if (isMobile && isSafari) {
+          const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+
+          if (isMobile && isSafari || isCapacitorApp) {
             const storedUserData = getStoredUserData();
             if (storedUserData && storedUserData.id) {
               console.log('[AUTH] Mobile Safari - found stored user data:', storedUserData.username);

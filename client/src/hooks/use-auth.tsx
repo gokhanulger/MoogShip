@@ -588,12 +588,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     retryDelay: 2000 // Slower retry delay
   });
   
-  // For mobile Safari, prioritize stored authentication data
+  // For mobile Safari or Capacitor, prioritize stored authentication data
   const effectiveUser = (() => {
     const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-    
-    if (isMobile && isSafari) {
+    const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+
+    if ((isMobile && isSafari) || isCapacitorApp) {
       // CRITICAL FIX: Always check for stored authentication first for mobile Safari
       const loginSuccess = localStorage.getItem('mobile_safari_login_success');
       const storedUser = localStorage.getItem('moogship_auth_user');
@@ -659,13 +660,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Check if we need to redirect to auth page
   useEffect(() => {
-    // For mobile Safari, if we have stored user data, never redirect to auth
+    // For mobile Safari or Capacitor, if we have stored user data, never redirect to auth
     const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-    
-    if (isMobile && isSafari && effectiveUser) {
+    const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
 
-      return; // Don't redirect if we have a user in mobile Safari
+    if (((isMobile && isSafari) || isCapacitorApp) && effectiveUser) {
+      return; // Don't redirect if we have a user in mobile Safari or Capacitor
     }
     
     // Only redirect if we're sure the user is not logged in (not during loading)

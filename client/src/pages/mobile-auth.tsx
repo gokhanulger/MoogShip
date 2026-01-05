@@ -164,7 +164,10 @@ export default function MobileAuthPage() {
           try {
             localStorage.setItem('moogship_auth_user', JSON.stringify(data.user));
             localStorage.setItem('moogship_session_user', JSON.stringify(data.user));
+            localStorage.setItem('mobile_safari_login_success', 'true');
+            localStorage.setItem('mobile_login_success', 'true');
             sessionStorage.setItem('moogship_session_user', JSON.stringify(data.user));
+            sessionStorage.setItem('mobile_safari_authenticated', JSON.stringify(data.user));
           } catch (e) {
             console.warn('Could not store user data:', e);
           }
