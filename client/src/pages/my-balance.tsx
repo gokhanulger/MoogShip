@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import Layout from "@/components/layout";
 import QRCode from "qrcode";
@@ -248,8 +248,9 @@ export default function MyBalancePage() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const res = await fetch('/api/user', {
-          credentials: 'include'
+        const res = await fetch(getApiUrl('/api/user'), {
+          credentials: 'include',
+          headers: getAuthHeaders()
         });
         if (res.ok) {
           const userData = await res.json();

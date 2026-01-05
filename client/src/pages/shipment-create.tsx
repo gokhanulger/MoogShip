@@ -42,7 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ServiceLevel, ShipmentStatus } from "@shared/schema";
 import PackageItemSelector from "@/components/package-item-selector-redesigned";
@@ -723,8 +723,9 @@ function ShipmentCreate() {
   >({
     queryKey: ["/api/recipients"],
     queryFn: async () => {
-      const response = await fetch("/api/recipients", {
+      const response = await fetch(getApiUrl("/api/recipients"), {
         credentials: "include",
+        headers: getAuthHeaders()
       });
       if (!response.ok) {
         throw new Error("Failed to fetch recipients");
@@ -739,8 +740,9 @@ function ShipmentCreate() {
     useQuery<any[]>({
       queryKey: ["/api/shipments/my"],
       queryFn: async () => {
-        const response = await fetch("/api/shipments/my", {
+        const response = await fetch(getApiUrl("/api/shipments/my"), {
           credentials: "include",
+          headers: getAuthHeaders()
         });
         if (!response.ok) {
           throw new Error("Failed to fetch previous shipments");
@@ -2151,10 +2153,11 @@ function ShipmentCreate() {
       const formData = new FormData();
       formData.append('invoice', file);
 
-      const response = await fetch(`/api/shipments/${shipmentId}/upload-invoice`, {
+      const response = await fetch(getApiUrl(`/api/shipments/${shipmentId}/upload-invoice`), {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        headers: getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -2212,11 +2215,12 @@ function ShipmentCreate() {
 
   const handleDeleteInvoice = async (shipmentId: number) => {
     setIsDeletingInvoice(true);
-    
+
     try {
-      const response = await fetch(`/api/shipments/${shipmentId}/delete-invoice`, {
+      const response = await fetch(getApiUrl(`/api/shipments/${shipmentId}/delete-invoice`), {
         method: 'DELETE',
         credentials: 'include',
+        headers: getAuthHeaders()
       });
 
       if (!response.ok) {
