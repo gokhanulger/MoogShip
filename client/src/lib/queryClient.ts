@@ -46,13 +46,16 @@ export async function apiRequest(
   const fullUrl = getApiUrl(url);
 
   try {
+    // Capacitor apps don't need credentials for cross-origin requests
+    const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+
     const res = await fetch(fullUrl, {
       method,
       headers: {
         ...(data ? { "Content-Type": "application/json" } : {}),
       },
       body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
+      credentials: isCapacitorApp ? "omit" : "include",
       signal: controller.signal,
       cache: 'no-store', // Use standard fetch cache option for mutations
       keepalive: true,
@@ -102,8 +105,11 @@ export const getQueryFn: <T>(options: {
       
       const isCriticalEndpoint = criticalEndpoints.some(endpoint => url.includes(endpoint));
       
+      // Capacitor apps don't need credentials for cross-origin requests
+      const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+
       const res = await fetch(url, {
-        credentials: "include",
+        credentials: isCapacitorApp ? "omit" : "include",
         signal: controller.signal,
         cache: isCriticalEndpoint ? 'no-store' : 'default',
         keepalive: true,
