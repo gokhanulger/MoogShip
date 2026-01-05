@@ -40,6 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ShipmentPreviewCard } from "@/components/shipment-preview-card";
 import { withAuth } from "@/lib/with-auth";
+import { getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { ShipmentStatusColors } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
 import { useSecureLabels } from "@/hooks/useSecureLabels";
@@ -49,7 +50,10 @@ function TrackingStatusCell({ shipmentId }: { shipmentId: number }) {
   const { data: trackingInfo, isLoading } = useQuery({
     queryKey: ['/api/shipments/track', shipmentId],
     queryFn: async () => {
-      const response = await fetch(`/api/shipments/track/${shipmentId}`);
+      const response = await fetch(getApiUrl(`/api/shipments/track/${shipmentId}`), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!response.ok) return null;
       return response.json();
     },
@@ -78,7 +82,10 @@ function EstimatedDeliveryCell({ shipmentId }: { shipmentId: number }) {
   const { data: trackingInfo, isLoading } = useQuery({
     queryKey: ['/api/shipments/track', shipmentId],
     queryFn: async () => {
-      const response = await fetch(`/api/shipments/track/${shipmentId}`);
+      const response = await fetch(getApiUrl(`/api/shipments/track/${shipmentId}`), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!response.ok) return null;
       return response.json();
     },

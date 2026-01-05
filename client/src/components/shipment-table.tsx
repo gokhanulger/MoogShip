@@ -95,7 +95,7 @@ import {
 import { ShipmentStatus, PickupStatus } from "@shared/schema";
 import { exportToExcel, formatShipmentForExport } from "@/lib/export-utils";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { useSecureLabels } from "@/hooks/useSecureLabels";
 import {
   Popover,
@@ -414,10 +414,11 @@ export default function ShipmentTable({
       formData.append('invoice', file);
 
       // Use fetch directly for file uploads to avoid JSON stringify issue
-      const response = await fetch(`/api/shipments/${shipmentId}/upload-invoice`, {
+      const response = await fetch(getApiUrl(`/api/shipments/${shipmentId}/upload-invoice`), {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        headers: getAuthHeaders(),
         // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
       });
 
@@ -720,7 +721,10 @@ export default function ShipmentTable({
 
     // Fetch package items for this shipment
     try {
-      const response = await fetch(`/api/shipments/${shipment.id}/items`);
+      const response = await fetch(getApiUrl(`/api/shipments/${shipment.id}/items`), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (response.ok) {
         const items = await response.json();
         // Update the shipment object with the package items data
@@ -781,7 +785,10 @@ export default function ShipmentTable({
   const fetchUserProducts = async () => {
     setLoadingProducts(true);
     try {
-      const response = await fetch("/api/products");
+      const response = await fetch(getApiUrl("/api/products"), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch products");
       }
@@ -980,7 +987,10 @@ export default function ShipmentTable({
       await fetchUserProducts();
 
       // Then fetch package contents
-      const response = await fetch(`/api/shipments/${shipment.id}/items`);
+      const response = await fetch(getApiUrl(`/api/shipments/${shipment.id}/items`), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch package contents");
       }
@@ -4521,7 +4531,10 @@ export default function ShipmentTable({
 
                         // Re-fetch the selected shipment to get updated tracking info
                         const updatedShipment = await (
-                          await fetch(`/api/shipments/${selectedShipment.id}`)
+                          await fetch(getApiUrl(`/api/shipments/${selectedShipment.id}`), {
+                            credentials: 'include',
+                            headers: getAuthHeaders()
+                          })
                         ).json();
                         setSelectedShipment(updatedShipment);
 

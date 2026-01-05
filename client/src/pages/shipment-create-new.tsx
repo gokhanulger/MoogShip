@@ -7,7 +7,7 @@ import {
   ArrowLeftIcon, Package, Calculator, TruckIcon, 
   Loader2, ChevronDown, ChevronUp, Check, MapPin, Box, Truck, User
 } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ServiceLevel, ShipmentStatus } from "@shared/schema";
 import { showCreditLimitExceededToast } from "@/components/credit-limit-toast";
@@ -128,10 +128,11 @@ export default function ShipmentCreate() {
   useEffect(() => {
     const loadUserAddress = async () => {
       try {
-        const response = await fetch("/api/user", {
-          credentials: "include"
+        const response = await fetch(getApiUrl("/api/user"), {
+          credentials: "include",
+          headers: getAuthHeaders()
         });
-        
+
         if (!response.ok) {
           console.error("Failed to load user data");
           return;
@@ -256,10 +257,11 @@ export default function ShipmentCreate() {
       const packageFormData = packageForm.getValues();
       
       // Make API call to calculate price
-      const response = await fetch("/api/calculate-price", {
+      const response = await fetch(getApiUrl("/api/calculate-price"), {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
         },
         body: JSON.stringify({
           // Package and shipment details
@@ -289,10 +291,11 @@ export default function ShipmentCreate() {
       if (data.totalPrice) {
         try {
           // First create a temporary shipment for credit limit checking
-          const tempRes = await fetch("/api/shipments/temporary", {
+          const tempRes = await fetch(getApiUrl("/api/shipments/temporary"), {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              ...getAuthHeaders()
             },
             body: JSON.stringify({ totalPrice: data.totalPrice }),
             credentials: "include"
@@ -306,10 +309,11 @@ export default function ShipmentCreate() {
           const tempShipment = await tempRes.json();
           
           // Now check if this would exceed the credit limit
-          const creditCheckRes = await fetch(`/api/shipments/check-credit-limit/${tempShipment.id}`, {
+          const creditCheckRes = await fetch(getApiUrl(`/api/shipments/check-credit-limit/${tempShipment.id}`), {
             method: "GET",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              ...getAuthHeaders()
             },
             credentials: "include"
           });
@@ -380,27 +384,29 @@ export default function ShipmentCreate() {
       // Check credit limit first with a separate API call
       try {
         // First create a temporary shipment for credit limit checking
-        const tempRes = await fetch("/api/shipments/temporary", {
+        const tempRes = await fetch(getApiUrl("/api/shipments/temporary"), {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            ...getAuthHeaders()
           },
           body: JSON.stringify({ totalPrice: priceDetails.totalPrice }),
           credentials: "include"
         });
-        
+
         if (!tempRes.ok) {
           console.error("Failed to create temporary shipment for credit check");
           throw new Error("Failed to check credit limit");
         }
-        
+
         const tempShipment = await tempRes.json();
-        
+
         // Now check if this would exceed the credit limit
-        const creditCheckRes = await fetch(`/api/shipments/check-credit-limit/${tempShipment.id}`, {
+        const creditCheckRes = await fetch(getApiUrl(`/api/shipments/check-credit-limit/${tempShipment.id}`), {
           method: "GET",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            ...getAuthHeaders()
           },
           credentials: "include"
         });
@@ -439,10 +445,11 @@ export default function ShipmentCreate() {
       };
       
       // Use fetch directly for better error handling
-      const response = await fetch("/api/shipments", {
+      const response = await fetch(getApiUrl("/api/shipments"), {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
         },
         body: JSON.stringify(enhancedShipmentData),
         credentials: "include"
