@@ -70,10 +70,23 @@ export default function AuthPage() {
   // Check if running in Capacitor native app
   const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
 
-  // Redirect mobile browsers to external mobile auth URL (but NOT in Capacitor app)
+  // Redirect Capacitor apps to mobile-auth page
+  if (isCapacitorApp) {
+    window.location.href = '/mobile-auth';
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect mobile browsers to external mobile auth URL
   const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
 
-  if (isMobile && !isCapacitorApp) {
+  if (isMobile) {
     window.location.href = 'https://www.moogship.com/mobile-auth';
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
