@@ -21,7 +21,7 @@ import { SiWhatsapp } from 'react-icons/si';
 import { SharedMarketingLayout } from '../components/shared-marketing-layout';
 
 export default function SupportPage() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
