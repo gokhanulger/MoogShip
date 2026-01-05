@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'MoogShip',
   webDir: 'dist/public',
   server: {
-    androidScheme: 'https',
-    iosScheme: 'https',
-    hostname: 'localhost',
+    // Load app directly from server - cookies work normally
+    url: 'https://moogship.onrender.com',
+    cleartext: true,
     allowNavigation: ['*']
   },
   ios: {
