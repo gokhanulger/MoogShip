@@ -116,11 +116,30 @@ export const getQueryFn: <T>(options: {
       
       const isCriticalEndpoint = criticalEndpoints.some(endpoint => url.includes(endpoint));
       
+      // Get stored user data for mobile auth fallback
+      const storedUser = localStorage.getItem('moogship_auth_user');
+      const headers: Record<string, string> = {};
+
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          if (userData.id) {
+            headers['X-User-Id'] = String(userData.id);
+          }
+          if (userData.sessionId) {
+            headers['X-Session-Id'] = userData.sessionId;
+          }
+        } catch (e) {
+          console.warn('Could not parse stored user data');
+        }
+      }
+
       const res = await fetch(url, {
         credentials: "include",
         signal: controller.signal,
         cache: isCriticalEndpoint ? 'no-store' : 'default',
         keepalive: true,
+        headers,
       });
 
       clearTimeout(timeoutId);

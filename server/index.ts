@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { testConnection, db, pool, globalConnectionStatus } from "./db";
+import { storage } from "./storage";
 import customRoutes from "./routes-ext";
 import refundRoutes from "./refund-routes";
 import emailCampaignRoutes from "./email-campaign-routes";
@@ -200,6 +201,52 @@ app.use((req, res, next) => {
 // Increase body parser limits to handle large requests (e.g., bulk uploads, shipment data)
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+// Mobile app session fallback middleware
+// When cookies don't work (Capacitor/WKWebView), use X-Session-Id header
+app.use(async (req, res, next) => {
+  // Skip if user is already authenticated via session
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+
+  // Check for session ID in header (mobile app fallback)
+  const sessionId = req.headers['x-session-id'] as string;
+  const userId = req.headers['x-user-id'] as string;
+
+  if (sessionId && userId) {
+    try {
+      // Validate the session exists in the database
+      const { Client } = require('pg');
+      const client = new Client({ connectionString: process.env.DATABASE_URL });
+      await client.connect();
+
+      const result = await client.query(
+        `SELECT sess FROM session WHERE sid = $1`,
+        [sessionId]
+      );
+
+      await client.end();
+
+      if (result.rows.length > 0) {
+        const sessionData = result.rows[0].sess;
+        // Verify the user ID matches
+        if (sessionData?.passport?.user == userId) {
+          // Attach user to request
+          const user = await storage.getUser(parseInt(userId));
+          if (user) {
+            (req as any).user = user;
+            console.log(`[AUTH] Mobile session fallback: authenticated user ${user.username}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[AUTH] Mobile session fallback error:', error);
+    }
+  }
+
+  next();
+});
 
 // Serve static files from uploads directory with cache headers
 app.use('/uploads', express.static('uploads', {
