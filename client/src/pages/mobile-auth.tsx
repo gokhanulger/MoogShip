@@ -158,19 +158,19 @@ export default function MobileAuthPage() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         // Store user data for Capacitor/mobile apps
-        if (data.user) {
-          try {
-            localStorage.setItem('moogship_auth_user', JSON.stringify(data.user));
-            localStorage.setItem('moogship_session_user', JSON.stringify(data.user));
-            localStorage.setItem('mobile_safari_login_success', 'true');
-            localStorage.setItem('mobile_login_success', 'true');
-            sessionStorage.setItem('moogship_session_user', JSON.stringify(data.user));
-            sessionStorage.setItem('mobile_safari_authenticated', JSON.stringify(data.user));
-          } catch (e) {
-            console.warn('Could not store user data:', e);
-          }
+        // Note: API returns user data directly in response, not in data.user
+        try {
+          localStorage.setItem('moogship_auth_user', JSON.stringify(data));
+          localStorage.setItem('moogship_session_user', JSON.stringify(data));
+          localStorage.setItem('mobile_safari_login_success', 'true');
+          localStorage.setItem('mobile_login_success', 'true');
+          sessionStorage.setItem('moogship_session_user', JSON.stringify(data));
+          sessionStorage.setItem('mobile_safari_authenticated', JSON.stringify(data));
+          console.log('[MOBILE-AUTH] User data stored in localStorage:', data.username);
+        } catch (e) {
+          console.warn('Could not store user data:', e);
         }
 
         toast({
@@ -179,7 +179,7 @@ export default function MobileAuthPage() {
           duration: 2000,
         });
 
-        if (data.user?.role === 'admin') {
+        if (data.role === 'admin') {
           setLocation("/admin/dashboard");
         } else {
           setLocation("/dashboard");
