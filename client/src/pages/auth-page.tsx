@@ -27,7 +27,7 @@ import { Loader2, Package, TruckIcon, AlertCircle, CheckCircle, Mail } from "luc
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { ResendVerification } from "@/components/resend-verification";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, getApiUrl } from "@/lib/queryClient";
 
 // Login form schema
 const loginSchema = z.object({
@@ -196,7 +196,7 @@ export default function AuthPage() {
       // Force logout any existing server session
       try {
         console.log("[AUTH FORM] Forcing logout of any existing server session...");
-        await fetch("/api/force-logout", {
+        await fetch(getApiUrl("/api/force-logout"), {
           method: "POST",
           credentials: "include",
           cache: "no-store"
@@ -226,7 +226,7 @@ export default function AuthPage() {
       console.log("[AUTH FORM] Attempting login for mobile:", isMobile);
       
       // Use single unified login endpoint for all browsers
-      const response = await fetch('/api/login', fetchConfig);
+      const response = await fetch(getApiUrl('/api/login'), fetchConfig);
       console.log("[AUTH FORM] Response status:", response.status);
       
       let data;
@@ -333,7 +333,7 @@ export default function AuthPage() {
       setRegisterSuccess(null);
       setRegisterError(null);
       
-      const response = await fetch('/api/register', {
+      const response = await fetch(getApiUrl('/api/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -371,7 +371,7 @@ export default function AuthPage() {
       setForgotPasswordSuccess(null);
       setForgotPasswordError(null);
       
-      const response = await fetch('/api/forgot-password', {
+      const response = await fetch(getApiUrl('/api/forgot-password'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
