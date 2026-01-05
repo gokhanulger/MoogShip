@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { getApiUrl } from "@/lib/queryClient";
 import {
   Home,
   Package,
@@ -54,10 +55,10 @@ export default function MobileNav({ isBottomNav = false, open, isOpen, onClose, 
     async function checkAdmin() {
       try {
         // Fetch user data directly from API
-        const response = await fetch('/api/user', {
+        const response = await fetch(getApiUrl('/api/user'), {
           credentials: 'include'
         });
-        
+
         if (response.ok) {
           const userData = await response.json();
           // Check if user has admin role
@@ -72,7 +73,7 @@ export default function MobileNav({ isBottomNav = false, open, isOpen, onClose, 
         setAdminStatus(false);
       }
     }
-    
+
     // Only run the check once when the component mounts
     checkAdmin();
   }, []);

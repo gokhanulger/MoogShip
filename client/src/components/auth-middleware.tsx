@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { getApiUrl } from '@/lib/queryClient';
 
 // This component can be used to wrap components that require authentication
 // or admin permissions without using the AuthContext directly
@@ -33,7 +34,7 @@ export function AuthMiddleware({
         // For admin check, use the dedicated endpoint
         if (adminOnly) {
           console.log('AuthMiddleware: Checking admin status');
-          const response = await fetch('/api/check-admin');
+          const response = await fetch(getApiUrl('/api/check-admin'));
           
           if (!response.ok) {
             if (response.status === 401 && requireAuth) {
@@ -69,7 +70,7 @@ export function AuthMiddleware({
         // For regular auth check, use the user endpoint
         else if (requireAuth) {
           console.log('AuthMiddleware: Checking regular auth');
-          const response = await fetch('/api/user');
+          const response = await fetch(getApiUrl('/api/user'));
           
           if (!response.ok) {
             // Not authenticated

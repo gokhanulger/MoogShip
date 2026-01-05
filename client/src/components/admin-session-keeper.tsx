@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { getApiUrl } from '@/lib/queryClient';
 
 /**
  * This component helps maintain admin sessions by periodically
@@ -20,7 +21,7 @@ export function AdminSessionKeeper() {
     // Function to refresh the admin session
     const refreshAdminSession = async () => {
       try {
-        const response = await fetch('/api/refresh-admin-session', {
+        const response = await fetch(getApiUrl('/api/refresh-admin-session'), {
           method: 'POST',
           credentials: 'include',
           headers: {

@@ -48,6 +48,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher, MiniLanguageSwitcher } from "@/components/language-switcher";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useAuth } from "@/hooks/use-auth";
+import { getApiUrl } from "@/lib/queryClient";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -123,7 +124,7 @@ export default function Layout({ children, hideMobileActions = false, user }: La
   const { data: balanceData } = useQuery({
     queryKey: ['/api/balance'],
     queryFn: async () => {
-      const response = await fetch('/api/balance', {
+      const response = await fetch(getApiUrl('/api/balance'), {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -140,7 +141,7 @@ export default function Layout({ children, hideMobileActions = false, user }: La
   const { data: revenueData } = useQuery({
     queryKey: ['/api/analytics/daily-gross-revenue'],
     queryFn: async () => {
-      const response = await fetch('/api/analytics/daily-gross-revenue', {
+      const response = await fetch(getApiUrl('/api/analytics/daily-gross-revenue'), {
         credentials: 'include'
       });
       if (!response.ok) {

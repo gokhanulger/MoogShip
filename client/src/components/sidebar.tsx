@@ -50,6 +50,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { getApiUrl } from "@/lib/queryClient";
 
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
@@ -70,7 +71,7 @@ export default function Sidebar() {
   const { data: balanceData } = useQuery({
     queryKey: ['/api/balance'],
     queryFn: async () => {
-      const response = await fetch('/api/balance', {
+      const response = await fetch(getApiUrl('/api/balance'), {
         credentials: 'include'
       });
       if (!response.ok) {

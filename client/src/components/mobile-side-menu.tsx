@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'wouter';
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/queryClient';
 import {
   Home,
   Package,
@@ -49,21 +50,21 @@ const MobileSideMenu = ({ isOpen, onClose, onLogout, isAdmin = false }: MobileSi
     async function checkUserData() {
       try {
         // First try the regular endpoint
-        let response = await fetch('/api/user', {
+        let response = await fetch(getApiUrl('/api/user'), {
           credentials: 'include'
         });
-        
+
         if (response.ok) {
           const userData = await response.json();
           console.log('Mobile menu: Initial user data:', userData);
-          
+
           // If we got user role but expected admin, try the admin endpoint
           if (userData.role === 'user' && window.location.pathname.includes('admin')) {
             try {
-              const adminResponse = await fetch('/api/admin/user', {
+              const adminResponse = await fetch(getApiUrl('/api/admin/user'), {
                 credentials: 'include'
               });
-              
+
               if (adminResponse.ok) {
                 const adminUserData = await adminResponse.json();
                 console.log('Mobile menu: Admin user data:', adminUserData);
@@ -76,7 +77,7 @@ const MobileSideMenu = ({ isOpen, onClose, onLogout, isAdmin = false }: MobileSi
               console.log("Mobile menu: Admin endpoint failed, using regular user data");
             }
           }
-          
+
           const isUserAdmin = userData && userData.role === "admin";
           console.log('Mobile menu: Final admin status:', isUserAdmin);
           setAdminStatus(isUserAdmin);
@@ -86,7 +87,7 @@ const MobileSideMenu = ({ isOpen, onClose, onLogout, isAdmin = false }: MobileSi
         console.error('Error fetching user data:', error);
       }
     }
-    
+
     // Call immediately on mount and whenever the menu is opened
     if (isOpen) {
       checkUserData();
