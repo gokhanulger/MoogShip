@@ -183,10 +183,10 @@ function DraftShipmentsContent() {
 
   return (
     <Layout user={user}>
-      <div className="container max-w-7xl mx-auto px-4 py-4 md:py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+      <div className="container max-w-7xl mx-auto px-4 py-2 md:py-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 md:mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t("draftShipments.title")}</h1>
+            <h1 className="text-xl md:text-2xl font-bold">{t("draftShipments.title")}</h1>
             <p className="text-muted-foreground">
               {t("draftShipments.subtitle")}
             </p>

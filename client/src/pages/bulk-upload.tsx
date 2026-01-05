@@ -2037,9 +2037,9 @@ function BulkUploadContent({ user }: BulkUploadProps) {
   return (
     <div>
       <Layout>
-        <div className="py-6">
+        <div className="py-2 md:py-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-            <div className="flex items-center mb-6">
+            <div className="flex items-center mb-3 md:mb-6">
               <Button
                 variant="ghost"
                 size="sm"
@@ -2049,7 +2049,7 @@ function BulkUploadContent({ user }: BulkUploadProps) {
                 <ArrowLeftIcon className="h-4 w-4 mr-1" />
                 {String(t("bulkUpload.backButton"))}
               </Button>
-              <h1 className="text-2xl font-semibold text-gray-900">
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
                 {String(t("bulkUpload.title"))}
               </h1>
             </div>

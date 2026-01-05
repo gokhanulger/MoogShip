@@ -197,11 +197,11 @@ export default function MyPickupsPage() {
   
   return (
     <Layout>
-      <div className="p-4 md:p-6 pt-6 md:pt-8">
-        <div className="flex justify-between items-center mb-10 mt-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-3">{t('myPickups.title')}</h1>
-            <p className="text-muted-foreground text-lg">
+      <div className="p-2 md:p-6 pt-2 md:pt-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-10 mt-2 md:mt-6">
+          <div className="mb-2 md:mb-0">
+            <h1 className="text-xl md:text-3xl font-bold tracking-tight mb-1 md:mb-3">{t('myPickups.title')}</h1>
+            <p className="text-muted-foreground text-sm md:text-lg">
               {t('myPickups.subtitle')}
             </p>
           </div>

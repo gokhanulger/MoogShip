@@ -168,9 +168,9 @@ function ShipmentListContent({ user }: ShipmentListProps) {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">{t('shipments.title')}</h1>
+      <div className="container mx-auto py-2 md:py-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-6">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">{t('shipments.title')}</h1>
             
             <Button asChild className="mt-4 md:mt-0 bg-primary-600 hover:bg-primary-700">
               <Link href="/shipments/create">

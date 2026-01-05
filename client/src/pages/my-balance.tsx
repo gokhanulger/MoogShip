@@ -401,7 +401,7 @@ export default function MyBalancePage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-2 md:py-6">
         <h1 className="text-3xl font-bold mb-8">{t('balance.title')}</h1>
         
         {/* Bank information card */}

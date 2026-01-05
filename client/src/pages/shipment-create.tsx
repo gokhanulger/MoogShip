@@ -2804,7 +2804,7 @@ function ShipmentCreate() {
         </DialogContent>
       </Dialog>
 
-      <div className="container py-6 pl-4 md:pl-6">
+      <div className="container py-2 md:py-6 pl-4 md:pl-6">
         {/* Desktop header with button */}
         <div className="hidden md:flex justify-between items-center mb-6">
           <div>
@@ -2826,26 +2826,26 @@ function ShipmentCreate() {
         </div>
 
         {/* Mobile header without icons */}
-        <div className="md:hidden mb-6">
-          <div className="flex items-center mb-2">
+        <div className="md:hidden mb-3">
+          <div className="flex items-center mb-1">
             <Button
               variant="ghost"
               size="sm"
-              className="mr-2 -ml-3 h-9 w-9"
+              className="mr-2 -ml-3 h-8 w-8"
               onClick={() => navigate("/dashboard")}
             >
               <ArrowLeftIcon className="h-4 w-4" />
               <span className="sr-only">{t("common.back")}</span>
             </Button>
-            <h1 className="text-2xl font-bold">{t("createShipment.title")}</h1>
+            <h1 className="text-xl font-bold">{t("createShipment.title")}</h1>
           </div>
-          <p className="text-muted-foreground text-base">
+          <p className="text-muted-foreground text-sm">
             {t("createShipment.subtitle")}
           </p>
         </div>
 
         {/* Progress indicator - Compact Stepper */}
-        <div className="mb-6">
+        <div className="mb-3 md:mb-6">
           <div className="flex items-center justify-center gap-1 sm:gap-2">
             {/* Step 1 - Recipient */}
             <button

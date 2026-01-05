@@ -79,7 +79,7 @@ export default function Products() {
   // Use the currentLanguage variable that was declared at the top level
   return (
     <Layout key={`products-page-${currentLanguage}`}>
-      <div className="container mx-auto py-6 text-content">
+      <div className="container mx-auto py-2 md:py-6 text-content">
         {/* Add custom title above the component that directly uses i18n.t() */}
         <div className="mb-6 products-page-header">
           <h1 className="text-3xl font-bold mb-2">

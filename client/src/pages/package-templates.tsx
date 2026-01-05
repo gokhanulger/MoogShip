@@ -283,7 +283,7 @@ export default function PackageTemplates() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-2 md:py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">{t("packageTemplates.pageTitle")}</h1>
