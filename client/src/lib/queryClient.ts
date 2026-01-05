@@ -5,8 +5,19 @@ function isCapacitor(): boolean {
   return !!(window as any).Capacitor?.isNativePlatform?.();
 }
 
+// Check if we're already on the server (loaded via server.url in Capacitor)
+function isOnServerOrigin(): boolean {
+  return window.location.origin === 'https://moogship.onrender.com' ||
+         window.location.origin === 'https://www.moogship.com';
+}
+
 // API base URL - check at runtime for Capacitor
 export function getApiBaseUrl(): string {
+  // If we're already on the server origin, use relative URLs
+  if (isOnServerOrigin()) {
+    return '';
+  }
+  // Otherwise, for local Capacitor builds, use full URL
   return isCapacitor() ? 'https://moogship.onrender.com' : '';
 }
 
