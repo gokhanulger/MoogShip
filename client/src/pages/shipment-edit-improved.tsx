@@ -69,7 +69,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { COUNTRIES } from "@/lib/countries";
 import { convertCountryNameToCode } from "@shared/countries";
 import { withAuth } from "@/lib/with-auth";
@@ -417,10 +417,11 @@ const ShipmentEditContent = ({ user }: ShipmentEditProps) => {
 
     // Also fetch fresh package data and update the local state
     try {
-      const response = await fetch(`/api/shipments/${shipmentId}`, {
+      const response = await fetch(getApiUrl(`/api/shipments/${shipmentId}`), {
         credentials: "include",
         headers: {
           Accept: "application/json",
+          ...getAuthHeaders()
         },
       });
 
@@ -690,10 +691,11 @@ const ShipmentEditContent = ({ user }: ShipmentEditProps) => {
 
       try {
         // Fetch package items for this shipment using the correct endpoint
-        const response = await fetch(`/api/shipments/${shipmentId}/items`, {
+        const response = await fetch(getApiUrl(`/api/shipments/${shipmentId}/items`), {
           credentials: "include", // This ensures cookies are sent with the request
           headers: {
             Accept: "application/json",
+            ...getAuthHeaders()
           },
         });
 
@@ -1322,10 +1324,11 @@ const ShipmentEditContent = ({ user }: ShipmentEditProps) => {
       };
 
       // Call pricing API to get updated price for customer's service
-      const response = await fetch("/api/calculate-price", {
+      const response = await fetch(getApiUrl("/api/calculate-price"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders()
         },
         body: JSON.stringify(requestData),
         credentials: "include",
@@ -1559,11 +1562,13 @@ const ShipmentEditContent = ({ user }: ShipmentEditProps) => {
         };
 
         // Direct fetch approach for better control and debugging
-        const response = await fetch(`/api/shipments/${shipmentId}`, {
+        const response = await fetch(getApiUrl(`/api/shipments/${shipmentId}`), {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders()
           },
+          credentials: "include",
           body: JSON.stringify(requestData),
         });
 
@@ -1818,11 +1823,13 @@ const ShipmentEditContent = ({ user }: ShipmentEditProps) => {
 
     try {
       // Use direct fetch to have more control
-      const response = await fetch(`/api/shipments/${shipmentId}`, {
+      const response = await fetch(getApiUrl(`/api/shipments/${shipmentId}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders()
         },
+        credentials: "include",
         body: JSON.stringify(data),
       });
 
