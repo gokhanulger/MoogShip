@@ -202,46 +202,31 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-// Mobile app session fallback middleware
-// When cookies don't work (Capacitor/WKWebView), use X-Session-Id header
+// Mobile app authentication fallback middleware
+// When cookies don't work (Capacitor/WKWebView), use X-User-Id header
 app.use(async (req, res, next) => {
-  // Skip if user is already authenticated via session
-  if (req.isAuthenticated && req.isAuthenticated()) {
+  // Skip non-API routes
+  if (!req.path.startsWith('/api')) {
     return next();
   }
 
-  // Check for session ID in header (mobile app fallback)
-  const sessionId = req.headers['x-session-id'] as string;
+  // Skip if user is already authenticated via session
+  if (req.user) {
+    return next();
+  }
+
+  // Check for user ID in header (mobile app fallback)
   const userId = req.headers['x-user-id'] as string;
 
-  if (sessionId && userId) {
+  if (userId) {
     try {
-      // Validate the session exists in the database
-      const { Client } = require('pg');
-      const client = new Client({ connectionString: process.env.DATABASE_URL });
-      await client.connect();
-
-      const result = await client.query(
-        `SELECT sess FROM session WHERE sid = $1`,
-        [sessionId]
-      );
-
-      await client.end();
-
-      if (result.rows.length > 0) {
-        const sessionData = result.rows[0].sess;
-        // Verify the user ID matches
-        if (sessionData?.passport?.user == userId) {
-          // Attach user to request
-          const user = await storage.getUser(parseInt(userId));
-          if (user) {
-            (req as any).user = user;
-            console.log(`[AUTH] Mobile session fallback: authenticated user ${user.username}`);
-          }
-        }
+      const user = await storage.getUser(parseInt(userId));
+      if (user) {
+        (req as any).user = user;
+        console.log(`[AUTH] Mobile fallback: authenticated user ${user.username} (ID: ${userId})`);
       }
     } catch (error) {
-      console.error('[AUTH] Mobile session fallback error:', error);
+      console.error('[AUTH] Mobile fallback error:', error);
     }
   }
 
