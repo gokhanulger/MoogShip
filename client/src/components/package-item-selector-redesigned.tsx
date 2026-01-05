@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { getApiUrl, getAuthHeaders } from '@/lib/queryClient';
 import { PackageTemplateSelect } from './package-template-select';
 import { PackageTemplateSelector } from './package-template-selector';
 import { ProductNameTranslator } from './product-name-translator';
@@ -210,18 +211,24 @@ const PackageItemSelectorRedesigned = ({ items, setItems, packages, setPackages,
     queryKey: ['/api/products/search', searchQuery],
     queryFn: async () => {
       if (!searchQuery) return [];
-      const res = await fetch(`/api/products/search?q=${encodeURIComponent(searchQuery)}`);
+      const res = await fetch(getApiUrl(`/api/products/search?q=${encodeURIComponent(searchQuery)}`), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!res.ok) throw new Error('Failed to fetch products');
       return res.json();
     },
     enabled: searchQuery.length > 0,
   });
-  
+
   // Fetch all user's products
   const { data: allUserProducts, isLoading: isLoadingAllProducts } = useQuery({
     queryKey: ['/api/products'],
     queryFn: async () => {
-      const res = await fetch('/api/products');
+      const res = await fetch(getApiUrl('/api/products'), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!res.ok) throw new Error('Failed to fetch all products');
       return res.json();
     },
@@ -271,7 +278,10 @@ const PackageItemSelectorRedesigned = ({ items, setItems, packages, setPackages,
     }
 
     try {
-      const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(getApiUrl(`/api/products/search?q=${encodeURIComponent(query)}`), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (res.ok) {
         const results = await res.json();
         setQuickSearchResults(results);
@@ -292,7 +302,10 @@ const PackageItemSelectorRedesigned = ({ items, setItems, packages, setPackages,
     }
 
     try {
-      const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(getApiUrl(`/api/products/search?q=${encodeURIComponent(query)}`), {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (res.ok) {
         const results = await res.json();
         setQuickAddResults(results);

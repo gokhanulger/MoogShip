@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,8 +126,9 @@ export default function ProductManagement() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/products', {
-        credentials: 'include'
+      const response = await fetch(getApiUrl('/api/products'), {
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       
       if (response.ok) {
@@ -155,10 +157,11 @@ export default function ProductManagement() {
       // Convert price string to cents (integer)
       const priceInCents = Math.round(parseFloat(data.price) * 100);
       
-      const response = await fetch('/api/products', {
+      const response = await fetch(getApiUrl('/api/products'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -208,10 +211,11 @@ export default function ProductManagement() {
       // Convert price string to cents (integer)
       const priceInCents = Math.round(parseFloat(data.price) * 100);
       
-      const response = await fetch(`/api/products/${selectedProduct.id}`, {
+      const response = await fetch(getApiUrl(`/api/products/${selectedProduct.id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -251,9 +255,10 @@ export default function ProductManagement() {
     if (!selectedProduct) return;
     
     try {
-      const response = await fetch(`/api/products/${selectedProduct.id}`, {
+      const response = await fetch(getApiUrl(`/api/products/${selectedProduct.id}`), {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       
       if (response.ok) {
@@ -766,9 +771,10 @@ export default function ProductManagement() {
                           setUploadingFile(true);
                           setUploadResults(null);
                           
-                          fetch('/api/products/bulk-upload', {
+                          fetch(getApiUrl('/api/products/bulk-upload'), {
                             method: 'POST',
                             credentials: 'include',
+                            headers: getAuthHeaders(),
                             body: formData
                           })
                           .then(response => response.json())

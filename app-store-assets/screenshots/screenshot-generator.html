@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoogShip App Store Screenshot Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .screenshot-frame {
+            background: linear-gradient(180deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 40px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .screenshot-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .screenshot-subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .phone-frame {
+            background: #1a1a1a;
+            border-radius: 35px;
+            padding: 12px;
+            display: inline-block;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        .phone-screen {
+            background: white;
+            border-radius: 25px;
+            width: 280px;
+            height: 600px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 30px;
+            background: #1a1a1a;
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+
+        .screen-content {
+            padding: 45px 15px 15px;
+            height: 100%;
+            background: #f8fafc;
+        }
+
+        /* Dashboard Screen */
+        .dashboard .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            margin: -45px -15px 15px;
+            padding: 50px 15px 20px;
+            color: white;
+        }
+
+        .dashboard .welcome {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .dashboard .balance {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .stat-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e3a5f;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        /* Shipment List */
+        .shipment-item {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .shipment-icon {
+            width: 40px;
+            height: 40px;
+            background: #dbeafe;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .shipment-info {
+            flex: 1;
+        }
+
+        .shipment-id {
+            font-weight: 600;
+            font-size: 13px;
+            color: #1e3a5f;
+        }
+
+        .shipment-dest {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .shipment-status {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-transit {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-delivered {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .status-pending {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        /* Create Shipment */
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .form-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e3a5f;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Tracking */
+        .tracking-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            margin: -45px -15px 15px;
+            padding: 50px 15px 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .tracking-number {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .tracking-status {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .timeline {
+            padding: 15px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 20px;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-dot {
+            width: 24px;
+            height: 24px;
+            background: #10b981;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot.inactive {
+            background: #e2e8f0;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e3a5f;
+        }
+
+        .timeline-date {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 40px;
+            color: white;
+        }
+
+        .instructions h2 {
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MoogShip App Store Screenshots</h1>
+
+        <div class="screenshot-grid">
+            <!-- Screenshot 1: Dashboard -->
+            <div class="screenshot-frame">
+                <div class="screenshot-title">Track Your Shipments</div>
+                <div class="screenshot-subtitle">All your packages in one place</div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="phone-notch"></div>
+                        <div class="screen-content dashboard">
+                            <div class="header">
+                                <div class="welcome">Welcome back, Seller!</div>
+                                <div class="balance">$1,250.00</div>
+                            </div>
+                            <div class="stat-cards">
+                                <div class="stat-card">
+                                    <div class="stat-value">47</div>
+                                    <div class="stat-label">Total Shipments</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">12</div>
+                                    <div class="stat-label">In Transit</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">32</div>
+                                    <div class="stat-label">Delivered</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">3</div>
+                                    <div class="stat-label">Pending</div>
+                                </div>
+                            </div>
+                            <div class="shipment-item">
+                                <div class="shipment-icon">📦</div>
+                                <div class="shipment-info">
+                                    <div class="shipment-id">#MS-2024-0847</div>
+                                    <div class="shipment-dest">New York, USA</div>
+                                </div>
+                                <div class="shipment-status status-transit">In Transit</div>
+                            </div>
+                            <div class="shipment-item">
+                                <div class="shipment-icon">📦</div>
+                                <div class="shipment-info">
+                                    <div class="shipment-id">#MS-2024-0846</div>
+                                    <div class="shipment-dest">London, UK</div>
+                                </div>
+                                <div class="shipment-status status-delivered">Delivered</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screenshot 2: Create Shipment -->
+            <div class="screenshot-frame">
+                <div class="screenshot-title">Easy Shipping</div>
+                <div class="screenshot-subtitle">Create shipments in seconds</div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="phone-notch"></div>
+                        <div class="screen-content">
+                            <div style="font-size: 18px; font-weight: 700; color: #1e3a5f; margin-bottom: 15px;">New Shipment</div>
+                            <div class="form-section">
+                                <div class="form-title">📍 Recipient</div>
+                                <input class="form-input" placeholder="Full Name" value="John Smith">
+                                <input class="form-input" placeholder="Address" value="123 Main Street">
+                                <input class="form-input" placeholder="City, Country" value="New York, USA">
+                            </div>
+                            <div class="form-section">
+                                <div class="form-title">📦 Package</div>
+                                <input class="form-input" placeholder="Weight (kg)" value="2.5">
+                                <input class="form-input" placeholder="Dimensions" value="30 x 20 x 15 cm">
+                            </div>
+                            <div class="form-section">
+                                <div class="form-title">💰 Price: $24.99</div>
+                                <div style="font-size: 11px; color: #64748b;">UPS Express - 3-5 days</div>
+                            </div>
+                            <button class="btn-primary">Create Shipment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screenshot 3: Tracking -->
+            <div class="screenshot-frame">
+                <div class="screenshot-title">Real-Time Tracking</div>
+                <div class="screenshot-subtitle">Know where your package is</div>
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="phone-notch"></div>
+                        <div class="screen-content">
+                            <div class="tracking-header">
+                                <div class="tracking-number">Tracking: 1Z999AA10123456784</div>
+                                <div class="tracking-status">In Transit</div>
+                            </div>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Out for Delivery</div>
+                                        <div class="timeline-date">Jan 5, 2025 - 08:30 AM</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Arrived at Local Facility</div>
+                                        <div class="timeline-date">Jan 5, 2025 - 06:15 AM</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">In Transit</div>
+                                        <div class="timeline-date">Jan 4, 2025 - 02:00 PM</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Shipped</div>
+                                        <div class="timeline-date">Jan 3, 2025 - 10:00 AM</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot inactive"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Order Placed</div>
+                                        <div class="timeline-date">Jan 2, 2025 - 03:45 PM</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h2>How to Capture Screenshots</h2>
+            <ol>
+                <li>Open this file in Chrome or Safari</li>
+                <li>Right-click on each phone mockup and select "Inspect"</li>
+                <li>In DevTools, click the device toolbar icon</li>
+                <li>Set dimensions to 1290x2796 (iPhone 14 Pro Max)</li>
+                <li>Take a screenshot of the entire frame</li>
+                <li>Repeat for other sizes: 1284x2778 and 1242x2208</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>
