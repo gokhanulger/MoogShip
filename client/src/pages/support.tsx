@@ -58,9 +58,9 @@ export default function SupportPage() {
               <Phone className="w-8 h-8 text-purple-600" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Telefon</h3>
-            <p className="text-gray-600 mb-4">+90 540 744 79 11</p>
+            <p className="text-gray-600 mb-4">+90 (850) 304 75 38</p>
             <a
-              href="tel:+905407447911"
+              href="tel:+908503047538"
               className="block w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors"
             >
               Ara
@@ -106,7 +106,7 @@ export default function SupportPage() {
                 HALİL RIFAT PAŞA MAH. YÜZER HAVUZ SK.<br/>
                 PERPA TİC MER B BLOK NO: 1/1 İÇ KAPI NO: 159<br/>
                 İstanbul, Türkiye 34384<br/>
-                +90 540 744 79 11
+                +90 (850) 304 75 38
               </p>
             </div>
 
