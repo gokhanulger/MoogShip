@@ -1,5 +1,25 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Helper function to detect Capacitor at runtime
+function isCapacitor(): boolean {
+  return !!(window as any).Capacitor?.isNativePlatform?.();
+}
+
+// API base URL - check at runtime for Capacitor
+export function getApiBaseUrl(): string {
+  return isCapacitor() ? 'https://moogship.onrender.com' : '';
+}
+
+// For backward compatibility
+export const API_BASE_URL = '';
+
+// Helper function to get full API URL - checks Capacitor at runtime
+export function getApiUrl(path: string): string {
+  if (path.startsWith('http')) return path;
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}${path}`;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -14,7 +34,7 @@ export async function apiRequest(
 ): Promise<Response> {
   // Create an AbortController for timeout handling
   const controller = new AbortController();
-  
+
   // Set timeout with proper error message
   const timeoutId = setTimeout(() => {
     if (!controller.signal.aborted) {
@@ -22,8 +42,11 @@ export async function apiRequest(
     }
   }, 30000); // 30 second timeout
 
+  // Use full API URL for Capacitor
+  const fullUrl = getApiUrl(url);
+
   try {
-    const res = await fetch(url, {
+    const res = await fetch(fullUrl, {
       method,
       headers: {
         ...(data ? { "Content-Type": "application/json" } : {}),
@@ -55,7 +78,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     // Create an AbortController for timeout handling
     const controller = new AbortController();
-    const url = queryKey[0] as string;
+    const url = getApiUrl(queryKey[0] as string);
 
     // Set timeout with proper error message
     const timeoutId = setTimeout(() => {

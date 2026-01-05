@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import Layout from "@/components/layout";
-import StatsCard from "@/components/stats-card";
 import ShipmentTable from "@/components/shipment-table";
 import { AnnouncementsDisplay } from "@/components/announcements-display";
 import { PriceCalculatorDialog } from "@/components/price-calculator-dialog";
@@ -147,18 +146,18 @@ function DashboardContent({ user }: DashboardProps) {
         
 {/* Customer Balance Bar - Compact */}
         {user?.role !== 'admin' && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-3 px-3 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
             {/* Balance */}
-            <div className="flex items-center gap-2">
-              <Wallet className={`h-4 w-4 ${
+            <div className="flex items-center gap-1.5">
+              <Wallet className={`h-3.5 w-3.5 ${
                 balanceData && balanceData.balance > 0 ? 'text-green-600' :
                 balanceData && balanceData.balance < 0 ? 'text-red-500' : 'text-blue-600'
               }`} />
-              <span className="text-xs text-gray-500">{t('dashboard.yourBalance', 'Bakiye')}:</span>
+              <span className="text-[11px] text-gray-500 hidden xs:inline">{t('dashboard.yourBalance', 'Bakiye')}:</span>
               {isLoadingBalance ? (
-                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-4 w-14" />
               ) : (
-                <span className={`text-sm font-bold ${
+                <span className={`text-xs font-bold ${
                   balanceData && balanceData.balance > 0 ? 'text-green-600' :
                   balanceData && balanceData.balance < 0 ? 'text-red-500' : 'text-gray-900'
                 }`}>
@@ -167,11 +166,11 @@ function DashboardContent({ user }: DashboardProps) {
               )}
             </div>
 
-            <div className="h-4 w-px bg-blue-200 hidden sm:block" />
+            <div className="h-3.5 w-px bg-blue-200" />
 
-            {/* Quick Stats */}
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1">
+            {/* Quick Stats - inline on all screens */}
+            <div className="flex items-center gap-2 sm:gap-3 text-[11px]">
+              <div className="flex items-center gap-0.5">
                 <span className="text-gray-500">{t('dashboard.thisMonth', 'Bu Ay')}:</span>
                 <span className="font-semibold text-gray-700">
                   {shipments.filter(s => {
@@ -181,11 +180,11 @@ function DashboardContent({ user }: DashboardProps) {
                   }).length}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <span className="text-gray-500">{t('dashboard.pending', 'Bekleyen')}:</span>
                 <span className="font-semibold text-yellow-600">{stats.pending}</span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <span className="text-gray-500">{t('dashboard.delivered', 'Teslim')}:</span>
                 <span className="font-semibold text-green-600">{stats.completed}</span>
               </div>
@@ -194,14 +193,15 @@ function DashboardContent({ user }: DashboardProps) {
             <div className="flex-1" />
 
             {/* Actions */}
-            <div className="flex items-center gap-1">
-              <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-100">
+            <div className="flex items-center gap-0.5">
+              <Button asChild variant="ghost" size="sm" className="h-6 px-1.5 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-blue-100">
                 <Link href="/my-balance">
-                  <CreditCard className="h-3 w-3 mr-1" />
-                  {t('dashboard.addBalance', 'Bakiye Ekle')}
+                  <CreditCard className="h-3 w-3 mr-0.5" />
+                  <span className="hidden sm:inline">{t('dashboard.addBalance', 'Bakiye Ekle')}</span>
+                  <span className="sm:hidden">+</span>
                 </Link>
               </Button>
-              <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-600 hover:text-gray-700">
+              <Button asChild variant="ghost" size="sm" className="h-6 px-1.5 text-[11px] text-gray-600 hover:text-gray-700">
                 <Link href="/transactions">
                   {t('dashboard.viewTransactions', 'İşlemler')}
                   <ChevronRight className="h-3 w-3 ml-0.5" />
@@ -211,81 +211,92 @@ function DashboardContent({ user }: DashboardProps) {
           </div>
         )}
 
-        {/* Quick Actions - Compact */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+        {/* Quick Actions + Stats Combined */}
+        <div className="mt-3 grid grid-cols-4 lg:grid-cols-8 gap-2">
+          {/* Quick Actions */}
           <Button
             variant="outline"
-            className="h-10 flex items-center justify-center gap-2 hover:bg-primary/5 border-primary/20"
+            className="h-12 flex flex-col items-center justify-center gap-0.5 hover:bg-primary/5 border-primary/20 text-[10px] p-1"
             onClick={() => setIsPriceCalculatorOpen(true)}
           >
             <Calculator className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium">{t('dashboard.quickActions.priceCalculator')}</span>
+            <span className="truncate w-full text-center">{t('dashboard.quickActions.priceCalculator')}</span>
           </Button>
 
           <Button
             asChild
             variant="outline"
-            className="h-10 flex items-center justify-center gap-2 hover:bg-green-50 border-green-200"
+            className="h-12 flex flex-col items-center justify-center gap-0.5 hover:bg-green-50 border-green-200 text-[10px] p-1"
           >
             <Link href="/shipment-create">
               <PlusIcon className="h-4 w-4 text-green-600" />
-              <span className="text-xs font-medium">{t('dashboard.quickActions.newShipment')}</span>
+              <span className="truncate w-full text-center">{t('dashboard.quickActions.newShipment')}</span>
             </Link>
           </Button>
 
           <Button
             asChild
             variant="outline"
-            className="h-10 flex items-center justify-center gap-2 hover:bg-blue-50 border-blue-200"
+            className="h-12 flex flex-col items-center justify-center gap-0.5 hover:bg-blue-50 border-blue-200 text-[10px] p-1"
           >
             <Link href="/us-customs-calculator">
               <Globe className="h-4 w-4 text-blue-600" />
-              <span className="text-xs font-medium">{t('dashboard.quickActions.customsCalculator')}</span>
+              <span className="truncate w-full text-center">{t('dashboard.quickActions.customsCalculator')}</span>
             </Link>
           </Button>
 
           <Button
             asChild
             variant="outline"
-            className="h-10 flex items-center justify-center gap-2 hover:bg-purple-50 border-purple-200"
+            className="h-12 flex flex-col items-center justify-center gap-0.5 hover:bg-purple-50 border-purple-200 text-[10px] p-1"
           >
             <Link href="/tracking">
               <TruckIcon className="h-4 w-4 text-purple-600" />
-              <span className="text-xs font-medium">{t('dashboard.quickActions.trackShipment')}</span>
+              <span className="truncate w-full text-center">{t('dashboard.quickActions.trackShipment')}</span>
             </Link>
           </Button>
-        </div>
-          
-          {/* Dashboard Stats */}
-          <div className="mt-6">
-            <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <StatsCard
-                title={t('dashboard.stats.totalShipments')}
-                value={isLoadingShipments ? -1 : stats.total}
-                icon="package-open"
-                iconColor="bg-primary"
-                trend={stats.total > 0 ? 12 : undefined}
-              />
-              <StatsCard
-                title={t('dashboard.stats.pendingApproval')}
-                value={isLoadingShipments ? -1 : stats.pending}
-                icon="hourglass"
-                iconColor="bg-yellow-500"
-              />
-              <StatsCard
-                title={t('dashboard.stats.inTransit')}
-                value={isLoadingShipments ? -1 : stats.inTransit}
-                icon="send"
-                iconColor="bg-blue-500"
-              />
-              <StatsCard
-                title={t('dashboard.stats.delivered')}
-                value={isLoadingShipments ? -1 : stats.completed}
-                icon="package-check"
-                iconColor="bg-green-500"
-              />
-            </dl>
+
+          {/* Stats Cards */}
+          <div className="bg-white px-3 py-2 shadow rounded-lg flex items-center gap-2">
+            <div className="bg-primary rounded-md p-1.5 flex-shrink-0">
+              <PackageIcon className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-gray-500 truncate">{t('dashboard.stats.totalShipments')}</p>
+              <p className="text-base font-bold text-gray-900">{isLoadingShipments ? '-' : stats.total}</p>
+            </div>
           </div>
+
+          <div className="bg-white px-3 py-2 shadow rounded-lg flex items-center gap-2">
+            <div className="bg-yellow-500 rounded-md p-1.5 flex-shrink-0">
+              <RefreshCw className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-gray-500 truncate">{t('dashboard.stats.pendingApproval')}</p>
+              <p className="text-base font-bold text-gray-900">{isLoadingShipments ? '-' : stats.pending}</p>
+            </div>
+          </div>
+
+          <div className="bg-white px-3 py-2 shadow rounded-lg flex items-center gap-2">
+            <div className="bg-blue-500 rounded-md p-1.5 flex-shrink-0">
+              <TruckIcon className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-gray-500 truncate">{t('dashboard.stats.inTransit')}</p>
+              <p className="text-base font-bold text-gray-900">{isLoadingShipments ? '-' : stats.inTransit}</p>
+            </div>
+          </div>
+
+          <div className="bg-white px-3 py-2 shadow rounded-lg flex items-center gap-2">
+            <div className="bg-green-500 rounded-md p-1.5 flex-shrink-0">
+              <PackageIcon className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-gray-500 truncate">{t('dashboard.stats.delivered')}</p>
+              <p className="text-base font-bold text-gray-900">{isLoadingShipments ? '-' : stats.completed}</p>
+            </div>
+          </div>
+        </div>
           
           {/* Announcements Section */}
           <div className="mt-6">

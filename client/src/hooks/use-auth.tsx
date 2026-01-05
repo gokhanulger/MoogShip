@@ -696,13 +696,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isLoading && confirmedUnauthorized && effectiveUser === null && !isMarketingOrAuthPage) {
       console.log('[AUTH] Confirmed unauthorized - redirecting to auth');
 
-      // For mobile browsers, redirect to external mobile auth URL
+      // Check if running in Capacitor native app
+      const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+
+      // For mobile browsers (but NOT Capacitor app), redirect to external mobile auth URL
       const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
 
-      if (isMobile) {
+      if (isMobile && !isCapacitorApp) {
         window.location.href = 'https://www.moogship.com/mobile-auth';
       } else {
-        // Redirect to /auth directly to avoid loop with app.moogship.com
+        // Redirect to /auth directly (works for both web and Capacitor)
         setLocation('/auth');
       }
     }

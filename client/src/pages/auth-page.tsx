@@ -67,10 +67,13 @@ const registerSchema = z.object({
 });
 
 export default function AuthPage() {
-  // Redirect mobile browsers to external mobile auth URL
+  // Check if running in Capacitor native app
+  const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+
+  // Redirect mobile browsers to external mobile auth URL (but NOT in Capacitor app)
   const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-  
-  if (isMobile) {
+
+  if (isMobile && !isCapacitorApp) {
     window.location.href = 'https://www.moogship.com/mobile-auth';
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -444,7 +447,20 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Username</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter your username" {...field} />
+                              <input
+                                type="text"
+                                inputMode="email"
+                                placeholder="Enter your username"
+                                autoCapitalize="off"
+                                autoCorrect="off"
+                                autoComplete="username"
+                                spellCheck={false}
+                                data-form-type="other"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lowercase"
+                                style={{ textTransform: 'lowercase' }}
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -668,7 +684,20 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Username</FormLabel>
                             <FormControl>
-                              <Input placeholder="johndoe" {...field} />
+                              <input
+                                type="text"
+                                inputMode="email"
+                                placeholder="johndoe"
+                                autoCapitalize="off"
+                                autoCorrect="off"
+                                autoComplete="username"
+                                spellCheck={false}
+                                data-form-type="other"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lowercase"
+                                style={{ textTransform: 'lowercase' }}
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

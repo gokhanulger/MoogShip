@@ -4,6 +4,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS Safe Area Support for Capacitor */
+html {
+  /* Ensure content doesn't hide behind notch/status bar */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Fix for iOS status bar overlap */
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Capacitor specific - ensure app starts at top */
+#root {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
 /* Theme CSS Variables - replaces Replit plugin */
 :root {
   --background: 210 40% 98%;

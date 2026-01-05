@@ -6,13 +6,17 @@ const config: CapacitorConfig = {
   webDir: 'dist/public',
   server: {
     androidScheme: 'https',
-    // Remove development-specific settings for production
-    iosScheme: 'capacitor'
+    iosScheme: 'capacitor',
+    hostname: 'localhost',
+    allowNavigation: ['*']
   },
   ios: {
     contentInset: 'always',
     allowsLinkPreview: false,
-    scheme: 'capacitor'
+    limitsNavigationsToAppBoundDomains: false
+  },
+  android: {
+    allowMixedContent: true
   }
 };
 

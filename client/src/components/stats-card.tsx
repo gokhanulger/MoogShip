@@ -1,14 +1,14 @@
 import React from 'react';
-import { 
-  Package, 
+import {
+  Package,
   PackageOpen,
   PackageCheck,
-  Clock, 
+  Clock,
   Hourglass,
-  CheckCircle, 
+  CheckCircle,
   Truck,
   Send,
-  Globe, 
+  Globe,
   TrendingUp,
   TrendingDown,
   LucideIcon
@@ -32,10 +32,10 @@ export default function StatsCard({
   // Icon component mapping
   const getIcon = (): React.ReactNode => {
     const IconProps = {
-      className: "h-6 w-6 text-white",
+      className: "h-5 w-5 text-white",
       strokeWidth: 2
     };
-    
+
     switch (icon) {
       case "package":
         return <Package {...IconProps} />;
@@ -59,32 +59,30 @@ export default function StatsCard({
         return <Package {...IconProps} />;
     }
   };
-  
+
   // Trend icon component
   const TrendIcon = trend && trend > 0 ? TrendingUp : TrendingDown;
-  
+
   // Trend color
   const trendColor = trend && trend > 0 ? "text-green-600" : "text-red-600";
 
   return (
-    <div className="relative bg-white pt-5 px-4 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
-      <dt>
-        <div className={`absolute ${iconColor} rounded-md p-3`}>
-          {getIcon()}
+    <div className="bg-white px-4 py-3 shadow rounded-lg overflow-hidden flex items-center gap-3">
+      <div className={`${iconColor} rounded-lg p-2.5 flex-shrink-0`}>
+        {getIcon()}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-gray-500 truncate">{title}</p>
+        <div className="flex items-baseline gap-1.5">
+          <p className="text-xl font-bold text-gray-900">{value}</p>
+          {trend && (
+            <span className={`flex items-center text-xs font-medium ${trendColor}`}>
+              <TrendIcon className={`h-3 w-3 mr-0.5 ${trendColor}`} />
+              {Math.abs(trend)}%
+            </span>
+          )}
         </div>
-        <p className="ml-16 text-sm font-medium text-gray-500 truncate">{title}</p>
-      </dt>
-      <dd className="ml-16 pb-6 flex items-baseline">
-        <p className="text-2xl font-semibold text-gray-900">{value}</p>
-        
-        {trend && (
-          <p className={`ml-2 flex items-baseline text-sm font-semibold ${trendColor}`}>
-            <TrendIcon className={`h-5 w-5 ${trendColor}`} />
-            <span className="sr-only">{trend > 0 ? 'Increased' : 'Decreased'} by</span>
-            {Math.abs(trend)}%
-          </p>
-        )}
-      </dd>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { 
   Globe, 
   TrendingUp, 
@@ -101,7 +101,12 @@ const testimonials = [
 
 export default function Marketing() {
   const { t } = useTranslation();
-  
+  const [, setLocation] = useLocation();
+
+  const handleAuthClick = () => {
+    setLocation('/auth');
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -168,35 +173,23 @@ export default function Marketing() {
                 </div>
                 
                 {/* Get Started Button */}
-                <a 
-                  href="/auth"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-                    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-                    window.location.href = (isMobile && isSafari) ? '/mobile-auth' : '/auth';
-                  }}
+                <button
+                  onClick={handleAuthClick}
                   className="inline-block py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
                 >
                   {t('marketing.hero.startShipping', 'Start Shipping')}
-                </a>
+                </button>
               </div>
-              
+
               {/* Mobile Menu */}
               <div className="md:hidden flex items-center space-x-3">
                 <MiniLanguageSwitcher />
-                <a 
-                  href="/auth"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-                    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-                    window.location.href = (isMobile && isSafari) ? '/mobile-auth' : '/auth';
-                  }}
+                <button
+                  onClick={handleAuthClick}
                   className="inline-block py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
                 >
                   {t('marketing.hero.startShipping', 'Start Shipping')}
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -217,18 +210,12 @@ export default function Marketing() {
                 <span>NEW: Etsy Integration - Automate your entire shipping workflow!</span>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <a 
-                  href="/auth"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-                    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-                    window.location.href = (isMobile && isSafari) ? '/mobile-auth' : '/auth';
-                  }}
+                <button
+                  onClick={handleAuthClick}
                   className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-medium text-center w-full sm:w-auto transition-colors"
                 >
                   {t('marketing.hero.startShipping', 'Start Shipping')}
-                </a>
+                </button>
                 <a 
                   href="#features"
                   className="inline-block border border-blue-300 text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg text-lg font-medium text-center w-full sm:w-auto transition-colors"

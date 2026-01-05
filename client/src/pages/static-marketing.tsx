@@ -26,7 +26,15 @@ export default function StaticMarketing(props: any) {
   const { t, i18n, ready } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState(i18n.language);
-  
+
+  // Redirect to mobile-auth if running in Capacitor native app
+  useEffect(() => {
+    const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
+    if (isCapacitorApp) {
+      window.location.href = '/mobile-auth';
+    }
+  }, []);
+
   // Force re-render when language changes
   useEffect(() => {
     const handleLanguageChange = () => {
@@ -34,9 +42,9 @@ export default function StaticMarketing(props: any) {
       // Force re-render by updating state
       setMobileMenuOpen(false);
     };
-    
+
     i18n.on('languageChanged', handleLanguageChange);
-    
+
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };

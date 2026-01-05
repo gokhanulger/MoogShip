@@ -154,7 +154,10 @@ app.use((req, res, next) => {
     'https://www.moogship.com',
     'https://moogship.com',
     'https://app.moogship.com',
-    'https://moogship.onrender.com'
+    'https://moogship.onrender.com',
+    'capacitor://localhost',
+    'ionic://localhost',
+    'http://localhost'
   ];
 
   // In development, also allow localhost
