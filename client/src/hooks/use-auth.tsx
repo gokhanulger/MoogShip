@@ -4,7 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { queryClient, apiRequest, getApiUrl } from "@/lib/queryClient";
+import { queryClient, apiRequest, getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -422,7 +422,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           cache: "no-store",
           headers: {
             "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache"
+            "Pragma": "no-cache",
+            ...getAuthHeaders()
           }
         });
         
@@ -477,7 +478,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 credentials: "include",
                 headers: {
                   "Content-Type": "application/json",
-                  "Cache-Control": "no-cache, no-store, must-revalidate"
+                  "Cache-Control": "no-cache, no-store, must-revalidate",
+                  ...getAuthHeaders()
                 },
                 body: JSON.stringify({ adminId: localUser.id })
               });

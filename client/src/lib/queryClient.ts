@@ -38,6 +38,27 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Helper to get auth headers for mobile app - exported for use in other files
+export function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const storedUser = localStorage.getItem('moogship_auth_user');
+
+  if (storedUser) {
+    try {
+      const userData = JSON.parse(storedUser);
+      if (userData.id) {
+        headers['X-User-Id'] = String(userData.id);
+      }
+      if (userData.sessionId) {
+        headers['X-Session-Id'] = userData.sessionId;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  return headers;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -57,18 +78,16 @@ export async function apiRequest(
   const fullUrl = getApiUrl(url);
 
   try {
-    // Capacitor apps don't need credentials for cross-origin requests
-    const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
-
     const res = await fetch(fullUrl, {
       method,
       headers: {
         ...(data ? { "Content-Type": "application/json" } : {}),
+        ...getAuthHeaders(),
       },
       body: data ? JSON.stringify(data) : undefined,
-      credentials: isCapacitorApp ? "omit" : "include",
+      credentials: "include",
       signal: controller.signal,
-      cache: 'no-store', // Use standard fetch cache option for mutations
+      cache: 'no-store',
       keepalive: true,
     });
 
@@ -116,34 +135,12 @@ export const getQueryFn: <T>(options: {
       
       const isCriticalEndpoint = criticalEndpoints.some(endpoint => url.includes(endpoint));
       
-      // Get stored user data for mobile auth fallback
-      const storedUser = localStorage.getItem('moogship_auth_user');
-      const headers: Record<string, string> = {};
-
-      console.log('[API] Stored user data:', storedUser ? 'found' : 'not found');
-
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser);
-          console.log('[API] User ID from storage:', userData.id);
-          if (userData.id) {
-            headers['X-User-Id'] = String(userData.id);
-          }
-          if (userData.sessionId) {
-            headers['X-Session-Id'] = userData.sessionId;
-          }
-          console.log('[API] Headers being sent:', headers);
-        } catch (e) {
-          console.warn('Could not parse stored user data:', e);
-        }
-      }
-
       const res = await fetch(url, {
         credentials: "include",
         signal: controller.signal,
         cache: isCriticalEndpoint ? 'no-store' : 'default',
         keepalive: true,
-        headers,
+        headers: getAuthHeaders(),
       });
 
       clearTimeout(timeoutId);

@@ -50,7 +50,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getApiUrl } from "@/lib/queryClient";
+import { getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
@@ -72,7 +72,8 @@ export default function Sidebar() {
     queryKey: ['/api/balance'],
     queryFn: async () => {
       const response = await fetch(getApiUrl('/api/balance'), {
-        credentials: 'include'
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       if (!response.ok) {
         throw new Error('Failed to fetch balance');

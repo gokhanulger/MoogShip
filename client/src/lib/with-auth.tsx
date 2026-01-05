@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import Layout from '@/components/layout';
 import { Loader2 } from 'lucide-react';
 import { PageTransitionLoader } from '@/components/video-loader';
-import { getApiUrl } from '@/lib/queryClient';
+import { getApiUrl, getAuthHeaders } from '@/lib/queryClient';
 
 /**
  * A Higher Order Component (HOC) that handles authentication and authorization.
@@ -96,7 +96,8 @@ export function withAuth<P extends object>(
                 credentials: 'include',
                 headers: {
                   'Cache-Control': 'no-cache, no-store, must-revalidate',
-                  'Pragma': 'no-cache'
+                  'Pragma': 'no-cache',
+                  ...getAuthHeaders()
                 },
               }).then(response => {
                 if (!response.ok) {
@@ -115,7 +116,8 @@ export function withAuth<P extends object>(
             credentials: 'include',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
+              'Pragma': 'no-cache',
+              ...getAuthHeaders()
             },
           });
           
@@ -141,7 +143,8 @@ export function withAuth<P extends object>(
                   credentials: 'include',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    ...getAuthHeaders()
                   }
                 });
                 console.log('Admin session refreshed successfully');
@@ -164,7 +167,8 @@ export function withAuth<P extends object>(
                   credentials: 'include',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    ...getAuthHeaders()
                   },
                   body: JSON.stringify({ adminId: storedAdminData.id })
                 });

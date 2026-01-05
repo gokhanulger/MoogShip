@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'wouter';
 import { useState, useEffect } from 'react';
-import { getApiUrl } from '@/lib/queryClient';
+import { getApiUrl, getAuthHeaders } from '@/lib/queryClient';
 import {
   Home,
   Package,
@@ -51,7 +51,8 @@ const MobileSideMenu = ({ isOpen, onClose, onLogout, isAdmin = false }: MobileSi
       try {
         // First try the regular endpoint
         let response = await fetch(getApiUrl('/api/user'), {
-          credentials: 'include'
+          credentials: 'include',
+          headers: getAuthHeaders()
         });
 
         if (response.ok) {
@@ -62,7 +63,8 @@ const MobileSideMenu = ({ isOpen, onClose, onLogout, isAdmin = false }: MobileSi
           if (userData.role === 'user' && window.location.pathname.includes('admin')) {
             try {
               const adminResponse = await fetch(getApiUrl('/api/admin/user'), {
-                credentials: 'include'
+                credentials: 'include',
+                headers: getAuthHeaders()
               });
 
               if (adminResponse.ok) {

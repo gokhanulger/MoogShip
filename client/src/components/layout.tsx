@@ -48,7 +48,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher, MiniLanguageSwitcher } from "@/components/language-switcher";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useAuth } from "@/hooks/use-auth";
-import { getApiUrl } from "@/lib/queryClient";
+import { getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -125,7 +125,8 @@ export default function Layout({ children, hideMobileActions = false, user }: La
     queryKey: ['/api/balance'],
     queryFn: async () => {
       const response = await fetch(getApiUrl('/api/balance'), {
-        credentials: 'include'
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       if (!response.ok) {
         throw new Error('Failed to fetch balance');
@@ -142,7 +143,8 @@ export default function Layout({ children, hideMobileActions = false, user }: La
     queryKey: ['/api/analytics/daily-gross-revenue'],
     queryFn: async () => {
       const response = await fetch(getApiUrl('/api/analytics/daily-gross-revenue'), {
-        credentials: 'include'
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       if (!response.ok) {
         throw new Error('Failed to fetch daily gross revenue');

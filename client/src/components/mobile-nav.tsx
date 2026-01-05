@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { getApiUrl } from "@/lib/queryClient";
+import { getApiUrl, getAuthHeaders } from "@/lib/queryClient";
 import {
   Home,
   Package,
@@ -56,7 +56,8 @@ export default function MobileNav({ isBottomNav = false, open, isOpen, onClose, 
       try {
         // Fetch user data directly from API
         const response = await fetch(getApiUrl('/api/user'), {
-          credentials: 'include'
+          credentials: 'include',
+          headers: getAuthHeaders()
         });
 
         if (response.ok) {
