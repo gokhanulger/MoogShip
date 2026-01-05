@@ -165,8 +165,8 @@ export default function Layout({ children, hideMobileActions = false, user }: La
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50/30 to-gray-50">
       {/* Sidebar for desktop */}
       <Sidebar />
-      {/* Mobile header - Hamburger on left, logo on right */}
-      <div className="md:hidden bg-blue-50/80 backdrop-blur-sm border-b border-blue-100/50 text-gray-700 fixed top-0 left-0 right-0 z-[1000] h-16">
+      {/* Mobile header - Hamburger on left, logo on right - FIXED on scroll */}
+      <div className="md:hidden bg-blue-50 border-b border-blue-100 text-gray-700 fixed top-0 left-0 right-0 z-[1000] h-16 shadow-sm" style={{ position: 'fixed', WebkitBackfaceVisibility: 'hidden' }}>
         {/* Container for mobile shipping assistant at line 114:6 as requested */}
         <div 
           id="mobileAssistantContainer" 
