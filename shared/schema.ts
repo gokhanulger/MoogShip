@@ -1956,3 +1956,139 @@ export const insertEmailSyncLogSchema = createInsertSchema(emailSyncLog).omit({
 
 export type InsertEmailSyncLog = z.infer<typeof insertEmailSyncLogSchema>;
 export type EmailSyncLog = typeof emailSyncLog.$inferSelect;
+
+// ============================================
+// NAVLUNGO PRICE INTEGRATION TABLES
+// ============================================
+
+// Navlungo Prices - Main price table for each country/weight/carrier combination
+export const navlungoPrices = pgTable("navlungo_prices", {
+  id: serial("id").primaryKey(),
+  countryCode: text("country_code").notNull(), // ISO country code (e.g., "US", "DE", "GB")
+  countryName: text("country_name").notNull(), // Display name (e.g., "United States")
+  weight: real("weight").notNull(), // Weight in kg (0.5, 1, 1.5... 30)
+  carrier: text("carrier").notNull(), // Carrier name (e.g., "UPS", "FedEx", "DHL", "PTT")
+  service: text("service").notNull(), // Service type (e.g., "Express", "Economy")
+  priceUsd: integer("price_usd").notNull(), // Price in cents (15860 = $158.60)
+  transitDays: text("transit_days"), // Transit time (e.g., "2-4 iş günü")
+
+  // Status and visibility
+  status: text("status").notNull().default("pending"), // "pending" | "active" | "disabled"
+  isVisibleToCustomers: boolean("is_visible_to_customers").notNull().default(false), // Admin controlled visibility
+
+  // Timestamps
+  scrapedAt: timestamp("scraped_at"), // When the price was scraped
+  approvedAt: timestamp("approved_at"), // When the price was approved
+  approvedBy: integer("approved_by"), // Admin user ID who approved
+  batchId: integer("batch_id"), // Reference to navlungo_scrape_batches
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const insertNavlungoPriceSchema = createInsertSchema(navlungoPrices).omit({
+  id: true,
+  approvedAt: true,
+  approvedBy: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertNavlungoPrice = z.infer<typeof insertNavlungoPriceSchema>;
+export type NavlungoPrice = typeof navlungoPrices.$inferSelect;
+
+// Navlungo Service Settings - Control which carriers/services are visible to customers
+export const navlungoServiceSettings = pgTable("navlungo_service_settings", {
+  id: serial("id").primaryKey(),
+  carrier: text("carrier").notNull(), // Carrier name (e.g., "UPS")
+  service: text("service").notNull(), // Service type (e.g., "Express")
+  displayName: text("display_name").notNull(), // Customer-facing name (e.g., "MoogShip Express")
+  isActive: boolean("is_active").notNull().default(true), // Whether this service is active
+  sortOrder: integer("sort_order").notNull().default(0), // Display order
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const insertNavlungoServiceSettingSchema = createInsertSchema(navlungoServiceSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertNavlungoServiceSetting = z.infer<typeof insertNavlungoServiceSettingSchema>;
+export type NavlungoServiceSetting = typeof navlungoServiceSettings.$inferSelect;
+
+// Navlungo Scrape Batches - Track scraping sessions
+export const navlungoScrapeBatches = pgTable("navlungo_scrape_batches", {
+  id: serial("id").primaryKey(),
+  countryCode: text("country_code"), // Optional: specific country or null for all
+  totalPrices: integer("total_prices").notNull().default(0), // Total prices in this batch
+  approvedPrices: integer("approved_prices").notNull().default(0), // Prices that were approved
+  status: text("status").notNull().default("pending"), // "pending" | "approved" | "rejected"
+  source: text("source").notNull().default("chrome-extension"), // "chrome-extension" | "manual"
+  notes: text("notes"), // Admin notes
+
+  scrapedAt: timestamp("scraped_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+  processedBy: integer("processed_by"), // Admin user ID who processed
+
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertNavlungoScrapeBatchSchema = createInsertSchema(navlungoScrapeBatches).omit({
+  id: true,
+  approvedPrices: true,
+  processedAt: true,
+  processedBy: true,
+  createdAt: true
+});
+
+export type InsertNavlungoScrapeBatch = z.infer<typeof insertNavlungoScrapeBatchSchema>;
+export type NavlungoScrapeBatch = typeof navlungoScrapeBatches.$inferSelect;
+
+// Navlungo Price Audit Log - Track all price changes for audit trail
+export const navlungoPriceAuditLogs = pgTable("navlungo_price_audit_logs", {
+  id: serial("id").primaryKey(),
+  priceId: integer("price_id").notNull(), // Reference to navlungo_prices
+  action: text("action").notNull(), // "created" | "updated" | "approved" | "disabled"
+  previousValue: json("previous_value"), // Previous state (JSON)
+  newValue: json("new_value"), // New state (JSON)
+  userId: integer("user_id").notNull(), // User who made the change
+  reason: text("reason"), // Reason for the change
+
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertNavlungoPriceAuditLogSchema = createInsertSchema(navlungoPriceAuditLogs).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertNavlungoPriceAuditLog = z.infer<typeof insertNavlungoPriceAuditLogSchema>;
+export type NavlungoPriceAuditLog = typeof navlungoPriceAuditLogs.$inferSelect;
+
+// Navlungo status enums
+export enum NavlungoPriceStatus {
+  PENDING = "pending",
+  ACTIVE = "active",
+  DISABLED = "disabled"
+}
+
+export enum NavlungoBatchStatus {
+  PENDING = "pending",
+  APPROVED = "approved",
+  REJECTED = "rejected"
+}
+
+export const NavlungoPriceStatusColors = {
+  pending: "bg-yellow-100 text-yellow-800",
+  active: "bg-green-100 text-green-800",
+  disabled: "bg-gray-100 text-gray-800"
+};
+
+export const NavlungoBatchStatusColors = {
+  pending: "bg-yellow-100 text-yellow-800",
+  approved: "bg-green-100 text-green-800",
+  rejected: "bg-red-100 text-red-800"
+};

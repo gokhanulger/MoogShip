@@ -10,6 +10,7 @@ import {
   type AFSPriceOption,
 } from "./afstransport";
 import { storage } from "../storage";
+import { calculateNavlungoPricing, getNavlungoPrices } from "./navlungo-pricing";
 
 function getDefaultPostalCode(countryCode: string): string {
   const codes: Record<string, string> = {
@@ -1360,4 +1361,119 @@ function generateFallbackPricing(): MoogShipPriceResponse {
     options: [],
     currency: "USD",
   };
+}
+
+// ============================================
+// NAVLUNGO INTEGRATION
+// ============================================
+
+/**
+ * Check if Navlungo prices are available for a specific route
+ */
+export async function hasNavlungoPrices(
+  countryCode: string,
+  weight: number
+): Promise<boolean> {
+  try {
+    const prices = await getNavlungoPrices(countryCode, weight);
+    return prices.length > 0;
+  } catch (error) {
+    console.error("[MoogShip] Error checking Navlungo prices:", error);
+    return false;
+  }
+}
+
+/**
+ * Calculate pricing with Navlungo as primary source, falling back to Shipentegra
+ *
+ * Priority:
+ * 1. Check Navlungo prices first
+ * 2. If no Navlungo prices available, use existing Shipentegra/Aramex pricing
+ *
+ * @param useNavlungo - Force Navlungo usage (default: true when available)
+ */
+export async function calculateCombinedPricing(
+  packageLength: number,
+  packageWidth: number,
+  packageHeight: number,
+  packageWeight: number,
+  receiverCountry: string,
+  userMultiplier: number = 1.0,
+  skipMultiplier: boolean = false,
+  userId?: number,
+  useNavlungo: boolean = true
+): Promise<MoogShipPriceResponse> {
+  const countryCode = normalizeCountryCode(receiverCountry);
+
+  // Calculate volumetric weight
+  const volumetricWeight = (packageLength * packageWidth * packageHeight) / 5000;
+  const chargeableWeight = Math.max(packageWeight, volumetricWeight);
+
+  console.log(`[MoogShip] Combined pricing for ${countryCode}, ${chargeableWeight.toFixed(2)}kg (useNavlungo: ${useNavlungo})`);
+
+  // Check Navlungo first if enabled
+  if (useNavlungo) {
+    const navlungoAvailable = await hasNavlungoPrices(countryCode, chargeableWeight);
+
+    if (navlungoAvailable) {
+      console.log(`[MoogShip] Using Navlungo prices for ${countryCode}`);
+      const navlungoResult = await calculateNavlungoPricing(
+        packageLength,
+        packageWidth,
+        packageHeight,
+        packageWeight,
+        receiverCountry,
+        userMultiplier,
+        skipMultiplier,
+        userId
+      );
+
+      if (navlungoResult.success && navlungoResult.options.length > 0) {
+        return {
+          ...navlungoResult,
+          rawApiResponses: {
+            navlungo: {
+              success: true,
+              optionsCount: navlungoResult.options.length,
+              options: navlungoResult.options
+            },
+            timestamp: new Date().toISOString(),
+            requestParams: {
+              packageLength,
+              packageWidth,
+              packageHeight,
+              packageWeight,
+              receiverCountry,
+            }
+          }
+        };
+      }
+    }
+
+    console.log(`[MoogShip] No Navlungo prices for ${countryCode}, falling back to Shipentegra`);
+  }
+
+  // Fall back to existing pricing (Shipentegra + Aramex)
+  return calculateMoogShipPricing(
+    packageLength,
+    packageWidth,
+    packageHeight,
+    packageWeight,
+    receiverCountry,
+    userMultiplier,
+    skipMultiplier,
+    userId
+  );
+}
+
+/**
+ * Get pricing source for a specific route
+ * Returns 'navlungo' if Navlungo prices available, 'shipentegra' otherwise
+ */
+export async function getPricingSource(
+  countryCode: string,
+  weight: number
+): Promise<'navlungo' | 'shipentegra'> {
+  const hasNavlungo = await hasNavlungoPrices(countryCode, weight);
+  return hasNavlungo ? 'navlungo' : 'shipentegra';
 }
