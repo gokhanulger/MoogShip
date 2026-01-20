@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Navlungo Price Scraper",
+  "version": "1.1.0",
+  "description": "Scrapes shipping prices from Navlungo price calculator",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "webRequest",
+    "notifications",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.navlungo.com/*",
+    "https://quick-price-calculator.navlungo.com/*",
+    "http://localhost:3000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://ship.navlungo.com/*",
+        "https://*.navlungo.com/*",
+        "https://quick-price-calculator.navlungo.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

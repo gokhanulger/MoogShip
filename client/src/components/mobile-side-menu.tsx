@@ -366,11 +366,11 @@ const MobileSideMenu = ({ isOpen, onClose, onLogout, isAdmin = false }: MobileSi
                   isActive={location === "/email-campaigns"}
                 />
                 
-                <MenuLink 
-                  href="/admin-price-fetcher"
+                <MenuLink
+                  href="/admin-navlungo-prices"
                   icon={<Calculator className="h-5 w-5" />}
-                  text={t('common.priceFetcher')}
-                  isActive={location === "/admin-price-fetcher"}
+                  text="Fiyat Yönetimi"
+                  isActive={location === "/admin-navlungo-prices"}
                 />
                 
                 <MenuLink 

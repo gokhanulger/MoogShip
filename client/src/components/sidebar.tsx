@@ -295,14 +295,14 @@ export default function Sidebar() {
                   {isExpanded && t('shipping.managePickups')}
                 </Link>
                 
-                <Link href="/admin-price-fetcher" className={`${
-                    location === "/admin-price-fetcher" 
-                      ? "bg-blue-50/70 text-blue-600 font-medium border-l-4 border-blue-400" 
+                <Link href="/admin-navlungo-prices" className={`${
+                    location === "/admin-navlungo-prices"
+                      ? "bg-blue-50/70 text-blue-600 font-medium border-l-4 border-blue-400"
                       : "text-gray-600 hover:bg-blue-50/40 hover:text-blue-500"
                   } group flex items-center ${isExpanded ? 'px-3' : 'px-1 justify-center'} py-2 text-sm rounded-r-lg transition-all duration-150 ease-in-out`}
-                  title={!isExpanded ? 'Price Fetcher' : undefined}>
-                  <Calculator className={`${isExpanded ? 'mr-3' : ''} h-5 w-5 ${location === "/admin-price-fetcher" ? "text-blue-500" : "text-indigo-500 group-hover:text-indigo-400"}`} />
-                  {isExpanded && 'Price Fetcher'}
+                  title={!isExpanded ? 'Fiyat Yönetimi' : undefined}>
+                  <Calculator className={`${isExpanded ? 'mr-3' : ''} h-5 w-5 ${location === "/admin-navlungo-prices" ? "text-blue-500" : "text-indigo-500 group-hover:text-indigo-400"}`} />
+                  {isExpanded && 'Fiyat Yönetimi'}
                 </Link>
                 
                 <Link href="/admin-refund-requests" className={`${
