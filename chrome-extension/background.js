@@ -10,7 +10,7 @@ const CONFIG = {
   // For production:
   BACKEND_URL: 'https://app.moogship.com',
   // API endpoint path:
-  API_PATH: '/api/navlungo/prices/batch'
+  API_PATH: '/api/external-pricing/prices/batch'
 };
 
 let capturedPrices = [];
