@@ -431,9 +431,9 @@ export default function MobileNav({ isBottomNav = false, open, isOpen, onClose, 
                   </div>
                 </Link>
                 
-                <Link href="/admin-navlungo-prices">
+                <Link href="/admin-fiyat-yonetimi">
                   <div className={`${
-                    location === "/admin-navlungo-prices" ? "bg-gray-900" : ""
+                    location === "/admin-fiyat-yonetimi" ? "bg-gray-900" : ""
                   } text-white hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium cursor-pointer`}>
                     <div className="flex items-center">
                       <Calculator className="mr-3 h-5 w-5 text-blue-400" />
@@ -647,9 +647,9 @@ export default function MobileNav({ isBottomNav = false, open, isOpen, onClose, 
                   </div>
                 </Link>
                 
-                <Link href="/admin-navlungo-prices">
+                <Link href="/admin-fiyat-yonetimi">
                   <div className={`${
-                    location === "/admin-navlungo-prices" ? "bg-gray-900" : ""
+                    location === "/admin-fiyat-yonetimi" ? "bg-gray-900" : ""
                   } text-white hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium cursor-pointer`}>
                     <div className="flex items-center">
                       <Calculator className="mr-3 h-5 w-5 text-green-400" />

@@ -27,7 +27,7 @@ import billingReminderRoutes from "./billing-reminder-routes";
 import etsyRoutes from "./etsy-routes";
 import { setupEtsyImportRoutes } from "./etsy-import-routes";
 import emailRoutes from "./email-routes";
-import navlungoRoutes from "./navlungo-routes";
+import pricingRoutes from "./pricing-routes";
 console.log(
   "[ROUTES] Billing reminder routes imported successfully:",
   !!billingReminderRoutes,
@@ -11963,8 +11963,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount Email integration routes
   app.use("/api/email", emailRoutes);
 
-  // Mount Navlungo price management routes
-  app.use("/api/navlungo", navlungoRoutes);
+  // Mount external price management routes
+  app.use("/api/external-pricing", pricingRoutes);
 
   // USITC Duty Rate API endpoint for HS code duty rates
   app.get("/api/duty-rates/usitc", async (req, res) => {

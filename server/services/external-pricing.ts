@@ -1,7 +1,7 @@
 /**
- * Navlungo Price Service
+ * External Price Service
  *
- * Handles price calculations using Navlungo prices stored in the database.
+ * Handles price calculations using external prices stored in the database.
  * Prices are scraped via Chrome extension and approved by admins before activation.
  */
 
@@ -19,7 +19,7 @@ import { eq, and, gte, lte, desc, asc, inArray, sql } from "drizzle-orm";
 import { normalizeCountryCode } from "@shared/countries";
 import type { MoogShipPriceOption, MoogShipPriceResponse } from "./moogship-pricing";
 
-// Standard weight brackets for Navlungo pricing
+// Standard weight brackets for external pricing
 const WEIGHT_BRACKETS = [
   0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
   5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10,
@@ -38,7 +38,7 @@ export function findMatchingWeight(weight: number): number {
 }
 
 /**
- * Get active Navlungo prices for a country and weight
+ * Get active external prices for a country and weight
  */
 export async function getNavlungoPrices(
   countryCode: string,
@@ -47,7 +47,7 @@ export async function getNavlungoPrices(
   const normalizedCountry = normalizeCountryCode(countryCode);
   const matchingWeight = findMatchingWeight(weight);
 
-  console.log(`[Navlungo] Looking up prices for ${normalizedCountry}, ${weight}kg → bracket: ${matchingWeight}kg`);
+  console.log(`[ExternalPricing] Looking up prices for ${normalizedCountry}, ${weight}kg → bracket: ${matchingWeight}kg`);
 
   const prices = await db.select()
     .from(navlungoPrices)
@@ -58,7 +58,7 @@ export async function getNavlungoPrices(
       eq(navlungoPrices.isVisibleToCustomers, true)
     ));
 
-  console.log(`[Navlungo] Found ${prices.length} active prices`);
+  console.log(`[ExternalPricing] Found ${prices.length} active prices`);
   return prices;
 }
 
@@ -73,7 +73,7 @@ export async function getActiveServiceSettings(): Promise<NavlungoServiceSetting
 }
 
 /**
- * Calculate Navlungo pricing and return MoogShip format
+ * Calculate external pricing and return MoogShip format
  */
 export async function calculateNavlungoPricing(
   packageLength: number,
@@ -93,19 +93,19 @@ export async function calculateNavlungoPricing(
     const chargeableWeight = Math.max(packageWeight, volumetricWeight);
     const matchingWeight = findMatchingWeight(chargeableWeight);
 
-    console.log(`[Navlungo] Calculating prices for ${countryCode}`);
-    console.log(`[Navlungo] Weight: actual=${packageWeight}kg, volumetric=${volumetricWeight.toFixed(2)}kg, chargeable=${chargeableWeight.toFixed(2)}kg, bracket=${matchingWeight}kg`);
+    console.log(`[ExternalPricing] Calculating prices for ${countryCode}`);
+    console.log(`[ExternalPricing] Weight: actual=${packageWeight}kg, volumetric=${volumetricWeight.toFixed(2)}kg, chargeable=${chargeableWeight.toFixed(2)}kg, bracket=${matchingWeight}kg`);
 
     // Get prices from database
     const prices = await getNavlungoPrices(countryCode, chargeableWeight);
 
     if (prices.length === 0) {
-      console.log(`[Navlungo] No prices found for ${countryCode} at ${matchingWeight}kg`);
+      console.log(`[ExternalPricing] No prices found for ${countryCode} at ${matchingWeight}kg`);
       return {
         success: false,
         options: [],
         currency: "USD",
-        error: "No Navlungo prices available for this destination"
+        error: "No external prices available for this destination"
       };
     }
 
@@ -126,7 +126,7 @@ export async function calculateNavlungoPricing(
       activeServiceKeys.has(`${p.carrier}-${p.service}`)
     );
 
-    console.log(`[Navlungo] After service filtering: ${filteredPrices.length} prices`);
+    console.log(`[ExternalPricing] After service filtering: ${filteredPrices.length} prices`);
 
     // Convert to MoogShip price options
     const options: MoogShipPriceOption[] = filteredPrices.map(price => {
@@ -144,7 +144,7 @@ export async function calculateNavlungoPricing(
         serviceName: `navlungo-${price.carrier.toLowerCase()}-${price.service.toLowerCase()}`,
         displayName,
         cargoPrice: finalPrice,
-        fuelCost: 0, // Navlungo prices include fuel
+        fuelCost: 0, // external prices include fuel
         totalPrice: finalPrice,
         deliveryTime: price.transitDays || "3-7 business days",
         serviceType: price.service.toLowerCase().includes("express") ? "EXPRESS" : "ECO",
@@ -171,12 +171,12 @@ export async function calculateNavlungoPricing(
     };
 
   } catch (error) {
-    console.error("[Navlungo] Error calculating prices:", error);
+    console.error("[ExternalPricing] Error calculating prices:", error);
     return {
       success: false,
       options: [],
       currency: "USD",
-      error: "Failed to calculate Navlungo prices"
+      error: "Failed to calculate external prices"
     };
   }
 }
@@ -212,7 +212,7 @@ export async function createScrapeBatch(
     })
     .returning();
 
-  console.log(`[Navlungo] Created batch #${batch.id} with ${prices.length} prices`);
+  console.log(`[ExternalPricing] Created batch #${batch.id} with ${prices.length} prices`);
 
   // Import prices with batch ID
   let imported = 0;
@@ -242,7 +242,7 @@ export async function createScrapeBatch(
 
       imported++;
     } catch (err) {
-      console.error(`[Navlungo] Failed to import price:`, err);
+      console.error(`[ExternalPricing] Failed to import price:`, err);
     }
   }
 
@@ -251,7 +251,7 @@ export async function createScrapeBatch(
     .set({ totalPrices: imported })
     .where(eq(navlungoScrapeBatches.id, batch.id));
 
-  console.log(`[Navlungo] Imported ${imported}/${prices.length} prices for batch #${batch.id}`);
+  console.log(`[ExternalPricing] Imported ${imported}/${prices.length} prices for batch #${batch.id}`);
 
   return { batchId: batch.id, pricesImported: imported };
 }
@@ -368,7 +368,7 @@ export async function approveBatch(
     })
     .where(eq(navlungoScrapeBatches.id, batchId));
 
-  console.log(`[Navlungo] Batch #${batchId} approved: ${approvedCount} prices activated`);
+  console.log(`[ExternalPricing] Batch #${batchId} approved: ${approvedCount} prices activated`);
 
   return { approvedCount };
 }
@@ -390,7 +390,7 @@ export async function rejectBatch(
     })
     .where(eq(navlungoScrapeBatches.id, batchId));
 
-  console.log(`[Navlungo] Batch #${batchId} rejected`);
+  console.log(`[ExternalPricing] Batch #${batchId} rejected`);
 }
 
 /**

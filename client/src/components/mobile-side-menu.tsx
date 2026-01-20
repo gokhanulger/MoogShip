@@ -367,10 +367,10 @@ const MobileSideMenu = ({ isOpen, onClose, onLogout, isAdmin = false }: MobileSi
                 />
                 
                 <MenuLink
-                  href="/admin-navlungo-prices"
+                  href="/admin-fiyat-yonetimi"
                   icon={<Calculator className="h-5 w-5" />}
                   text="Fiyat Yönetimi"
-                  isActive={location === "/admin-navlungo-prices"}
+                  isActive={location === "/admin-fiyat-yonetimi"}
                 />
                 
                 <MenuLink 

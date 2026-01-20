@@ -1,18 +1,18 @@
 /**
- * Navlungo Price Controller
+ * External Price Controller
  *
- * Handles all API endpoints for Navlungo price management.
+ * Handles all API endpoints for External price management.
  */
 
 import { Request, Response } from "express";
-import * as navlungoPricingService from "../services/navlungo-pricing";
+import * as external-pricingPricingService from "../services/external-pricing";
 
 // ============================================
 // CHROME EXTENSION ENDPOINTS
 // ============================================
 
 /**
- * POST /api/navlungo/prices/batch
+ * POST /api/external-pricing/prices/batch
  * Receive scraped prices from Chrome extension
  */
 export async function importPricesBatch(req: Request, res: Response) {
@@ -26,9 +26,9 @@ export async function importPricesBatch(req: Request, res: Response) {
       });
     }
 
-    console.log(`[Navlungo] Receiving batch import: ${prices.length} prices from ${source}`);
+    console.log(`[External] Receiving batch import: ${prices.length} prices from ${source}`);
 
-    const result = await navlungoPricingService.createScrapeBatch(prices, source);
+    const result = await external-pricingPricingService.createScrapeBatch(prices, source);
 
     res.json({
       success: true,
@@ -38,7 +38,7 @@ export async function importPricesBatch(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error importing prices:", error);
+    console.error("[External] Error importing prices:", error);
     res.status(500).json({
       success: false,
       error: "Failed to import prices"
@@ -51,7 +51,7 @@ export async function importPricesBatch(req: Request, res: Response) {
 // ============================================
 
 /**
- * GET /api/admin/navlungo/batches
+ * GET /api/admin/external-pricing/batches
  * Get all batches with optional status filter
  */
 export async function getBatches(req: Request, res: Response) {
@@ -61,7 +61,7 @@ export async function getBatches(req: Request, res: Response) {
     const status = req.query.status as string;
 
     if (status === "pending") {
-      const batches = await navlungoPricingService.getPendingBatches();
+      const batches = await external-pricingPricingService.getPendingBatches();
       return res.json({
         success: true,
         batches,
@@ -69,7 +69,7 @@ export async function getBatches(req: Request, res: Response) {
       });
     }
 
-    const result = await navlungoPricingService.getBatches(limit, offset);
+    const result = await external-pricingPricingService.getBatches(limit, offset);
     res.json({
       success: true,
       batches: result.batches,
@@ -77,7 +77,7 @@ export async function getBatches(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error fetching batches:", error);
+    console.error("[External] Error fetching batches:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch batches"
@@ -86,7 +86,7 @@ export async function getBatches(req: Request, res: Response) {
 }
 
 /**
- * GET /api/admin/navlungo/batches/:id/prices
+ * GET /api/admin/external-pricing/batches/:id/prices
  * Get all prices in a specific batch
  */
 export async function getBatchPrices(req: Request, res: Response) {
@@ -100,7 +100,7 @@ export async function getBatchPrices(req: Request, res: Response) {
       });
     }
 
-    const prices = await navlungoPricingService.getBatchPrices(batchId);
+    const prices = await external-pricingPricingService.getBatchPrices(batchId);
 
     res.json({
       success: true,
@@ -109,7 +109,7 @@ export async function getBatchPrices(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error fetching batch prices:", error);
+    console.error("[External] Error fetching batch prices:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch batch prices"
@@ -118,7 +118,7 @@ export async function getBatchPrices(req: Request, res: Response) {
 }
 
 /**
- * POST /api/admin/navlungo/batches/:id/approve
+ * POST /api/admin/external-pricing/batches/:id/approve
  * Approve a batch and activate its prices
  */
 export async function approveBatch(req: Request, res: Response) {
@@ -140,7 +140,7 @@ export async function approveBatch(req: Request, res: Response) {
       });
     }
 
-    const result = await navlungoPricingService.approveBatch(
+    const result = await external-pricingPricingService.approveBatch(
       batchId,
       req.user.id,
       replaceExisting
@@ -153,7 +153,7 @@ export async function approveBatch(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error approving batch:", error);
+    console.error("[External] Error approving batch:", error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Failed to approve batch"
@@ -162,7 +162,7 @@ export async function approveBatch(req: Request, res: Response) {
 }
 
 /**
- * POST /api/admin/navlungo/batches/:id/reject
+ * POST /api/admin/external-pricing/batches/:id/reject
  * Reject a batch
  */
 export async function rejectBatch(req: Request, res: Response) {
@@ -184,7 +184,7 @@ export async function rejectBatch(req: Request, res: Response) {
       });
     }
 
-    await navlungoPricingService.rejectBatch(batchId, req.user.id, reason);
+    await external-pricingPricingService.rejectBatch(batchId, req.user.id, reason);
 
     res.json({
       success: true,
@@ -192,7 +192,7 @@ export async function rejectBatch(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error rejecting batch:", error);
+    console.error("[External] Error rejecting batch:", error);
     res.status(500).json({
       success: false,
       error: "Failed to reject batch"
@@ -205,7 +205,7 @@ export async function rejectBatch(req: Request, res: Response) {
 // ============================================
 
 /**
- * GET /api/admin/navlungo/prices
+ * GET /api/admin/external-pricing/prices
  * Get all active prices with filtering
  */
 export async function getPrices(req: Request, res: Response) {
@@ -217,7 +217,7 @@ export async function getPrices(req: Request, res: Response) {
       maxWeight: req.query.maxWeight ? parseFloat(req.query.maxWeight as string) : undefined
     };
 
-    const prices = await navlungoPricingService.getActivePrices(filters);
+    const prices = await external-pricingPricingService.getActivePrices(filters);
 
     res.json({
       success: true,
@@ -226,7 +226,7 @@ export async function getPrices(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error fetching prices:", error);
+    console.error("[External] Error fetching prices:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch prices"
@@ -235,7 +235,7 @@ export async function getPrices(req: Request, res: Response) {
 }
 
 /**
- * PUT /api/admin/navlungo/prices/:id
+ * PUT /api/admin/external-pricing/prices/:id
  * Update a single price
  */
 export async function updatePrice(req: Request, res: Response) {
@@ -263,7 +263,7 @@ export async function updatePrice(req: Request, res: Response) {
     if (status !== undefined) updates.status = status;
     if (isVisibleToCustomers !== undefined) updates.isVisibleToCustomers = isVisibleToCustomers;
 
-    const updatedPrice = await navlungoPricingService.updatePrice(
+    const updatedPrice = await external-pricingPricingService.updatePrice(
       priceId,
       updates,
       req.user.id,
@@ -276,7 +276,7 @@ export async function updatePrice(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error updating price:", error);
+    console.error("[External] Error updating price:", error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Failed to update price"
@@ -285,7 +285,7 @@ export async function updatePrice(req: Request, res: Response) {
 }
 
 /**
- * DELETE /api/admin/navlungo/prices/:id
+ * DELETE /api/admin/external-pricing/prices/:id
  * Delete a price
  */
 export async function deletePrice(req: Request, res: Response) {
@@ -306,7 +306,7 @@ export async function deletePrice(req: Request, res: Response) {
       });
     }
 
-    await navlungoPricingService.deletePrice(priceId, req.user.id);
+    await external-pricingPricingService.deletePrice(priceId, req.user.id);
 
     res.json({
       success: true,
@@ -314,7 +314,7 @@ export async function deletePrice(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error deleting price:", error);
+    console.error("[External] Error deleting price:", error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete price"
@@ -327,12 +327,12 @@ export async function deletePrice(req: Request, res: Response) {
 // ============================================
 
 /**
- * GET /api/admin/navlungo/services
+ * GET /api/admin/external-pricing/services
  * Get all service settings
  */
 export async function getServiceSettings(req: Request, res: Response) {
   try {
-    const settings = await navlungoPricingService.getAllServiceSettings();
+    const settings = await external-pricingPricingService.getAllServiceSettings();
 
     res.json({
       success: true,
@@ -340,7 +340,7 @@ export async function getServiceSettings(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error fetching service settings:", error);
+    console.error("[External] Error fetching service settings:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch service settings"
@@ -349,7 +349,7 @@ export async function getServiceSettings(req: Request, res: Response) {
 }
 
 /**
- * POST /api/admin/navlungo/services
+ * POST /api/admin/external-pricing/services
  * Create or update a service setting
  */
 export async function upsertServiceSetting(req: Request, res: Response) {
@@ -363,7 +363,7 @@ export async function upsertServiceSetting(req: Request, res: Response) {
       });
     }
 
-    const setting = await navlungoPricingService.upsertServiceSetting(
+    const setting = await external-pricingPricingService.upsertServiceSetting(
       carrier,
       service,
       displayName,
@@ -377,7 +377,7 @@ export async function upsertServiceSetting(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error upserting service setting:", error);
+    console.error("[External] Error upserting service setting:", error);
     res.status(500).json({
       success: false,
       error: "Failed to update service setting"
@@ -386,7 +386,7 @@ export async function upsertServiceSetting(req: Request, res: Response) {
 }
 
 /**
- * PUT /api/admin/navlungo/services/:id
+ * PUT /api/admin/external-pricing/services/:id
  * Toggle service active status
  */
 export async function toggleServiceSetting(req: Request, res: Response) {
@@ -408,7 +408,7 @@ export async function toggleServiceSetting(req: Request, res: Response) {
       });
     }
 
-    const setting = await navlungoPricingService.toggleServiceActive(settingId, isActive);
+    const setting = await external-pricingPricingService.toggleServiceActive(settingId, isActive);
 
     res.json({
       success: true,
@@ -416,7 +416,7 @@ export async function toggleServiceSetting(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error toggling service setting:", error);
+    console.error("[External] Error toggling service setting:", error);
     res.status(500).json({
       success: false,
       error: "Failed to toggle service setting"
@@ -429,12 +429,12 @@ export async function toggleServiceSetting(req: Request, res: Response) {
 // ============================================
 
 /**
- * GET /api/admin/navlungo/stats
+ * GET /api/admin/external-pricing/stats
  * Get price statistics
  */
 export async function getStatistics(req: Request, res: Response) {
   try {
-    const stats = await navlungoPricingService.getPriceStatistics();
+    const stats = await external-pricingPricingService.getPriceStatistics();
 
     res.json({
       success: true,
@@ -442,7 +442,7 @@ export async function getStatistics(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error fetching statistics:", error);
+    console.error("[External] Error fetching statistics:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch statistics"
@@ -451,12 +451,12 @@ export async function getStatistics(req: Request, res: Response) {
 }
 
 /**
- * GET /api/admin/navlungo/countries
+ * GET /api/admin/external-pricing/countries
  * Get list of countries with active prices
  */
 export async function getCountries(req: Request, res: Response) {
   try {
-    const countries = await navlungoPricingService.getCountriesWithPrices();
+    const countries = await external-pricingPricingService.getCountriesWithPrices();
 
     res.json({
       success: true,
@@ -464,7 +464,7 @@ export async function getCountries(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error fetching countries:", error);
+    console.error("[External] Error fetching countries:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch countries"
@@ -473,12 +473,12 @@ export async function getCountries(req: Request, res: Response) {
 }
 
 /**
- * GET /api/admin/navlungo/carriers
+ * GET /api/admin/external-pricing/carriers
  * Get list of carriers with active prices
  */
 export async function getCarriers(req: Request, res: Response) {
   try {
-    const carriers = await navlungoPricingService.getCarriersWithPrices();
+    const carriers = await external-pricingPricingService.getCarriersWithPrices();
 
     res.json({
       success: true,
@@ -486,7 +486,7 @@ export async function getCarriers(req: Request, res: Response) {
     });
 
   } catch (error) {
-    console.error("[Navlungo] Error fetching carriers:", error);
+    console.error("[External] Error fetching carriers:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch carriers"

@@ -103,7 +103,7 @@ const AdminInvoiceManagement = lazy(() => import("@/pages/admin-invoice-manageme
 const AdminBillingReminders = lazy(() => import("@/pages/admin-billing-reminders"));
 const AdminTracking = lazy(() => import("@/pages/admin-tracking"));
 const AdminPricingLogs = lazy(() => import("@/pages/admin-pricing-logs"));
-const AdminNavlungoPrices = lazy(() => import("@/pages/admin-navlungo-prices"));
+const AdminFiyatYonetimi = lazy(() => import("@/pages/admin-fiyat-yonetimi"));
 // UndeliveredPackages functionality integrated into admin-tracking page
 const TranslationDemo = lazy(() => import("@/pages/translation-demo"));
 const PackingDemo = lazy(() => import("@/pages/packing-demo"));
@@ -363,7 +363,7 @@ function Router() {
       <ProtectedRoute path="/admin-billing-reminders" component={AdminBillingReminders} adminOnly />
       <ProtectedRoute path="/admin-tracking" component={AdminTracking} adminOnly />
       <ProtectedRoute path="/admin-pricing-logs" component={AdminPricingLogs} adminOnly />
-      <ProtectedRoute path="/admin-navlungo-prices" component={AdminNavlungoPrices} adminOnly />
+      <ProtectedRoute path="/admin-fiyat-yonetimi" component={AdminFiyatYonetimi} adminOnly />
       {/* Undelivered packages functionality moved to admin-tracking page */}
       <Route path="/marketing-price-calculator">
         <MarketingPriceCalculator />

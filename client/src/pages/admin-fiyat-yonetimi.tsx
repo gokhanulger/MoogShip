@@ -1,7 +1,7 @@
 /**
- * Admin Navlungo Prices Page
+ * Admin External Prices Page
  *
- * Manage Navlungo scraped prices:
+ * Manage External scraped prices:
  * - Review and approve/reject batches
  * - View and edit active prices
  * - Configure service visibility settings
@@ -26,7 +26,7 @@ import { Loader2, CheckCircle2, XCircle, Package, Globe, Truck, Settings, Refres
 import { apiRequest } from "@/lib/queryClient";
 
 // Types
-interface NavlungoBatch {
+interface ExternalBatch {
   id: number;
   countryCode: string | null;
   totalPrices: number;
@@ -40,7 +40,7 @@ interface NavlungoBatch {
   createdAt: string;
 }
 
-interface NavlungoPrice {
+interface ExternalPrice {
   id: number;
   countryCode: string;
   countryName: string;
@@ -59,7 +59,7 @@ interface NavlungoPrice {
   updatedAt: string;
 }
 
-interface NavlungoServiceSetting {
+interface ExternalServiceSetting {
   id: number;
   carrier: string;
   service: string;
@@ -84,7 +84,7 @@ interface Country {
   priceCount: number;
 }
 
-export default function AdminNavlungoPrices() {
+export default function AdminExternalPrices() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -97,7 +97,7 @@ export default function AdminNavlungoPrices() {
     minWeight: "",
     maxWeight: ""
   });
-  const [editingPrice, setEditingPrice] = useState<NavlungoPrice | null>(null);
+  const [editingPrice, setEditingPrice] = useState<ExternalPrice | null>(null);
   const [newServiceSetting, setNewServiceSetting] = useState({
     carrier: "",
     service: "",
@@ -112,57 +112,57 @@ export default function AdminNavlungoPrices() {
 
   // Get price statistics
   const { data: stats, isLoading: statsLoading } = useQuery<{ success: boolean; stats: PriceStats }>({
-    queryKey: ["navlungo-stats"],
-    queryFn: () => apiRequest("/api/navlungo/admin/stats"),
+    queryKey: ["pricing-stats"],
+    queryFn: () => apiRequest("/api/external-pricing/admin/stats"),
     staleTime: 30000
   });
 
   // Get batches
-  const { data: batchesData, isLoading: batchesLoading } = useQuery<{ success: boolean; batches: NavlungoBatch[] }>({
-    queryKey: ["navlungo-batches"],
-    queryFn: () => apiRequest("/api/navlungo/admin/batches"),
+  const { data: batchesData, isLoading: batchesLoading } = useQuery<{ success: boolean; batches: ExternalBatch[] }>({
+    queryKey: ["pricing-batches"],
+    queryFn: () => apiRequest("/api/external-pricing/admin/batches"),
     enabled: activeTab === "batches"
   });
 
   // Get batch prices when a batch is selected
-  const { data: batchPricesData, isLoading: batchPricesLoading } = useQuery<{ success: boolean; prices: NavlungoPrice[] }>({
-    queryKey: ["navlungo-batch-prices", selectedBatchId],
-    queryFn: () => apiRequest(`/api/navlungo/admin/batches/${selectedBatchId}/prices`),
+  const { data: batchPricesData, isLoading: batchPricesLoading } = useQuery<{ success: boolean; prices: ExternalPrice[] }>({
+    queryKey: ["pricing-batch-prices", selectedBatchId],
+    queryFn: () => apiRequest(`/api/external-pricing/admin/batches/${selectedBatchId}/prices`),
     enabled: !!selectedBatchId
   });
 
   // Get active prices
-  const { data: pricesData, isLoading: pricesLoading } = useQuery<{ success: boolean; prices: NavlungoPrice[] }>({
-    queryKey: ["navlungo-prices", priceFilters],
+  const { data: pricesData, isLoading: pricesLoading } = useQuery<{ success: boolean; prices: ExternalPrice[] }>({
+    queryKey: ["pricing-prices", priceFilters],
     queryFn: () => {
       const params = new URLSearchParams();
       if (priceFilters.countryCode) params.set("countryCode", priceFilters.countryCode);
       if (priceFilters.carrier) params.set("carrier", priceFilters.carrier);
       if (priceFilters.minWeight) params.set("minWeight", priceFilters.minWeight);
       if (priceFilters.maxWeight) params.set("maxWeight", priceFilters.maxWeight);
-      return apiRequest(`/api/navlungo/admin/prices?${params.toString()}`);
+      return apiRequest(`/api/external-pricing/admin/prices?${params.toString()}`);
     },
     enabled: activeTab === "prices"
   });
 
   // Get service settings
-  const { data: servicesData, isLoading: servicesLoading } = useQuery<{ success: boolean; settings: NavlungoServiceSetting[] }>({
-    queryKey: ["navlungo-services"],
-    queryFn: () => apiRequest("/api/navlungo/admin/services"),
+  const { data: servicesData, isLoading: servicesLoading } = useQuery<{ success: boolean; settings: ExternalServiceSetting[] }>({
+    queryKey: ["pricing-services"],
+    queryFn: () => apiRequest("/api/external-pricing/admin/services"),
     enabled: activeTab === "services"
   });
 
   // Get countries
   const { data: countriesData } = useQuery<{ success: boolean; countries: Country[] }>({
-    queryKey: ["navlungo-countries"],
-    queryFn: () => apiRequest("/api/navlungo/admin/countries"),
+    queryKey: ["pricing-countries"],
+    queryFn: () => apiRequest("/api/external-pricing/admin/countries"),
     enabled: activeTab === "prices"
   });
 
   // Get carriers
   const { data: carriersData } = useQuery<{ success: boolean; carriers: string[] }>({
-    queryKey: ["navlungo-carriers"],
-    queryFn: () => apiRequest("/api/navlungo/admin/carriers"),
+    queryKey: ["pricing-carriers"],
+    queryFn: () => apiRequest("/api/external-pricing/admin/carriers"),
     enabled: activeTab === "prices"
   });
 
@@ -173,7 +173,7 @@ export default function AdminNavlungoPrices() {
   // Approve batch
   const approveBatchMutation = useMutation({
     mutationFn: (batchId: number) =>
-      apiRequest(`/api/navlungo/admin/batches/${batchId}/approve`, {
+      apiRequest(`/api/external-pricing/admin/batches/${batchId}/approve`, {
         method: "POST",
         body: JSON.stringify({ replaceExisting: true })
       }),
@@ -182,9 +182,9 @@ export default function AdminNavlungoPrices() {
         title: "Batch Approved",
         description: `${data.approvedCount} prices activated successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-batches"] });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-batches"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-prices"] });
       setSelectedBatchId(null);
     },
     onError: (error: any) => {
@@ -199,7 +199,7 @@ export default function AdminNavlungoPrices() {
   // Reject batch
   const rejectBatchMutation = useMutation({
     mutationFn: ({ batchId, reason }: { batchId: number; reason?: string }) =>
-      apiRequest(`/api/navlungo/admin/batches/${batchId}/reject`, {
+      apiRequest(`/api/external-pricing/admin/batches/${batchId}/reject`, {
         method: "POST",
         body: JSON.stringify({ reason })
       }),
@@ -208,7 +208,7 @@ export default function AdminNavlungoPrices() {
         title: "Batch Rejected",
         description: "Batch has been rejected",
       });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-batches"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-batches"] });
       setSelectedBatchId(null);
     },
     onError: (error: any) => {
@@ -223,7 +223,7 @@ export default function AdminNavlungoPrices() {
   // Update price
   const updatePriceMutation = useMutation({
     mutationFn: ({ priceId, updates }: { priceId: number; updates: any }) =>
-      apiRequest(`/api/navlungo/admin/prices/${priceId}`, {
+      apiRequest(`/api/external-pricing/admin/prices/${priceId}`, {
         method: "PUT",
         body: JSON.stringify(updates)
       }),
@@ -232,7 +232,7 @@ export default function AdminNavlungoPrices() {
         title: "Price Updated",
         description: "Price has been updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-prices"] });
       setEditingPrice(null);
     },
     onError: (error: any) => {
@@ -247,7 +247,7 @@ export default function AdminNavlungoPrices() {
   // Delete price
   const deletePriceMutation = useMutation({
     mutationFn: (priceId: number) =>
-      apiRequest(`/api/navlungo/admin/prices/${priceId}`, {
+      apiRequest(`/api/external-pricing/admin/prices/${priceId}`, {
         method: "DELETE"
       }),
     onSuccess: () => {
@@ -255,8 +255,8 @@ export default function AdminNavlungoPrices() {
         title: "Price Deleted",
         description: "Price has been deleted",
       });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-prices"] });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-stats"] });
     },
     onError: (error: any) => {
       toast({
@@ -270,7 +270,7 @@ export default function AdminNavlungoPrices() {
   // Toggle service
   const toggleServiceMutation = useMutation({
     mutationFn: ({ settingId, isActive }: { settingId: number; isActive: boolean }) =>
-      apiRequest(`/api/navlungo/admin/services/${settingId}`, {
+      apiRequest(`/api/external-pricing/admin/services/${settingId}`, {
         method: "PUT",
         body: JSON.stringify({ isActive })
       }),
@@ -279,7 +279,7 @@ export default function AdminNavlungoPrices() {
         title: "Service Updated",
         description: "Service visibility has been updated",
       });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-services"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-services"] });
     },
     onError: (error: any) => {
       toast({
@@ -293,7 +293,7 @@ export default function AdminNavlungoPrices() {
   // Create service setting
   const createServiceMutation = useMutation({
     mutationFn: (data: typeof newServiceSetting) =>
-      apiRequest("/api/navlungo/admin/services", {
+      apiRequest("/api/external-pricing/admin/services", {
         method: "POST",
         body: JSON.stringify(data)
       }),
@@ -302,7 +302,7 @@ export default function AdminNavlungoPrices() {
         title: "Service Created",
         description: "New service setting has been created",
       });
-      queryClient.invalidateQueries({ queryKey: ["navlungo-services"] });
+      queryClient.invalidateQueries({ queryKey: ["pricing-services"] });
       setNewServiceSetting({
         carrier: "",
         service: "",
@@ -372,7 +372,7 @@ export default function AdminNavlungoPrices() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Navlungo Fiyat Yönetimi</h1>
+            <h1 className="text-2xl font-bold">External Fiyat Yönetimi</h1>
             <p className="text-muted-foreground">Scrape edilen fiyatları yönetin ve onaylayın</p>
           </div>
 

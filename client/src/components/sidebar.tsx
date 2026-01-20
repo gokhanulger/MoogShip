@@ -295,13 +295,13 @@ export default function Sidebar() {
                   {isExpanded && t('shipping.managePickups')}
                 </Link>
                 
-                <Link href="/admin-navlungo-prices" className={`${
-                    location === "/admin-navlungo-prices"
+                <Link href="/admin-fiyat-yonetimi" className={`${
+                    location === "/admin-fiyat-yonetimi"
                       ? "bg-blue-50/70 text-blue-600 font-medium border-l-4 border-blue-400"
                       : "text-gray-600 hover:bg-blue-50/40 hover:text-blue-500"
                   } group flex items-center ${isExpanded ? 'px-3' : 'px-1 justify-center'} py-2 text-sm rounded-r-lg transition-all duration-150 ease-in-out`}
                   title={!isExpanded ? 'Fiyat Yönetimi' : undefined}>
-                  <Calculator className={`${isExpanded ? 'mr-3' : ''} h-5 w-5 ${location === "/admin-navlungo-prices" ? "text-blue-500" : "text-indigo-500 group-hover:text-indigo-400"}`} />
+                  <Calculator className={`${isExpanded ? 'mr-3' : ''} h-5 w-5 ${location === "/admin-fiyat-yonetimi" ? "text-blue-500" : "text-indigo-500 group-hover:text-indigo-400"}`} />
                   {isExpanded && 'Fiyat Yönetimi'}
                 </Link>
                 
