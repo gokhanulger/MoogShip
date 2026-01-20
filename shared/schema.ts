@@ -1958,11 +1958,11 @@ export type InsertEmailSyncLog = z.infer<typeof insertEmailSyncLogSchema>;
 export type EmailSyncLog = typeof emailSyncLog.$inferSelect;
 
 // ============================================
-// NAVLUNGO PRICE INTEGRATION TABLES
+// EXTERNAL PRICE INTEGRATION TABLES
 // ============================================
 
-// Navlungo Prices - Main price table for each country/weight/carrier combination
-export const navlungoPrices = pgTable("navlungo_prices", {
+// External Prices - Main price table for each country/weight/carrier combination
+export const externalPrices = pgTable("external_prices", {
   id: serial("id").primaryKey(),
   countryCode: text("country_code").notNull(), // ISO country code (e.g., "US", "DE", "GB")
   countryName: text("country_name").notNull(), // Display name (e.g., "United States")
@@ -1980,13 +1980,13 @@ export const navlungoPrices = pgTable("navlungo_prices", {
   scrapedAt: timestamp("scraped_at"), // When the price was scraped
   approvedAt: timestamp("approved_at"), // When the price was approved
   approvedBy: integer("approved_by"), // Admin user ID who approved
-  batchId: integer("batch_id"), // Reference to navlungo_scrape_batches
+  batchId: integer("batch_id"), // Reference to external_scrape_batches
 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-export const insertNavlungoPriceSchema = createInsertSchema(navlungoPrices).omit({
+export const insertExternalPriceSchema = createInsertSchema(externalPrices).omit({
   id: true,
   approvedAt: true,
   approvedBy: true,
@@ -1994,11 +1994,11 @@ export const insertNavlungoPriceSchema = createInsertSchema(navlungoPrices).omit
   updatedAt: true
 });
 
-export type InsertNavlungoPrice = z.infer<typeof insertNavlungoPriceSchema>;
-export type NavlungoPrice = typeof navlungoPrices.$inferSelect;
+export type InsertExternalPrice = z.infer<typeof insertExternalPriceSchema>;
+export type ExternalPrice = typeof externalPrices.$inferSelect;
 
-// Navlungo Service Settings - Control which carriers/services are visible to customers
-export const navlungoServiceSettings = pgTable("navlungo_service_settings", {
+// External Service Settings - Control which carriers/services are visible to customers
+export const externalServiceSettings = pgTable("navlungo_service_settings", {
   id: serial("id").primaryKey(),
   carrier: text("carrier").notNull(), // Carrier name (e.g., "UPS")
   service: text("service").notNull(), // Service type (e.g., "Express")
@@ -2010,17 +2010,17 @@ export const navlungoServiceSettings = pgTable("navlungo_service_settings", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-export const insertNavlungoServiceSettingSchema = createInsertSchema(navlungoServiceSettings).omit({
+export const insertExternalServiceSettingSchema = createInsertSchema(externalServiceSettings).omit({
   id: true,
   createdAt: true,
   updatedAt: true
 });
 
-export type InsertNavlungoServiceSetting = z.infer<typeof insertNavlungoServiceSettingSchema>;
-export type NavlungoServiceSetting = typeof navlungoServiceSettings.$inferSelect;
+export type InsertExternalServiceSetting = z.infer<typeof insertExternalServiceSettingSchema>;
+export type ExternalServiceSetting = typeof externalServiceSettings.$inferSelect;
 
-// Navlungo Scrape Batches - Track scraping sessions
-export const navlungoScrapeBatches = pgTable("navlungo_scrape_batches", {
+// External Scrape Batches - Track scraping sessions
+export const externalScrapeBatches = pgTable("external_scrape_batches", {
   id: serial("id").primaryKey(),
   countryCode: text("country_code"), // Optional: specific country or null for all
   totalPrices: integer("total_prices").notNull().default(0), // Total prices in this batch
@@ -2036,7 +2036,7 @@ export const navlungoScrapeBatches = pgTable("navlungo_scrape_batches", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
-export const insertNavlungoScrapeBatchSchema = createInsertSchema(navlungoScrapeBatches).omit({
+export const insertExternalScrapeBatchSchema = createInsertSchema(externalScrapeBatches).omit({
   id: true,
   approvedPrices: true,
   processedAt: true,
@@ -2044,13 +2044,13 @@ export const insertNavlungoScrapeBatchSchema = createInsertSchema(navlungoScrape
   createdAt: true
 });
 
-export type InsertNavlungoScrapeBatch = z.infer<typeof insertNavlungoScrapeBatchSchema>;
-export type NavlungoScrapeBatch = typeof navlungoScrapeBatches.$inferSelect;
+export type InsertExternalScrapeBatch = z.infer<typeof insertExternalScrapeBatchSchema>;
+export type ExternalScrapeBatch = typeof externalScrapeBatches.$inferSelect;
 
-// Navlungo Price Audit Log - Track all price changes for audit trail
-export const navlungoPriceAuditLogs = pgTable("navlungo_price_audit_logs", {
+// External Price Audit Log - Track all price changes for audit trail
+export const externalPriceAuditLogs = pgTable("navlungo_price_audit_logs", {
   id: serial("id").primaryKey(),
-  priceId: integer("price_id").notNull(), // Reference to navlungo_prices
+  priceId: integer("price_id").notNull(), // Reference to external_prices
   action: text("action").notNull(), // "created" | "updated" | "approved" | "disabled"
   previousValue: json("previous_value"), // Previous state (JSON)
   newValue: json("new_value"), // New state (JSON)
@@ -2060,34 +2060,34 @@ export const navlungoPriceAuditLogs = pgTable("navlungo_price_audit_logs", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
-export const insertNavlungoPriceAuditLogSchema = createInsertSchema(navlungoPriceAuditLogs).omit({
+export const insertExternalPriceAuditLogSchema = createInsertSchema(externalPriceAuditLogs).omit({
   id: true,
   createdAt: true
 });
 
-export type InsertNavlungoPriceAuditLog = z.infer<typeof insertNavlungoPriceAuditLogSchema>;
-export type NavlungoPriceAuditLog = typeof navlungoPriceAuditLogs.$inferSelect;
+export type InsertExternalPriceAuditLog = z.infer<typeof insertExternalPriceAuditLogSchema>;
+export type ExternalPriceAuditLog = typeof externalPriceAuditLogs.$inferSelect;
 
-// Navlungo status enums
-export enum NavlungoPriceStatus {
+// External status enums
+export enum ExternalPriceStatus {
   PENDING = "pending",
   ACTIVE = "active",
   DISABLED = "disabled"
 }
 
-export enum NavlungoBatchStatus {
+export enum ExternalBatchStatus {
   PENDING = "pending",
   APPROVED = "approved",
   REJECTED = "rejected"
 }
 
-export const NavlungoPriceStatusColors = {
+export const ExternalPriceStatusColors = {
   pending: "bg-yellow-100 text-yellow-800",
   active: "bg-green-100 text-green-800",
   disabled: "bg-gray-100 text-gray-800"
 };
 
-export const NavlungoBatchStatusColors = {
+export const ExternalBatchStatusColors = {
   pending: "bg-yellow-100 text-yellow-800",
   approved: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800"

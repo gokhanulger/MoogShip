@@ -7,13 +7,13 @@
 
 import { db } from "../db";
 import {
-  navlungoPrices,
-  navlungoServiceSettings,
-  navlungoScrapeBatches,
-  navlungoPriceAuditLogs,
-  type NavlungoPrice,
-  type NavlungoServiceSetting,
-  type NavlungoScrapeBatch
+  externalPrices,
+  externalServiceSettings,
+  externalScrapeBatches,
+  externalPriceAuditLogs,
+  type ExternalPrice,
+  type ExternalServiceSetting,
+  type ExternalScrapeBatch
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, asc, inArray, sql } from "drizzle-orm";
 import { normalizeCountryCode } from "@shared/countries";
@@ -40,22 +40,22 @@ export function findMatchingWeight(weight: number): number {
 /**
  * Get active external prices for a country and weight
  */
-export async function getNavlungoPrices(
+export async function getExternalPrices(
   countryCode: string,
   weight: number
-): Promise<NavlungoPrice[]> {
+): Promise<ExternalPrice[]> {
   const normalizedCountry = normalizeCountryCode(countryCode);
   const matchingWeight = findMatchingWeight(weight);
 
   console.log(`[ExternalPricing] Looking up prices for ${normalizedCountry}, ${weight}kg → bracket: ${matchingWeight}kg`);
 
   const prices = await db.select()
-    .from(navlungoPrices)
+    .from(externalPrices)
     .where(and(
-      eq(navlungoPrices.countryCode, normalizedCountry),
-      eq(navlungoPrices.weight, matchingWeight),
-      eq(navlungoPrices.status, "active"),
-      eq(navlungoPrices.isVisibleToCustomers, true)
+      eq(externalPrices.countryCode, normalizedCountry),
+      eq(externalPrices.weight, matchingWeight),
+      eq(externalPrices.status, "active"),
+      eq(externalPrices.isVisibleToCustomers, true)
     ));
 
   console.log(`[ExternalPricing] Found ${prices.length} active prices`);
@@ -65,17 +65,17 @@ export async function getNavlungoPrices(
 /**
  * Get active service settings (which carriers/services to show)
  */
-export async function getActiveServiceSettings(): Promise<NavlungoServiceSetting[]> {
+export async function getActiveServiceSettings(): Promise<ExternalServiceSetting[]> {
   return db.select()
-    .from(navlungoServiceSettings)
-    .where(eq(navlungoServiceSettings.isActive, true))
-    .orderBy(asc(navlungoServiceSettings.sortOrder));
+    .from(externalServiceSettings)
+    .where(eq(externalServiceSettings.isActive, true))
+    .orderBy(asc(externalServiceSettings.sortOrder));
 }
 
 /**
  * Calculate external pricing and return MoogShip format
  */
-export async function calculateNavlungoPricing(
+export async function calculateExternalPricing(
   packageLength: number,
   packageWidth: number,
   packageHeight: number,
@@ -97,7 +97,7 @@ export async function calculateNavlungoPricing(
     console.log(`[ExternalPricing] Weight: actual=${packageWeight}kg, volumetric=${volumetricWeight.toFixed(2)}kg, chargeable=${chargeableWeight.toFixed(2)}kg, bracket=${matchingWeight}kg`);
 
     // Get prices from database
-    const prices = await getNavlungoPrices(countryCode, chargeableWeight);
+    const prices = await getExternalPrices(countryCode, chargeableWeight);
 
     if (prices.length === 0) {
       console.log(`[ExternalPricing] No prices found for ${countryCode} at ${matchingWeight}kg`);
@@ -140,8 +140,8 @@ export async function calculateNavlungoPricing(
         : Math.round(basePrice * userMultiplier);
 
       return {
-        id: `navlungo-${price.carrier.toLowerCase()}-${price.service.toLowerCase()}-${price.id}`,
-        serviceName: `navlungo-${price.carrier.toLowerCase()}-${price.service.toLowerCase()}`,
+        id: `ext-${price.carrier.toLowerCase()}-${price.service.toLowerCase()}-${price.id}`,
+        serviceName: `ext-${price.carrier.toLowerCase()}-${price.service.toLowerCase()}`,
         displayName,
         cargoPrice: finalPrice,
         fuelCost: 0, // external prices include fuel
@@ -149,12 +149,12 @@ export async function calculateNavlungoPricing(
         deliveryTime: price.transitDays || "3-7 business days",
         serviceType: price.service.toLowerCase().includes("express") ? "EXPRESS" : "ECO",
         description: `${displayName} shipping service`,
-        providerServiceCode: `navlungo-${price.carrier.toLowerCase()}-${price.service.toLowerCase()}`,
+        providerServiceCode: `ext-${price.carrier.toLowerCase()}-${price.service.toLowerCase()}`,
         originalCargoPrice: basePrice,
         originalFuelCost: 0,
         originalTotalPrice: basePrice,
         appliedMultiplier: skipMultiplier ? 1 : userMultiplier,
-        isNavlungoOption: true
+        isExternalOption: true
       };
     });
 
@@ -203,7 +203,7 @@ export async function createScrapeBatch(
   source: string = "chrome-extension"
 ): Promise<{ batchId: number; pricesImported: number }> {
   // Create batch first
-  const [batch] = await db.insert(navlungoScrapeBatches)
+  const [batch] = await db.insert(externalScrapeBatches)
     .values({
       totalPrices: prices.length,
       source,
@@ -225,7 +225,7 @@ export async function createScrapeBatch(
       const countryCode = normalizeCountryCode(p.country);
       const countryName = p.countryName || p.country;
 
-      await db.insert(navlungoPrices)
+      await db.insert(externalPrices)
         .values({
           countryCode,
           countryName,
@@ -247,9 +247,9 @@ export async function createScrapeBatch(
   }
 
   // Update batch with actual imported count
-  await db.update(navlungoScrapeBatches)
+  await db.update(externalScrapeBatches)
     .set({ totalPrices: imported })
-    .where(eq(navlungoScrapeBatches.id, batch.id));
+    .where(eq(externalScrapeBatches.id, batch.id));
 
   console.log(`[ExternalPricing] Imported ${imported}/${prices.length} prices for batch #${batch.id}`);
 
@@ -259,11 +259,11 @@ export async function createScrapeBatch(
 /**
  * Get all pending batches
  */
-export async function getPendingBatches(): Promise<NavlungoScrapeBatch[]> {
+export async function getPendingBatches(): Promise<ExternalScrapeBatch[]> {
   return db.select()
-    .from(navlungoScrapeBatches)
-    .where(eq(navlungoScrapeBatches.status, "pending"))
-    .orderBy(desc(navlungoScrapeBatches.scrapedAt));
+    .from(externalScrapeBatches)
+    .where(eq(externalScrapeBatches.status, "pending"))
+    .orderBy(desc(externalScrapeBatches.scrapedAt));
 }
 
 /**
@@ -272,15 +272,15 @@ export async function getPendingBatches(): Promise<NavlungoScrapeBatch[]> {
 export async function getBatches(
   limit: number = 50,
   offset: number = 0
-): Promise<{ batches: NavlungoScrapeBatch[]; total: number }> {
+): Promise<{ batches: ExternalScrapeBatch[]; total: number }> {
   const [batches, countResult] = await Promise.all([
     db.select()
-      .from(navlungoScrapeBatches)
-      .orderBy(desc(navlungoScrapeBatches.scrapedAt))
+      .from(externalScrapeBatches)
+      .orderBy(desc(externalScrapeBatches.scrapedAt))
       .limit(limit)
       .offset(offset),
     db.select({ count: sql<number>`count(*)` })
-      .from(navlungoScrapeBatches)
+      .from(externalScrapeBatches)
   ]);
 
   return {
@@ -292,11 +292,11 @@ export async function getBatches(
 /**
  * Get prices for a specific batch
  */
-export async function getBatchPrices(batchId: number): Promise<NavlungoPrice[]> {
+export async function getBatchPrices(batchId: number): Promise<ExternalPrice[]> {
   return db.select()
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.batchId, batchId))
-    .orderBy(asc(navlungoPrices.countryCode), asc(navlungoPrices.weight), asc(navlungoPrices.carrier));
+    .from(externalPrices)
+    .where(eq(externalPrices.batchId, batchId))
+    .orderBy(asc(externalPrices.countryCode), asc(externalPrices.weight), asc(externalPrices.carrier));
 }
 
 /**
@@ -318,23 +318,23 @@ export async function approveBatch(
   for (const price of batchPrices) {
     // If replacing existing, disable old prices for same route
     if (replaceExisting) {
-      await db.update(navlungoPrices)
+      await db.update(externalPrices)
         .set({
           status: "disabled",
           isVisibleToCustomers: false,
           updatedAt: new Date()
         })
         .where(and(
-          eq(navlungoPrices.countryCode, price.countryCode),
-          eq(navlungoPrices.weight, price.weight),
-          eq(navlungoPrices.carrier, price.carrier),
-          eq(navlungoPrices.service, price.service),
-          eq(navlungoPrices.status, "active")
+          eq(externalPrices.countryCode, price.countryCode),
+          eq(externalPrices.weight, price.weight),
+          eq(externalPrices.carrier, price.carrier),
+          eq(externalPrices.service, price.service),
+          eq(externalPrices.status, "active")
         ));
     }
 
     // Activate the new price
-    await db.update(navlungoPrices)
+    await db.update(externalPrices)
       .set({
         status: "active",
         isVisibleToCustomers: true,
@@ -342,10 +342,10 @@ export async function approveBatch(
         approvedBy: adminUserId,
         updatedAt: new Date()
       })
-      .where(eq(navlungoPrices.id, price.id));
+      .where(eq(externalPrices.id, price.id));
 
     // Log the approval
-    await db.insert(navlungoPriceAuditLogs)
+    await db.insert(externalPriceAuditLogs)
       .values({
         priceId: price.id,
         action: "approved",
@@ -359,14 +359,14 @@ export async function approveBatch(
   }
 
   // Update batch status
-  await db.update(navlungoScrapeBatches)
+  await db.update(externalScrapeBatches)
     .set({
       status: "approved",
       approvedPrices: approvedCount,
       processedAt: new Date(),
       processedBy: adminUserId
     })
-    .where(eq(navlungoScrapeBatches.id, batchId));
+    .where(eq(externalScrapeBatches.id, batchId));
 
   console.log(`[ExternalPricing] Batch #${batchId} approved: ${approvedCount} prices activated`);
 
@@ -381,14 +381,14 @@ export async function rejectBatch(
   adminUserId: number,
   reason?: string
 ): Promise<void> {
-  await db.update(navlungoScrapeBatches)
+  await db.update(externalScrapeBatches)
     .set({
       status: "rejected",
       processedAt: new Date(),
       processedBy: adminUserId,
       notes: reason
     })
-    .where(eq(navlungoScrapeBatches.id, batchId));
+    .where(eq(externalScrapeBatches.id, batchId));
 
   console.log(`[ExternalPricing] Batch #${batchId} rejected`);
 }
@@ -401,17 +401,17 @@ export async function getActivePrices(filters?: {
   carrier?: string;
   minWeight?: number;
   maxWeight?: number;
-}): Promise<NavlungoPrice[]> {
+}): Promise<ExternalPrice[]> {
   let query = db.select()
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.status, "active"));
+    .from(externalPrices)
+    .where(eq(externalPrices.status, "active"));
 
   // Note: For dynamic filtering, we'd need to build the where clause dynamically
   // For now, we'll filter in memory for simplicity
   const prices = await query.orderBy(
-    asc(navlungoPrices.countryCode),
-    asc(navlungoPrices.weight),
-    asc(navlungoPrices.carrier)
+    asc(externalPrices.countryCode),
+    asc(externalPrices.weight),
+    asc(externalPrices.carrier)
   );
 
   // Apply filters in memory
@@ -437,27 +437,27 @@ export async function updatePrice(
   },
   adminUserId: number,
   reason?: string
-): Promise<NavlungoPrice> {
+): Promise<ExternalPrice> {
   // Get current price for audit log
   const [currentPrice] = await db.select()
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.id, priceId));
+    .from(externalPrices)
+    .where(eq(externalPrices.id, priceId));
 
   if (!currentPrice) {
     throw new Error("Price not found");
   }
 
   // Update price
-  const [updatedPrice] = await db.update(navlungoPrices)
+  const [updatedPrice] = await db.update(externalPrices)
     .set({
       ...updates,
       updatedAt: new Date()
     })
-    .where(eq(navlungoPrices.id, priceId))
+    .where(eq(externalPrices.id, priceId))
     .returning();
 
   // Log the update
-  await db.insert(navlungoPriceAuditLogs)
+  await db.insert(externalPriceAuditLogs)
     .values({
       priceId,
       action: "updated",
@@ -479,15 +479,15 @@ export async function deletePrice(
 ): Promise<void> {
   // Get current price for audit log
   const [currentPrice] = await db.select()
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.id, priceId));
+    .from(externalPrices)
+    .where(eq(externalPrices.id, priceId));
 
   if (!currentPrice) {
     throw new Error("Price not found");
   }
 
   // Log deletion before deleting
-  await db.insert(navlungoPriceAuditLogs)
+  await db.insert(externalPriceAuditLogs)
     .values({
       priceId,
       action: "deleted",
@@ -497,8 +497,8 @@ export async function deletePrice(
     });
 
   // Delete the price
-  await db.delete(navlungoPrices)
-    .where(eq(navlungoPrices.id, priceId));
+  await db.delete(externalPrices)
+    .where(eq(externalPrices.id, priceId));
 }
 
 // ============================================
@@ -508,10 +508,10 @@ export async function deletePrice(
 /**
  * Get all service settings
  */
-export async function getAllServiceSettings(): Promise<NavlungoServiceSetting[]> {
+export async function getAllServiceSettings(): Promise<ExternalServiceSetting[]> {
   return db.select()
-    .from(navlungoServiceSettings)
-    .orderBy(asc(navlungoServiceSettings.sortOrder), asc(navlungoServiceSettings.carrier));
+    .from(externalServiceSettings)
+    .orderBy(asc(externalServiceSettings.sortOrder), asc(externalServiceSettings.carrier));
 }
 
 /**
@@ -523,30 +523,30 @@ export async function upsertServiceSetting(
   displayName: string,
   isActive: boolean = true,
   sortOrder: number = 0
-): Promise<NavlungoServiceSetting> {
+): Promise<ExternalServiceSetting> {
   // Check if setting exists
   const [existing] = await db.select()
-    .from(navlungoServiceSettings)
+    .from(externalServiceSettings)
     .where(and(
-      eq(navlungoServiceSettings.carrier, carrier),
-      eq(navlungoServiceSettings.service, service)
+      eq(externalServiceSettings.carrier, carrier),
+      eq(externalServiceSettings.service, service)
     ));
 
   if (existing) {
     // Update existing
-    const [updated] = await db.update(navlungoServiceSettings)
+    const [updated] = await db.update(externalServiceSettings)
       .set({
         displayName,
         isActive,
         sortOrder,
         updatedAt: new Date()
       })
-      .where(eq(navlungoServiceSettings.id, existing.id))
+      .where(eq(externalServiceSettings.id, existing.id))
       .returning();
     return updated;
   } else {
     // Create new
-    const [created] = await db.insert(navlungoServiceSettings)
+    const [created] = await db.insert(externalServiceSettings)
       .values({
         carrier,
         service,
@@ -565,13 +565,13 @@ export async function upsertServiceSetting(
 export async function toggleServiceActive(
   settingId: number,
   isActive: boolean
-): Promise<NavlungoServiceSetting> {
-  const [updated] = await db.update(navlungoServiceSettings)
+): Promise<ExternalServiceSetting> {
+  const [updated] = await db.update(externalServiceSettings)
     .set({
       isActive,
       updatedAt: new Date()
     })
-    .where(eq(navlungoServiceSettings.id, settingId))
+    .where(eq(externalServiceSettings.id, settingId))
     .returning();
 
   return updated;
@@ -582,14 +582,14 @@ export async function toggleServiceActive(
  */
 export async function getCountriesWithPrices(): Promise<Array<{ countryCode: string; countryName: string; priceCount: number }>> {
   const result = await db.select({
-    countryCode: navlungoPrices.countryCode,
-    countryName: navlungoPrices.countryName,
+    countryCode: externalPrices.countryCode,
+    countryName: externalPrices.countryName,
     priceCount: sql<number>`count(*)`
   })
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.status, "active"))
-    .groupBy(navlungoPrices.countryCode, navlungoPrices.countryName)
-    .orderBy(asc(navlungoPrices.countryName));
+    .from(externalPrices)
+    .where(eq(externalPrices.status, "active"))
+    .groupBy(externalPrices.countryCode, externalPrices.countryName)
+    .orderBy(asc(externalPrices.countryName));
 
   return result.map(r => ({
     countryCode: r.countryCode,
@@ -602,10 +602,10 @@ export async function getCountriesWithPrices(): Promise<Array<{ countryCode: str
  * Get unique carriers with active prices
  */
 export async function getCarriersWithPrices(): Promise<string[]> {
-  const result = await db.selectDistinct({ carrier: navlungoPrices.carrier })
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.status, "active"))
-    .orderBy(asc(navlungoPrices.carrier));
+  const result = await db.selectDistinct({ carrier: externalPrices.carrier })
+    .from(externalPrices)
+    .where(eq(externalPrices.status, "active"))
+    .orderBy(asc(externalPrices.carrier));
 
   return result.map(r => r.carrier);
 }
@@ -621,20 +621,20 @@ export async function getPriceStatistics(): Promise<{
   lastUpdated: Date | null;
 }> {
   const [activeCount] = await db.select({ count: sql<number>`count(*)` })
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.status, "active"));
+    .from(externalPrices)
+    .where(eq(externalPrices.status, "active"));
 
   const [pendingCount] = await db.select({ count: sql<number>`count(*)` })
-    .from(navlungoPrices)
-    .where(eq(navlungoPrices.status, "pending"));
+    .from(externalPrices)
+    .where(eq(externalPrices.status, "pending"));
 
   const countries = await getCountriesWithPrices();
   const carriers = await getCarriersWithPrices();
 
-  const [lastBatch] = await db.select({ scrapedAt: navlungoScrapeBatches.scrapedAt })
-    .from(navlungoScrapeBatches)
-    .where(eq(navlungoScrapeBatches.status, "approved"))
-    .orderBy(desc(navlungoScrapeBatches.scrapedAt))
+  const [lastBatch] = await db.select({ scrapedAt: externalScrapeBatches.scrapedAt })
+    .from(externalScrapeBatches)
+    .where(eq(externalScrapeBatches.status, "approved"))
+    .orderBy(desc(externalScrapeBatches.scrapedAt))
     .limit(1);
 
   return {

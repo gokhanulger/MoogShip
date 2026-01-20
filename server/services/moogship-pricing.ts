@@ -10,7 +10,7 @@ import {
   type AFSPriceOption,
 } from "./afstransport";
 import { storage } from "../storage";
-import { calculateNavlungoPricing, getNavlungoPrices } from "./navlungo-pricing";
+import { calculateExternalPricing, getExternalPrices } from "./external-pricing";
 
 function getDefaultPostalCode(countryCode: string): string {
   const codes: Record<string, string> = {
@@ -1364,33 +1364,33 @@ function generateFallbackPricing(): MoogShipPriceResponse {
 }
 
 // ============================================
-// NAVLUNGO INTEGRATION
+// EXTERNAL PRICING INTEGRATION
 // ============================================
 
 /**
- * Check if Navlungo prices are available for a specific route
+ * Check if external prices are available for a specific route
  */
-export async function hasNavlungoPrices(
+export async function hasExternalPrices(
   countryCode: string,
   weight: number
 ): Promise<boolean> {
   try {
-    const prices = await getNavlungoPrices(countryCode, weight);
+    const prices = await getExternalPrices(countryCode, weight);
     return prices.length > 0;
   } catch (error) {
-    console.error("[MoogShip] Error checking Navlungo prices:", error);
+    console.error("[MoogShip] Error checking external prices:", error);
     return false;
   }
 }
 
 /**
- * Calculate pricing with Navlungo as primary source, falling back to Shipentegra
+ * Calculate pricing with external prices as primary source, falling back to Shipentegra
  *
  * Priority:
- * 1. Check Navlungo prices first
- * 2. If no Navlungo prices available, use existing Shipentegra/Aramex pricing
+ * 1. Check external prices first
+ * 2. If no external prices available, use existing Shipentegra/Aramex pricing
  *
- * @param useNavlungo - Force Navlungo usage (default: true when available)
+ * @param useExternal - Force external pricing usage (default: true when available)
  */
 export async function calculateCombinedPricing(
   packageLength: number,
@@ -1401,7 +1401,7 @@ export async function calculateCombinedPricing(
   userMultiplier: number = 1.0,
   skipMultiplier: boolean = false,
   userId?: number,
-  useNavlungo: boolean = true
+  useExternal: boolean = true
 ): Promise<MoogShipPriceResponse> {
   const countryCode = normalizeCountryCode(receiverCountry);
 
@@ -1409,15 +1409,15 @@ export async function calculateCombinedPricing(
   const volumetricWeight = (packageLength * packageWidth * packageHeight) / 5000;
   const chargeableWeight = Math.max(packageWeight, volumetricWeight);
 
-  console.log(`[MoogShip] Combined pricing for ${countryCode}, ${chargeableWeight.toFixed(2)}kg (useNavlungo: ${useNavlungo})`);
+  console.log(`[MoogShip] Combined pricing for ${countryCode}, ${chargeableWeight.toFixed(2)}kg (useExternal: ${useExternal})`);
 
-  // Check Navlungo first if enabled
-  if (useNavlungo) {
-    const navlungoAvailable = await hasNavlungoPrices(countryCode, chargeableWeight);
+  // Check external prices first if enabled
+  if (useExternal) {
+    const externalAvailable = await hasExternalPrices(countryCode, chargeableWeight);
 
-    if (navlungoAvailable) {
-      console.log(`[MoogShip] Using Navlungo prices for ${countryCode}`);
-      const navlungoResult = await calculateNavlungoPricing(
+    if (externalAvailable) {
+      console.log(`[MoogShip] Using external prices for ${countryCode}`);
+      const externalResult = await calculateExternalPricing(
         packageLength,
         packageWidth,
         packageHeight,
@@ -1428,14 +1428,14 @@ export async function calculateCombinedPricing(
         userId
       );
 
-      if (navlungoResult.success && navlungoResult.options.length > 0) {
+      if (externalResult.success && externalResult.options.length > 0) {
         return {
-          ...navlungoResult,
+          ...externalResult,
           rawApiResponses: {
-            navlungo: {
+            external: {
               success: true,
-              optionsCount: navlungoResult.options.length,
-              options: navlungoResult.options
+              optionsCount: externalResult.options.length,
+              options: externalResult.options
             },
             timestamp: new Date().toISOString(),
             requestParams: {
@@ -1450,7 +1450,7 @@ export async function calculateCombinedPricing(
       }
     }
 
-    console.log(`[MoogShip] No Navlungo prices for ${countryCode}, falling back to Shipentegra`);
+    console.log(`[MoogShip] No external prices for ${countryCode}, falling back to Shipentegra`);
   }
 
   // Fall back to existing pricing (Shipentegra + Aramex)
@@ -1468,12 +1468,12 @@ export async function calculateCombinedPricing(
 
 /**
  * Get pricing source for a specific route
- * Returns 'navlungo' if Navlungo prices available, 'shipentegra' otherwise
+ * Returns 'external' if external prices available, 'shipentegra' otherwise
  */
 export async function getPricingSource(
   countryCode: string,
   weight: number
-): Promise<'navlungo' | 'shipentegra'> {
-  const hasNavlungo = await hasNavlungoPrices(countryCode, weight);
-  return hasNavlungo ? 'navlungo' : 'shipentegra';
+): Promise<'external' | 'shipentegra'> {
+  const hasExternal = await hasExternalPrices(countryCode, weight);
+  return hasExternal ? 'external' : 'shipentegra';
 }
