@@ -7,7 +7,7 @@
  * - Configure service visibility settings
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import Layout from "@/components/layout";
@@ -20,10 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, XCircle, Package, Globe, Truck, Settings, RefreshCcw, Eye, EyeOff, Trash2, Edit } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { Loader2, CheckCircle2, XCircle, Package, Globe, Settings, RefreshCcw, Eye, EyeOff, Trash2, Edit } from "lucide-react";
 
 // Types
 interface ExternalBatch {
@@ -112,57 +111,55 @@ export default function AdminExternalPrices() {
 
   // Get price statistics
   const { data: stats, isLoading: statsLoading } = useQuery<{ success: boolean; stats: PriceStats }>({
-    queryKey: ["pricing-stats"],
-    queryFn: () => apiRequest("/api/external-pricing/admin/stats"),
+    queryKey: ["/api/external-pricing/admin/stats"],
     staleTime: 30000
   });
 
   // Get batches
   const { data: batchesData, isLoading: batchesLoading } = useQuery<{ success: boolean; batches: ExternalBatch[] }>({
-    queryKey: ["pricing-batches"],
-    queryFn: () => apiRequest("/api/external-pricing/admin/batches"),
+    queryKey: ["/api/external-pricing/admin/batches"],
     enabled: activeTab === "batches"
   });
 
   // Get batch prices when a batch is selected
   const { data: batchPricesData, isLoading: batchPricesLoading } = useQuery<{ success: boolean; prices: ExternalPrice[] }>({
-    queryKey: ["pricing-batch-prices", selectedBatchId],
-    queryFn: () => apiRequest(`/api/external-pricing/admin/batches/${selectedBatchId}/prices`),
+    queryKey: [`/api/external-pricing/admin/batches/${selectedBatchId}/prices`],
     enabled: !!selectedBatchId
   });
 
   // Get active prices
   const { data: pricesData, isLoading: pricesLoading } = useQuery<{ success: boolean; prices: ExternalPrice[] }>({
-    queryKey: ["pricing-prices", priceFilters],
-    queryFn: () => {
+    queryKey: ["/api/external-pricing/admin/prices", priceFilters],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (priceFilters.countryCode) params.set("countryCode", priceFilters.countryCode);
       if (priceFilters.carrier) params.set("carrier", priceFilters.carrier);
       if (priceFilters.minWeight) params.set("minWeight", priceFilters.minWeight);
       if (priceFilters.maxWeight) params.set("maxWeight", priceFilters.maxWeight);
-      return apiRequest(`/api/external-pricing/admin/prices?${params.toString()}`);
+      const res = await fetch(`/api/external-pricing/admin/prices?${params.toString()}`, {
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to fetch prices");
+      return res.json();
     },
     enabled: activeTab === "prices"
   });
 
   // Get service settings
   const { data: servicesData, isLoading: servicesLoading } = useQuery<{ success: boolean; settings: ExternalServiceSetting[] }>({
-    queryKey: ["pricing-services"],
-    queryFn: () => apiRequest("/api/external-pricing/admin/services"),
+    queryKey: ["/api/external-pricing/admin/services"],
     enabled: activeTab === "services"
   });
 
   // Get countries
   const { data: countriesData } = useQuery<{ success: boolean; countries: Country[] }>({
-    queryKey: ["pricing-countries"],
-    queryFn: () => apiRequest("/api/external-pricing/admin/countries"),
+    queryKey: ["/api/external-pricing/admin/countries"],
     enabled: activeTab === "prices"
   });
 
   // Get carriers
   const { data: carriersData } = useQuery<{ success: boolean; carriers: string[] }>({
-    queryKey: ["pricing-carriers"],
-    queryFn: () => apiRequest("/api/external-pricing/admin/carriers"),
+    queryKey: ["/api/external-pricing/admin/carriers"],
     enabled: activeTab === "prices"
   });
 
@@ -172,19 +169,24 @@ export default function AdminExternalPrices() {
 
   // Approve batch
   const approveBatchMutation = useMutation({
-    mutationFn: (batchId: number) =>
-      apiRequest(`/api/external-pricing/admin/batches/${batchId}/approve`, {
+    mutationFn: async (batchId: number) => {
+      const res = await fetch(`/api/external-pricing/admin/batches/${batchId}/approve`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ replaceExisting: true })
-      }),
+      });
+      if (!res.ok) throw new Error("Failed to approve batch");
+      return res.json();
+    },
     onSuccess: (data) => {
       toast({
         title: "Batch Approved",
         description: `${data.approvedCount} prices activated successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ["pricing-batches"] });
-      queryClient.invalidateQueries({ queryKey: ["pricing-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["pricing-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/batches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/prices"] });
       setSelectedBatchId(null);
     },
     onError: (error: any) => {
@@ -198,17 +200,22 @@ export default function AdminExternalPrices() {
 
   // Reject batch
   const rejectBatchMutation = useMutation({
-    mutationFn: ({ batchId, reason }: { batchId: number; reason?: string }) =>
-      apiRequest(`/api/external-pricing/admin/batches/${batchId}/reject`, {
+    mutationFn: async ({ batchId, reason }: { batchId: number; reason?: string }) => {
+      const res = await fetch(`/api/external-pricing/admin/batches/${batchId}/reject`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ reason })
-      }),
+      });
+      if (!res.ok) throw new Error("Failed to reject batch");
+      return res.json();
+    },
     onSuccess: () => {
       toast({
         title: "Batch Rejected",
         description: "Batch has been rejected",
       });
-      queryClient.invalidateQueries({ queryKey: ["pricing-batches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/batches"] });
       setSelectedBatchId(null);
     },
     onError: (error: any) => {
@@ -222,17 +229,22 @@ export default function AdminExternalPrices() {
 
   // Update price
   const updatePriceMutation = useMutation({
-    mutationFn: ({ priceId, updates }: { priceId: number; updates: any }) =>
-      apiRequest(`/api/external-pricing/admin/prices/${priceId}`, {
+    mutationFn: async ({ priceId, updates }: { priceId: number; updates: any }) => {
+      const res = await fetch(`/api/external-pricing/admin/prices/${priceId}`, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(updates)
-      }),
+      });
+      if (!res.ok) throw new Error("Failed to update price");
+      return res.json();
+    },
     onSuccess: () => {
       toast({
         title: "Price Updated",
         description: "Price has been updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["pricing-prices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/prices"] });
       setEditingPrice(null);
     },
     onError: (error: any) => {
@@ -246,17 +258,21 @@ export default function AdminExternalPrices() {
 
   // Delete price
   const deletePriceMutation = useMutation({
-    mutationFn: (priceId: number) =>
-      apiRequest(`/api/external-pricing/admin/prices/${priceId}`, {
-        method: "DELETE"
-      }),
+    mutationFn: async (priceId: number) => {
+      const res = await fetch(`/api/external-pricing/admin/prices/${priceId}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to delete price");
+      return res.json();
+    },
     onSuccess: () => {
       toast({
         title: "Price Deleted",
         description: "Price has been deleted",
       });
-      queryClient.invalidateQueries({ queryKey: ["pricing-prices"] });
-      queryClient.invalidateQueries({ queryKey: ["pricing-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/prices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/stats"] });
     },
     onError: (error: any) => {
       toast({
@@ -269,17 +285,22 @@ export default function AdminExternalPrices() {
 
   // Toggle service
   const toggleServiceMutation = useMutation({
-    mutationFn: ({ settingId, isActive }: { settingId: number; isActive: boolean }) =>
-      apiRequest(`/api/external-pricing/admin/services/${settingId}`, {
+    mutationFn: async ({ settingId, isActive }: { settingId: number; isActive: boolean }) => {
+      const res = await fetch(`/api/external-pricing/admin/services/${settingId}`, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ isActive })
-      }),
+      });
+      if (!res.ok) throw new Error("Failed to update service");
+      return res.json();
+    },
     onSuccess: () => {
       toast({
         title: "Service Updated",
         description: "Service visibility has been updated",
       });
-      queryClient.invalidateQueries({ queryKey: ["pricing-services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/services"] });
     },
     onError: (error: any) => {
       toast({
@@ -292,17 +313,22 @@ export default function AdminExternalPrices() {
 
   // Create service setting
   const createServiceMutation = useMutation({
-    mutationFn: (data: typeof newServiceSetting) =>
-      apiRequest("/api/external-pricing/admin/services", {
+    mutationFn: async (data: typeof newServiceSetting) => {
+      const res = await fetch("/api/external-pricing/admin/services", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data)
-      }),
+      });
+      if (!res.ok) throw new Error("Failed to create service");
+      return res.json();
+    },
     onSuccess: () => {
       toast({
         title: "Service Created",
         description: "New service setting has been created",
       });
-      queryClient.invalidateQueries({ queryKey: ["pricing-services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/services"] });
       setNewServiceSetting({
         carrier: "",
         service: "",
