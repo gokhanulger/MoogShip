@@ -731,7 +731,7 @@ export default function Sidebar() {
               isExpanded ? 'px-4 py-4' : 'px-2 py-2'
             }`}>
               <Link href="/auth" className={`text-blue-500 hover:underline ${isExpanded ? 'text-sm' : 'text-xs'}`}>
-                {isExpanded ? (typeof t('auth.login', 'Login') === 'object' ? 'Login' : t('auth.login', 'Login')) : '→'}
+                {isExpanded ? t('auth.login.tab', 'Login') : '→'}
               </Link>
             </div>
           )}
