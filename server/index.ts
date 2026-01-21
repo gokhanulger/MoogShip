@@ -56,10 +56,11 @@ app.use('/api/', apiLimiter);
 
 // Redirect www/apex authenticated routes to app.moogship.com
 // Marketing pages stay on www, auth and app pages go to app subdomain
+// NOTE: Do NOT redirect /api/ - this causes CORS issues
 app.use((req, res, next) => {
   const host = req.get('host') || '';
   if (host === 'www.moogship.com' || host === 'moogship.com') {
-    // Routes that should redirect to app.moogship.com
+    // Routes that should redirect to app.moogship.com (page navigation only, NOT API)
     const appRoutes = [
       '/auth',
       '/mobile-auth',
@@ -78,8 +79,7 @@ app.use((req, res, next) => {
       '/advisor',
       '/admin',
       '/manage',
-      '/reports',
-      '/api/'  // All API calls should go to app
+      '/reports'
     ];
 
     const shouldRedirect = appRoutes.some(route => req.path.startsWith(route));
