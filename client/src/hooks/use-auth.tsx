@@ -729,9 +729,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("[AUTH] AGGRESSIVE CLEAR: Clearing React Query cache completely...");
       queryClient.clear(); // Most aggressive - clears everything
       
-      // STEP 2: Clear ALL localStorage items except UI preferences
+      // STEP 2: Clear ALL localStorage items except UI preferences and user change detection
       console.log("[AUTH] Clearing all localStorage except preferences...");
-      const keysToPreserve = ['moogship_theme', 'moogship_language'];
+      const keysToPreserve = ['moogship_theme', 'moogship_language', 'moogship_last_user_id'];
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
         if (!keysToPreserve.includes(key)) {
@@ -1005,7 +1005,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear();
       
       // STEP 3: Clear ALL localStorage items that might contain user data
-      const keysToPreserve = ['moogship_theme', 'moogship_language']; // Preserve only UI preferences
+      // CRITICAL: Keep moogship_last_user_id to detect user changes on next login
+      const keysToPreserve = ['moogship_theme', 'moogship_language', 'moogship_last_user_id'];
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
         if (!keysToPreserve.includes(key)) {

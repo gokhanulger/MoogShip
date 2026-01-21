@@ -387,6 +387,53 @@ function Router() {
 // Import mobile wrapper
 import { MobileAppWrapper } from "./components/mobile-app-wrapper";
 import { Toaster } from "@/components/ui/toaster";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect, useRef } from "react";
+
+// CRITICAL: Detect user changes and force hard reload to prevent stale data
+function UserChangeDetector() {
+  const { user } = useAuth();
+  const lastUserIdRef = useRef<number | null>(null);
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    // Skip on initial mount - we only want to detect CHANGES
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      // Store initial user ID
+      if (user?.id) {
+        lastUserIdRef.current = user.id;
+        localStorage.setItem('moogship_last_user_id', user.id.toString());
+      }
+      return;
+    }
+
+    // If user exists and is different from last known user
+    if (user?.id) {
+      const storedUserId = localStorage.getItem('moogship_last_user_id');
+      const lastUserId = storedUserId ? parseInt(storedUserId) : lastUserIdRef.current;
+
+      if (lastUserId && lastUserId !== user.id) {
+        console.log(`[USER CHANGE] Detected user change from ${lastUserId} to ${user.id} - forcing reload`);
+
+        // Update stored user ID
+        localStorage.setItem('moogship_last_user_id', user.id.toString());
+
+        // Force hard reload to clear all cached state
+        const cacheBust = Date.now();
+        const currentPath = window.location.pathname;
+        window.location.href = `${currentPath}?_userchange=${cacheBust}`;
+        return;
+      }
+
+      // Update last known user
+      lastUserIdRef.current = user.id;
+      localStorage.setItem('moogship_last_user_id', user.id.toString());
+    }
+  }, [user?.id]);
+
+  return null; // This component doesn't render anything
+}
 
 function App() {
   // Use wouter's useLocation hook to reactively track route changes
@@ -428,13 +475,16 @@ function App() {
     <MobileAppWrapper>
       <SidebarProvider>
         <AuthProvider>
-          {/* We always render the Router, even for email verification 
+          {/* Detect user changes and force reload if needed */}
+          <UserChangeDetector />
+
+          {/* We always render the Router, even for email verification
               This works because the EmailVerification component doesn't use auth */}
           <Router />
-          
+
           {/* Only render ConditionalUI for authenticated pages */}
           {!isPublicPage && <ConditionalUI />}
-          
+
 
           {/* Always render the Toaster for notifications */}
           <Toaster />
