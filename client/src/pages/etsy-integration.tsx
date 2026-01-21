@@ -740,10 +740,20 @@ function EtsyIntegrationContent({ user }: { user: any }) {
 
       const createdShipment = await response.json();
       console.log('[Etsy] Shipment created successfully:', createdShipment);
-      
-      // Store the shipment ID with the order
+
+      // Store the shipment ID with the order (local state)
       updateOrderDetail(order.id, 'shipmentId', createdShipment.id);
-      
+
+      // Update the Etsy order in database with the shipment ID
+      try {
+        await apiRequest('PATCH', `/api/etsy/orders/${order.id}`, {
+          moogshipShipmentId: createdShipment.id
+        });
+        console.log('[Etsy] Updated order with shipment ID in database');
+      } catch (updateError) {
+        console.error('[Etsy] Failed to update order with shipment ID:', updateError);
+      }
+
       toast({
         title: "Success",
         description: user?.role === 'admin' ? 

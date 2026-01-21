@@ -374,6 +374,33 @@ router.get("/orders/unshipped", authenticateToken, async (req, res) => {
   }
 });
 
+// Update Etsy order (e.g., to link with MoogShip shipment)
+router.patch("/orders/:id", authenticateToken, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const userId = req.user!.id;
+    const updateData = req.body;
+
+    // Verify the order belongs to this user
+    const order = await storage.getEtsyOrder(orderId);
+    if (!order || order.userId !== userId) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    // Update the order
+    const updated = await storage.updateEtsyOrder(orderId, updateData);
+    if (!updated) {
+      return res.status(500).json({ error: "Failed to update order" });
+    }
+
+    console.log(`[Etsy] Order ${orderId} updated with:`, updateData);
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating Etsy order:", error);
+    res.status(500).json({ error: "Failed to update order" });
+  }
+});
+
 // Test pricing endpoint for debugging
 router.get("/test-pricing", async (req, res) => {
   try {
