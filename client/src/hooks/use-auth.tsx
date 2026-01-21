@@ -38,10 +38,48 @@ function saveUserToStorage(user: any) {
   }
 }
 
+// Clear user data WITHOUT setting logout marker - use for login preparation
+function clearUserDataForLogin() {
+  console.log('[STORAGE] Clearing user data for new login (no logout marker)');
+
+  // Clear all known authentication storage keys
+  const keysToRemove = [
+    AUTH_STORAGE_KEY,
+    SESSION_TIMESTAMP_KEY,
+    MOBILE_SESSION_KEY,
+    'moogship_auth_user',
+    'moogship_session_timestamp',
+    'moogship_mobile_session',
+    'moogship_temp_user',
+    'moogship_session_user',
+    'mobile_safari_login_success',
+    'mobile_safari_authenticated',
+    'mobile_login_success',
+    'mobile_login_failed',
+    'mobile_login_error',
+    'user',
+    'auth_user',
+    'session',
+    'sessionId',
+    // Also clear logout marker so fresh login works
+    'moogship_logout_marker'
+  ];
+
+  keysToRemove.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch (e) {
+      console.error(`Error removing ${key}:`, e);
+    }
+  });
+}
+
 function clearUserFromStorage() {
   console.log('[STORAGE] AGGRESSIVE CLEAR: Clearing all authentication data from storage');
-  
+
   // CRITICAL: Set a logout marker to invalidate any cached user data
+  // Only set this for actual logout, not for login preparation
   try {
     localStorage.setItem('moogship_logout_marker', Date.now().toString());
     sessionStorage.setItem('moogship_logout_marker', Date.now().toString());
@@ -749,7 +787,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLast401At(null);
       setConfirmedUnauthorized(false);
       setLastLoginAt(null);
-      clearUserFromStorage();
+      clearUserDataForLogin(); // Use login-specific clear (no logout marker)
       
       // STEP 5: Clear service worker caches
       if ('caches' in window) {
