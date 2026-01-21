@@ -346,6 +346,48 @@ export default function AdminExternalPrices() {
     }
   });
 
+  // Bulk approve all pending batches
+  const [bulkApproving, setBulkApproving] = useState(false);
+  const handleBulkApprove = async () => {
+    const pendingBatches = batchesData?.batches?.filter(b => b.status === "pending") || [];
+    if (pendingBatches.length === 0) {
+      toast({ title: "Bilgi", description: "Onaylanacak batch yok" });
+      return;
+    }
+
+    setBulkApproving(true);
+    let approved = 0;
+    let failed = 0;
+
+    for (const batch of pendingBatches) {
+      try {
+        const res = await fetch(`/api/external-pricing/admin/batches/${batch.id}/approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ replaceExisting: true })
+        });
+        if (res.ok) {
+          approved++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    setBulkApproving(false);
+    queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/batches"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/stats"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/external-pricing/admin/prices"] });
+
+    toast({
+      title: "Toplu Onay Tamamlandı",
+      description: `${approved} batch onaylandı${failed > 0 ? `, ${failed} başarısız` : ""}`,
+    });
+  };
+
   // ============================================
   // HELPERS
   // ============================================
@@ -445,9 +487,25 @@ export default function AdminExternalPrices() {
           {/* Batches Tab */}
           <TabsContent value="batches" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Scrape Batch'leri</CardTitle>
-                <CardDescription>Chrome extension'dan gelen fiyat paketlerini inceleyin ve onaylayın</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Scrape Batch'leri</CardTitle>
+                  <CardDescription>Chrome extension'dan gelen fiyat paketlerini inceleyin ve onaylayın</CardDescription>
+                </div>
+                {batchesData?.batches?.some(b => b.status === "pending") && (
+                  <Button
+                    onClick={handleBulkApprove}
+                    disabled={bulkApproving}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {bulkApproving ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    Tümünü Onayla ({batchesData?.batches?.filter(b => b.status === "pending").length})
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {batchesLoading ? (
