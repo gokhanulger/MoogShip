@@ -534,10 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.setPasswordResetToken(user.id, hashedToken, expires);
       
       // Generate the reset URL
-      const baseUrl = process.env.APP_URL || 
-                     (process.env.REPL_SLUG && process.env.REPL_OWNER 
-                       ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-                       : 'http://localhost:5000');
+      const baseUrl = process.env.APP_URL || 'https://app.moogship.com';
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
       
       // Send the reset email
@@ -12535,7 +12532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           DATABASE_URL_hostname: process.env.DATABASE_URL
             ? new URL(process.env.DATABASE_URL).hostname
             : "undefined",
-          REPL_ID: process.env.REPL_ID || "undefined",
+          APP_URL: process.env.APP_URL || "undefined",
         },
         storage_users_count: userCount.length,
         raw_sql_count: rawCount.rows[0]?.count,
@@ -12549,7 +12546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         environment: {
           NODE_ENV: process.env.NODE_ENV,
           DATABASE_URL_exists: !!process.env.DATABASE_URL,
-          REPL_ID: process.env.REPL_ID || "undefined",
+          APP_URL: process.env.APP_URL || "undefined",
         },
       });
     }

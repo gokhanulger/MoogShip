@@ -89,7 +89,7 @@ export default function DownloadExtension() {
               </div>
               <div className="space-y-1 mt-2">
                 <p className="text-sm"><strong>API URL:</strong></p>
-                <code className="block bg-background p-2 rounded text-xs break-all">https://64a16594-abd1-49b2-9383-39620759d013-00-12hpoujf36yq8.worf.replit.dev/api/etsy-import/import</code>
+                <code className="block bg-background p-2 rounded text-xs break-all">https://app.moogship.com/api/etsy-import/import</code>
               </div>
             </div>
             <ol className="list-decimal list-inside space-y-2 text-sm">

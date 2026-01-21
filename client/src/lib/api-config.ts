@@ -23,13 +23,13 @@ export const getApiBaseUrl = () => {
                      window.location.protocol === 'http:';
   
   if (isSimulator) {
-    // For iOS simulator, always use the full Replit URL
-    return 'https://64a16594-abd1-49b2-9383-39620759d013-00-12hpoujf36yq8.worf.replit.dev';
+    // For iOS simulator, always use the full production URL
+    return 'https://app.moogship.com';
   }
   
   if (isMobileEnvironment()) {
     // For real mobile devices, use the current deployment URL
-    return 'https://64a16594-abd1-49b2-9383-39620759d013-00-12hpoujf36yq8.worf.replit.dev';
+    return 'https://app.moogship.com';
   }
   
   // For web, use relative URLs (which work with the current server)

@@ -34,7 +34,7 @@ export const createConnectionPool = (): { pool: Pool, db: ReturnType<typeof driz
   console.log('[DB] Creating connection pool with DATABASE_URL length:', databaseUrl?.length);
   console.log('[DB] DATABASE_URL hostname:', databaseUrl ? new URL(databaseUrl).hostname : 'undefined');
   console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
-  console.log('[DB] REPL_ID:', process.env.REPL_ID || 'undefined');
+  console.log('[DB] APP_URL:', process.env.APP_URL || 'undefined');
   
   const pool = new Pool({ connectionString: databaseUrl });
   console.log('[DB] Drizzle ORM initialized directly');

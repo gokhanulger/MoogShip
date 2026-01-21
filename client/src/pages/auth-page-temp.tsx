@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ResendVerification } from "@/components/resend-verification";
-import moogshipLogo from "@/assets/moogship-logo.png.jpeg";
+import moogshipLogo from "@/assets/moogship-logo.jpg";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { apiFetch } from "@/lib/api-config";

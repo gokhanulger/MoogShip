@@ -5,7 +5,7 @@
  */
 
 import { Request, Response } from "express";
-import * as external-pricingPricingService from "../services/external-pricing";
+import * as externalPricingService from "../services/external-pricing";
 
 // ============================================
 // CHROME EXTENSION ENDPOINTS
@@ -28,7 +28,7 @@ export async function importPricesBatch(req: Request, res: Response) {
 
     console.log(`[External] Receiving batch import: ${prices.length} prices from ${source}`);
 
-    const result = await external-pricingPricingService.createScrapeBatch(prices, source);
+    const result = await externalPricingService.createScrapeBatch(prices, source);
 
     res.json({
       success: true,
@@ -61,7 +61,7 @@ export async function getBatches(req: Request, res: Response) {
     const status = req.query.status as string;
 
     if (status === "pending") {
-      const batches = await external-pricingPricingService.getPendingBatches();
+      const batches = await externalPricingService.getPendingBatches();
       return res.json({
         success: true,
         batches,
@@ -69,7 +69,7 @@ export async function getBatches(req: Request, res: Response) {
       });
     }
 
-    const result = await external-pricingPricingService.getBatches(limit, offset);
+    const result = await externalPricingService.getBatches(limit, offset);
     res.json({
       success: true,
       batches: result.batches,
@@ -100,7 +100,7 @@ export async function getBatchPrices(req: Request, res: Response) {
       });
     }
 
-    const prices = await external-pricingPricingService.getBatchPrices(batchId);
+    const prices = await externalPricingService.getBatchPrices(batchId);
 
     res.json({
       success: true,
@@ -140,7 +140,7 @@ export async function approveBatch(req: Request, res: Response) {
       });
     }
 
-    const result = await external-pricingPricingService.approveBatch(
+    const result = await externalPricingService.approveBatch(
       batchId,
       req.user.id,
       replaceExisting
@@ -184,7 +184,7 @@ export async function rejectBatch(req: Request, res: Response) {
       });
     }
 
-    await external-pricingPricingService.rejectBatch(batchId, req.user.id, reason);
+    await externalPricingService.rejectBatch(batchId, req.user.id, reason);
 
     res.json({
       success: true,
@@ -217,7 +217,7 @@ export async function getPrices(req: Request, res: Response) {
       maxWeight: req.query.maxWeight ? parseFloat(req.query.maxWeight as string) : undefined
     };
 
-    const prices = await external-pricingPricingService.getActivePrices(filters);
+    const prices = await externalPricingService.getActivePrices(filters);
 
     res.json({
       success: true,
@@ -263,7 +263,7 @@ export async function updatePrice(req: Request, res: Response) {
     if (status !== undefined) updates.status = status;
     if (isVisibleToCustomers !== undefined) updates.isVisibleToCustomers = isVisibleToCustomers;
 
-    const updatedPrice = await external-pricingPricingService.updatePrice(
+    const updatedPrice = await externalPricingService.updatePrice(
       priceId,
       updates,
       req.user.id,
@@ -306,7 +306,7 @@ export async function deletePrice(req: Request, res: Response) {
       });
     }
 
-    await external-pricingPricingService.deletePrice(priceId, req.user.id);
+    await externalPricingService.deletePrice(priceId, req.user.id);
 
     res.json({
       success: true,
@@ -332,7 +332,7 @@ export async function deletePrice(req: Request, res: Response) {
  */
 export async function getServiceSettings(req: Request, res: Response) {
   try {
-    const settings = await external-pricingPricingService.getAllServiceSettings();
+    const settings = await externalPricingService.getAllServiceSettings();
 
     res.json({
       success: true,
@@ -363,7 +363,7 @@ export async function upsertServiceSetting(req: Request, res: Response) {
       });
     }
 
-    const setting = await external-pricingPricingService.upsertServiceSetting(
+    const setting = await externalPricingService.upsertServiceSetting(
       carrier,
       service,
       displayName,
@@ -408,7 +408,7 @@ export async function toggleServiceSetting(req: Request, res: Response) {
       });
     }
 
-    const setting = await external-pricingPricingService.toggleServiceActive(settingId, isActive);
+    const setting = await externalPricingService.toggleServiceActive(settingId, isActive);
 
     res.json({
       success: true,
@@ -434,7 +434,7 @@ export async function toggleServiceSetting(req: Request, res: Response) {
  */
 export async function getStatistics(req: Request, res: Response) {
   try {
-    const stats = await external-pricingPricingService.getPriceStatistics();
+    const stats = await externalPricingService.getPriceStatistics();
 
     res.json({
       success: true,
@@ -456,7 +456,7 @@ export async function getStatistics(req: Request, res: Response) {
  */
 export async function getCountries(req: Request, res: Response) {
   try {
-    const countries = await external-pricingPricingService.getCountriesWithPrices();
+    const countries = await externalPricingService.getCountriesWithPrices();
 
     res.json({
       success: true,
@@ -478,7 +478,7 @@ export async function getCountries(req: Request, res: Response) {
  */
 export async function getCarriers(req: Request, res: Response) {
   try {
-    const carriers = await external-pricingPricingService.getCarriersWithPrices();
+    const carriers = await externalPricingService.getCarriersWithPrices();
 
     res.json({
       success: true,

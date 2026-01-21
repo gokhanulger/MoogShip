@@ -24,7 +24,7 @@ router.get("/auth-test-public", async (req, res) => {
       url: req.url,
       host: req.headers.host,
       forwardedHost: req.headers['x-forwarded-host'],
-      replitDeployment: process.env.REPLIT_DEPLOYMENT,
+      appUrl: process.env.APP_URL,
       userAgent: req.headers['user-agent'],
       cookie: req.headers.cookie ? 'present' : 'missing',
       cookiePreview: req.headers.cookie?.substring(0, 200) + '...'
@@ -62,7 +62,7 @@ router.get("/auth-test-public", async (req, res) => {
       authentication: authResult,
       environment: {
         NODE_ENV: process.env.NODE_ENV,
-        REPLIT_DEPLOYMENT: process.env.REPLIT_DEPLOYMENT,
+        APP_URL: process.env.APP_URL,
         host: req.headers.host,
         forwardedHost: req.headers['x-forwarded-host']
       }
@@ -86,7 +86,7 @@ router.get("/database-diagnostics-public", async (req, res) => {
       DATABASE_URL_exists: !!process.env.DATABASE_URL,
       DATABASE_URL_length: process.env.DATABASE_URL?.length,
       DATABASE_URL_hostname: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).hostname : 'undefined',
-      REPL_ID: process.env.REPL_ID || 'undefined'
+      APP_URL: process.env.APP_URL || 'undefined'
     });
 
     // Test raw SQL query with db
@@ -122,7 +122,7 @@ router.get("/database-diagnostics-public", async (req, res) => {
         DATABASE_URL_exists: !!process.env.DATABASE_URL,
         DATABASE_URL_length: process.env.DATABASE_URL?.length,
         DATABASE_URL_hostname: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).hostname : 'undefined',
-        REPL_ID: process.env.REPL_ID || 'undefined'
+        APP_URL: process.env.APP_URL || 'undefined'
       },
       database_tests: {
         total_users: rawCount.rows[0]?.count,
@@ -153,7 +153,7 @@ router.get("/database-diagnostics-public", async (req, res) => {
       environment: {
         NODE_ENV: process.env.NODE_ENV,
         DATABASE_URL_exists: !!process.env.DATABASE_URL,
-        REPL_ID: process.env.REPL_ID || 'undefined'
+        APP_URL: process.env.APP_URL || 'undefined'
       }
     });
   }
@@ -206,7 +206,7 @@ router.use((req, res, next) => {
   }
   
   // Production deployment fix: Allow access for admin users with secure checks
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT;
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.APP_URL?.includes('moogship.com');
   if (isProduction) {
     console.log('[BILLING AUTH] Production deployment - allowing admin access');
     req.user = {

@@ -1,4 +1,4 @@
-import moogshipLogo from '@/assets/moogship-logo.png.jpeg';
+import moogshipLogo from '@/assets/moogship-logo.jpg';
 
 // Utility function to reset video for new session (useful for logout)
 export const resetSidebarVideo = () => {

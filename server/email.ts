@@ -606,7 +606,7 @@ ${pickupData.pickupNotes ? `Notes: ${pickupData.pickupNotes}` : ''}
 
 export async function sendPasswordResetEmail(user: User, resetToken: string, resetUrl?: string): Promise<{success: boolean, error?: any}> {
   // Use provided resetUrl or generate a fallback
-  const finalResetUrl = resetUrl || `${process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+  const finalResetUrl = resetUrl || `${process.env.APP_URL || 'https://app.moogship.com'}/reset-password?token=${resetToken}`;
   
   const htmlContent = `
     <!DOCTYPE html>

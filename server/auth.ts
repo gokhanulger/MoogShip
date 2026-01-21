@@ -75,23 +75,15 @@ export function setupAuth(app: Express) {
   }
 
   // Enhanced production detection for deployed environments
-  const isProduction = process.env.NODE_ENV === 'production' || 
-                       process.env.REPLIT_DEPLOYMENT === '1' ||
+  const isProduction = process.env.NODE_ENV === 'production' ||
                        process.env.APP_URL?.includes('moogship.com');
-  const isReplit = process.env.REPLIT || process.env.REPL_ID;
-  const isDeployed = process.env.APP_URL?.includes('moogship.com') || 
-                     (typeof window !== 'undefined' && window.location?.hostname?.includes('moogship.com'));
-  
-  // CRITICAL: Detect if running on HTTPS
-  // Only use secure cookies when ACTUALLY on HTTPS, not just when in Replit
-  // Development uses HTTP even with REPL_ID set
-  const isHTTPS = process.env.REPLIT_DEPLOYMENT === '1' || // Published production
-                  process.env.APP_URL?.startsWith('https://') || // Explicit HTTPS URL
-                  (isProduction && process.env.APP_URL?.includes('moogship.com')); // Production domain
-  
-  // Don't use REPL_ID alone as it's set in HTTP development too
+  const isDeployed = process.env.APP_URL?.includes('moogship.com');
 
-  console.log(`[AUTH] Environment: ${isHTTPS ? 'HTTPS' : 'HTTP'}, REPL_ID: ${process.env.REPL_ID ? 'set' : 'not set'}, REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT || 'not set'}`);
+  // CRITICAL: Detect if running on HTTPS
+  const isHTTPS = process.env.APP_URL?.startsWith('https://') || // Explicit HTTPS URL
+                  (isProduction && process.env.APP_URL?.includes('moogship.com')); // Production domain
+
+  console.log(`[AUTH] Environment: ${isHTTPS ? 'HTTPS' : 'HTTP'}, Production: ${isProduction}, APP_URL: ${process.env.APP_URL || 'not set'}`);
   
   // Determine cookie domain for production
   const cookieDomain = process.env.APP_URL?.includes('moogship.com') 
@@ -146,11 +138,11 @@ export function setupAuth(app: Express) {
       },
       environment: {
         isHTTPS: isHTTPS,
+        isProduction: isProduction,
         cookieSecure: sessionSettings.cookie?.secure,
         cookieDomain: sessionSettings.cookie?.domain || 'none',
-        REPL_ID: process.env.REPL_ID ? 'set' : 'not set',
-        REPLIT_DEPLOYMENT: process.env.REPLIT_DEPLOYMENT || 'not set',
-        APP_URL: process.env.APP_URL || 'not set'
+        APP_URL: process.env.APP_URL || 'not set',
+        NODE_ENV: process.env.NODE_ENV || 'not set'
       },
       cookies: req.headers.cookie ? 
         req.headers.cookie.split(';').map(c => c.trim().split('=')[0]) : 

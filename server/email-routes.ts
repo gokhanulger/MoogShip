@@ -16,9 +16,9 @@ const OAuth2 = google.auth.OAuth2;
 // Gmail OAuth2 configuration
 const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID || '';
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || '';
-const REDIRECT_URI = process.env.NODE_ENV === 'production' 
-  ? 'https://moogship.com/api/email/oauth/callback'
-  : 'https://64a16594-abd1-49b2-9383-39620759d013-00-12hpoujf36yq8.worf.replit.dev/api/email/oauth/callback';
+const REDIRECT_URI = process.env.APP_URL
+  ? `${process.env.APP_URL}/api/email/oauth/callback`
+  : 'https://app.moogship.com/api/email/oauth/callback';
 
 // Auth middleware
 const authenticateUser = (req: Request, res: Response, next: any) => {

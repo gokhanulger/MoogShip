@@ -2020,8 +2020,9 @@ function EtsyIntegrationContent({ user }: { user: any }) {
                     <TableBody>
                       {orders.flatMap((order: any) => {
                         const rows = [];
+                        const hasShipment = !!getOrderDetail(order.id, 'shipmentId');
                         rows.push(
-                        <TableRow key={order.id} className="border-b">
+                        <TableRow key={order.id} className={`border-b ${hasShipment ? 'bg-green-50' : ''}`}>
                           {/* Checkbox */}
                           <TableCell className="p-2">
                             <Checkbox 
@@ -2054,7 +2055,14 @@ function EtsyIntegrationContent({ user }: { user: any }) {
                           <TableCell className="p-2">
                             <div className="flex items-start space-x-2">
                               <div>
-                                <div className="text-xs text-blue-600">#{order.orderNumber || order.receiptId}</div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-blue-600">#{order.orderNumber || order.receiptId}</span>
+                                  {hasShipment && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
+                                      ✓ Gönderi Oluşturuldu
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="text-xs font-medium mt-1">{order.shipToName}</div>
                                 <div className="text-xs text-gray-500">
                                   {order.shipToCity}, {order.shipToState}

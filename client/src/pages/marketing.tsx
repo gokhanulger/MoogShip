@@ -34,7 +34,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import moogshipLogo from "@/assets/moogship-logo.png.jpeg";
+import moogshipLogo from "@/assets/moogship-logo.jpg";
 
 // Feature data
 const features = [

@@ -57,13 +57,13 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     // Priority 4: Production deployment - direct database session lookup
     const isProduction = req.headers.host?.includes('moogship.com') ||
                         req.headers['x-forwarded-host']?.includes('moogship.com') ||
-                        process.env.REPLIT_DEPLOYMENT === '1';
-    
+                        process.env.APP_URL?.includes('moogship.com');
+
     if (isProduction) {
       console.log('[AUTH] Production authentication attempt:', {
         host: req.headers.host,
         forwardedHost: req.headers['x-forwarded-host'],
-        replitDeployment: process.env.REPLIT_DEPLOYMENT,
+        appUrl: process.env.APP_URL,
         hasCookie: !!req.headers.cookie,
         cookiePreview: req.headers.cookie?.substring(0, 100) + '...'
       });

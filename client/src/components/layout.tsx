@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "./sidebar";
 import MobileNav from "./mobile-nav";
 import MobileSideMenu from "./mobile-side-menu";
-import moogshipLogo from "@/assets/moogship-logo.png.jpeg";
+import moogshipLogo from "@/assets/moogship-logo.jpg";
 import { 
   Wallet, 
   Calculator, 

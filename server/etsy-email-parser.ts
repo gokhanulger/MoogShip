@@ -96,7 +96,13 @@ export function parseEtsyOrderEmail(parsed: any): any {
         if (streetMatch) {
           order.shipToAddress1 = streetMatch[1].trim();
         }
-        
+
+        // Extract second address line from span class='second-line' (Apt, Unit, etc.)
+        const secondLineMatch = addressHtml.match(/<span\s+class\s*=\s*['"]?second-line['"]?\s*>([^<]+)<\/span>/i);
+        if (secondLineMatch) {
+          order.shipToAddress2 = secondLineMatch[1].trim();
+        }
+
         // Extract city from span class='city'
         const cityMatch = addressHtml.match(/<span\s+class\s*=\s*['"]?city['"]?\s*>([^<]+)<\/span>/i);
         if (cityMatch) {
@@ -363,7 +369,8 @@ export function parseEtsyOrderEmail(parsed: any): any {
       orderNumber: order.orderNumber,
       buyerName: order.shipToName,
       buyerEmail: order.buyerEmail,
-      address: order.shipToAddress1,
+      address1: order.shipToAddress1,
+      address2: order.shipToAddress2,
       city: order.shipToCity,
       state: order.shipToState,
       zip: order.shipToZip,

@@ -5,7 +5,7 @@ import { MiniLanguageSwitcher } from '../components/language-switcher';
 import { LazyLoadingWrapper } from '../components/lazy-loading-wrapper';
 import { CriticalCSSLoader } from '../components/critical-css-loader';
 // Import logos - header and footer use the same logo
-import moogshipLogoPath from '../assets/moogship-logo.png.jpeg';
+import moogshipLogoPath from '../assets/moogship-logo.jpg';
 const moogshipFooterLogoPath = moogshipLogoPath;
 import { clearTranslationCache } from '../i18n';
 import { getAuthUrl, redirectToAuth } from '../lib/mobile-auth-redirect';
