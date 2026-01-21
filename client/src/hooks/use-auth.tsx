@@ -869,12 +869,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Welcome back, ${user.name}!`,
       });
 
-      // CRITICAL FIX: Force a hard reload to dashboard to ensure completely fresh state
-      // This is the most reliable way to ensure no stale data
-      console.log('[AUTH] LOGIN: Forcing hard reload to dashboard for clean state');
-      setTimeout(() => {
-        window.location.href = `/dashboard?_t=${cacheBustTimestamp}`;
-      }, 100);
+      // Redirect to dashboard using React router (no hard reload)
+      if (window.location.pathname === '/auth' || window.location.pathname === '/mobile-auth') {
+        setLocation('/dashboard');
+      }
     },
     onError: (error: Error) => {
       console.error("[AUTH] Login failed:", error);
