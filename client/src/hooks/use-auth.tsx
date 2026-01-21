@@ -869,21 +869,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Welcome back, ${user.name}!`,
       });
 
-      // CRITICAL FIX: Always hard reload after login
-      // Check if user changed - if so, clear everything and reload
+      // CRITICAL FIX: Clear logout markers BEFORE hard reload
+      // This prevents the reload from thinking user is logged out
+      console.log('[AUTH] LOGIN: Clearing logout markers');
+      localStorage.removeItem('moogship_logout_marker');
+      sessionStorage.removeItem('moogship_logout_marker');
+
+      // Check if user changed
       const lastUserId = localStorage.getItem('moogship_last_user_id');
       const userChanged = lastUserId && parseInt(lastUserId) !== user.id;
 
       if (userChanged) {
-        console.log(`[AUTH] LOGIN: User changed from ${lastUserId} to ${user.id} - aggressive clear`);
-        // Clear absolutely everything
-        localStorage.clear();
-        sessionStorage.clear();
-        // Re-set only what we need
-        localStorage.setItem('moogship_last_user_id', user.id.toString());
-      } else {
-        localStorage.setItem('moogship_last_user_id', user.id.toString());
+        console.log(`[AUTH] LOGIN: User changed from ${lastUserId} to ${user.id}`);
       }
+
+      // Save user ID for next comparison
+      localStorage.setItem('moogship_last_user_id', user.id.toString());
+
+      // CRITICAL: Save user data to storage so it survives the reload
+      saveUserToStorage(user);
 
       // Determine redirect path based on user role
       const redirectPath = user.role === 'admin' ? '/admin-shipments' : '/dashboard';
@@ -891,7 +895,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log('[AUTH] LOGIN: Hard reload to', redirectPath, 'for user:', user.username);
 
-      // Always do hard reload - most reliable way to prevent stale data
+      // Hard reload - session cookie is set, user is in storage
       window.location.href = `${redirectPath}?_t=${cacheBust}`;
     },
     onError: (error: Error) => {
