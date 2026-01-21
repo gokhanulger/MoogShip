@@ -54,12 +54,40 @@ app.use('/api/register', loginLimiter);
 app.use('/api/forgot-password', loginLimiter);
 app.use('/api/', apiLimiter);
 
-// Redirect www.moogship.com to app.moogship.com
+// Redirect www/apex authenticated routes to app.moogship.com
+// Marketing pages stay on www, auth and app pages go to app subdomain
 app.use((req, res, next) => {
   const host = req.get('host') || '';
   if (host === 'www.moogship.com' || host === 'moogship.com') {
-    const redirectUrl = `https://app.moogship.com${req.originalUrl}`;
-    return res.redirect(301, redirectUrl);
+    // Routes that should redirect to app.moogship.com
+    const appRoutes = [
+      '/auth',
+      '/mobile-auth',
+      '/dashboard',
+      '/shipments',
+      '/draft-shipments',
+      '/approved-shipments',
+      '/my-pickups',
+      '/recipients',
+      '/package-templates',
+      '/my-balance',
+      '/notifications',
+      '/profile',
+      '/settings',
+      '/support',
+      '/advisor',
+      '/admin',
+      '/manage',
+      '/reports',
+      '/api/'  // All API calls should go to app
+    ];
+
+    const shouldRedirect = appRoutes.some(route => req.path.startsWith(route));
+
+    if (shouldRedirect) {
+      const redirectUrl = `https://app.moogship.com${req.originalUrl}`;
+      return res.redirect(301, redirectUrl);
+    }
   }
   next();
 });
