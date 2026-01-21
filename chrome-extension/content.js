@@ -18,10 +18,14 @@ let currentWeight = 0;
 let selectedCountries = []; // User-selected countries (empty = all)
 let availableCountries = []; // All countries from dropdown
 
-// Generate weights: 0.5-10 (every 0.5), 11-30 (every 1)
+// Generate weights: 0.1-0.5 (every 0.1), 0.5-10 (every 0.5), 11-30 (every 1)
 function generateWeights(maxWeight = 30) {
   const weights = [];
-  for (let w = 0.5; w <= 10; w += 0.5) weights.push(w);
+  // 0.1 to 0.5 kg: every 0.1 kg
+  for (let w = 0.1; w < 0.5; w = Math.round((w + 0.1) * 10) / 10) weights.push(w);
+  // 0.5 to 10 kg: every 0.5 kg
+  for (let w = 0.5; w <= 10; w = Math.round((w + 0.5) * 10) / 10) weights.push(w);
+  // 11 to maxWeight: every 1 kg
   for (let w = 11; w <= maxWeight; w += 1) weights.push(w);
   return weights;
 }
