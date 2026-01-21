@@ -206,7 +206,7 @@ export async function rejectBatch(req: Request, res: Response) {
 
 /**
  * GET /api/admin/external-pricing/prices
- * Get all active prices with filtering
+ * Get active prices with filtering and pagination
  */
 export async function getPrices(req: Request, res: Response) {
   try {
@@ -214,15 +214,20 @@ export async function getPrices(req: Request, res: Response) {
       countryCode: req.query.countryCode as string | undefined,
       carrier: req.query.carrier as string | undefined,
       minWeight: req.query.minWeight ? parseFloat(req.query.minWeight as string) : undefined,
-      maxWeight: req.query.maxWeight ? parseFloat(req.query.maxWeight as string) : undefined
+      maxWeight: req.query.maxWeight ? parseFloat(req.query.maxWeight as string) : undefined,
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 100
     };
 
-    const prices = await externalPricingService.getActivePrices(filters);
+    const result = await externalPricingService.getActivePrices(filters);
 
     res.json({
       success: true,
-      prices,
-      count: prices.length
+      prices: result.prices,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+      limit: filters.limit
     });
 
   } catch (error) {

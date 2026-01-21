@@ -942,14 +942,78 @@ function createMainPageUI() {
   document.getElementById('send-server-btn').onclick = sendToServer;
 }
 
+// Find the price calculator iframe
+function findPriceIframe() {
+  // Try multiple selectors
+  const selectors = [
+    'iframe[src*="quick-price-calculator"]',
+    'iframe[src*="price-calculator"]',
+    'iframe[src*="calculator"]',
+    'iframe[src*="navlungo"]',
+    'iframe'
+  ];
+
+  for (const selector of selectors) {
+    const iframes = document.querySelectorAll(selector);
+    for (const iframe of iframes) {
+      const src = iframe.src || '';
+      console.log(`[Scraper] iframe bulundu: ${src}`);
+      if (src.includes('calculator') || src.includes('price') || iframes.length === 1) {
+        return iframe;
+      }
+    }
+  }
+
+  // Log all iframes for debugging
+  const allIframes = document.querySelectorAll('iframe');
+  console.log(`[Scraper] Toplam ${allIframes.length} iframe var:`);
+  allIframes.forEach((f, i) => console.log(`  ${i}: ${f.src}`));
+
+  return allIframes.length > 0 ? allIframes[0] : null;
+}
+
 // Load countries from iframe
 function loadCountries() {
   updateStatus('Ülkeler yükleniyor...');
-  const iframe = document.querySelector('iframe[src*="quick-price-calculator"]');
+
+  // Debug: Log page info
+  console.log(`[Scraper] Sayfa: ${window.location.href}`);
+  console.log(`[Scraper] IS_MAIN_PAGE: ${IS_MAIN_PAGE}, IS_QUICK_CALC: ${IS_QUICK_CALC}, IS_IFRAME: ${IS_IFRAME}`);
+
+  const iframe = findPriceIframe();
   if (iframe && iframe.contentWindow) {
+    console.log(`[Scraper] iframe'e GET_COUNTRIES gönderiliyor: ${iframe.src}`);
     iframe.contentWindow.postMessage({ type: 'NAVLUNGO_CMD', cmd: 'GET_COUNTRIES' }, '*');
   } else {
-    showNotification('❌ iframe bulunamadı!', 'error');
+    console.log('[Scraper] ❌ iframe bulunamadı!');
+
+    // Log all iframes on page for debugging
+    const allIframes = document.querySelectorAll('iframe');
+    console.log(`[Scraper] Sayfadaki tüm iframeler (${allIframes.length}):`);
+    allIframes.forEach((f, i) => {
+      console.log(`  [${i}] src: ${f.src || '(boş)'}, id: ${f.id || '(yok)'}, class: ${f.className || '(yok)'}`);
+    });
+
+    showNotification('❌ iframe bulunamadı! Konsolu kontrol edin.', 'error');
+
+    // Try direct scraping on current page
+    if (IS_QUICK_CALC || window.location.href.includes('calculator') || window.location.href.includes('navlungo')) {
+      console.log('[Scraper] Direkt sayfa üzerinde çalışılıyor...');
+      updateStatus('Direkt sayfa üzerinde deneniyor...');
+      getCountriesFromDropdown().then(countries => {
+        if (countries.length > 0) {
+          renderCountryList(countries.map(c => c.name));
+          updateStatus(`${countries.length} ülke yüklendi (direkt)`);
+          showNotification(`✅ ${countries.length} ülke yüklendi (direkt mod)`);
+        } else {
+          updateStatus('❌ Ülke bulunamadı');
+          showNotification('❌ Dropdown bulunamadı. Fiyat hesaplama sayfasında olduğunuzdan emin olun.', 'error');
+        }
+      });
+    } else {
+      updateStatus('❌ Yanlış sayfa');
+      showNotification('❌ Navlungo fiyat hesaplama sayfasına gidin', 'error');
+    }
   }
 }
 
@@ -1052,7 +1116,7 @@ function startFromMainPage() {
   updateStatus(`🚀 Başlatılıyor... (${countryInfo})`);
 
   // Send command to iframe with selected countries
-  const iframe = document.querySelector('iframe[src*="quick-price-calculator"]');
+  const iframe = findPriceIframe();
   if (iframe && iframe.contentWindow) {
     iframe.contentWindow.postMessage({
       type: 'NAVLUNGO_CMD',
@@ -1064,13 +1128,17 @@ function startFromMainPage() {
   } else {
     console.log('[main] ❌ iframe bulunamadı!');
     updateStatus('❌ iframe bulunamadı!');
+    showNotification('❌ iframe bulunamadı! Sayfayı yenileyin.', 'error');
+    document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('stop-btn').style.display = 'none';
+    isRunning = false;
   }
 }
 
 function stopFromMainPage() {
   isRunning = false;
 
-  const iframe = document.querySelector('iframe[src*="quick-price-calculator"]');
+  const iframe = findPriceIframe();
   if (iframe && iframe.contentWindow) {
     iframe.contentWindow.postMessage({ type: 'NAVLUNGO_CMD', cmd: 'STOP' }, '*');
   }

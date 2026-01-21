@@ -383,34 +383,57 @@ export async function rejectBatch(
 }
 
 /**
- * Get all active prices with filtering
+ * Get active prices with filtering and pagination
  */
 export async function getActivePrices(filters?: {
   countryCode?: string;
   carrier?: string;
   minWeight?: number;
   maxWeight?: number;
-}): Promise<ExternalPrice[]> {
-  let query = db.select()
+  page?: number;
+  limit?: number;
+}): Promise<{ prices: ExternalPrice[]; total: number; page: number; totalPages: number }> {
+  const page = filters?.page || 1;
+  const limit = filters?.limit || 100; // Default 100 per page
+  const offset = (page - 1) * limit;
+
+  // Build conditions array
+  const conditions = [eq(externalPrices.status, "active")];
+
+  if (filters?.countryCode) {
+    conditions.push(eq(externalPrices.countryCode, filters.countryCode));
+  }
+  if (filters?.carrier) {
+    conditions.push(eq(externalPrices.carrier, filters.carrier));
+  }
+  if (filters?.minWeight) {
+    conditions.push(gte(externalPrices.weight, filters.minWeight));
+  }
+  if (filters?.maxWeight) {
+    conditions.push(lte(externalPrices.weight, filters.maxWeight));
+  }
+
+  // Get total count
+  const [countResult] = await db.select({ count: sql<number>`count(*)` })
     .from(externalPrices)
-    .where(eq(externalPrices.status, "active"));
+    .where(and(...conditions));
 
-  // Note: For dynamic filtering, we'd need to build the where clause dynamically
-  // For now, we'll filter in memory for simplicity
-  const prices = await query.orderBy(
-    asc(externalPrices.countryCode),
-    asc(externalPrices.weight),
-    asc(externalPrices.carrier)
-  );
+  const total = Number(countResult?.count || 0);
+  const totalPages = Math.ceil(total / limit);
 
-  // Apply filters in memory
-  return prices.filter(p => {
-    if (filters?.countryCode && p.countryCode !== filters.countryCode) return false;
-    if (filters?.carrier && p.carrier !== filters.carrier) return false;
-    if (filters?.minWeight && p.weight < filters.minWeight) return false;
-    if (filters?.maxWeight && p.weight > filters.maxWeight) return false;
-    return true;
-  });
+  // Get paginated results
+  const prices = await db.select()
+    .from(externalPrices)
+    .where(and(...conditions))
+    .orderBy(
+      asc(externalPrices.countryCode),
+      asc(externalPrices.weight),
+      asc(externalPrices.carrier)
+    )
+    .limit(limit)
+    .offset(offset);
+
+  return { prices, total, page, totalPages };
 }
 
 /**

@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, XCircle, Package, Globe, Settings, RefreshCcw, Eye, EyeOff, Trash2, Edit } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Package, Globe, Settings, RefreshCcw, Eye, EyeOff, Trash2, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 
 // Types
 interface ExternalBatch {
@@ -96,6 +96,8 @@ export default function AdminExternalPrices() {
     minWeight: "",
     maxWeight: ""
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 100;
   const [editingPrice, setEditingPrice] = useState<ExternalPrice | null>(null);
   const [newServiceSetting, setNewServiceSetting] = useState({
     carrier: "",
@@ -127,15 +129,24 @@ export default function AdminExternalPrices() {
     enabled: !!selectedBatchId
   });
 
-  // Get active prices
-  const { data: pricesData, isLoading: pricesLoading } = useQuery<{ success: boolean; prices: ExternalPrice[] }>({
-    queryKey: ["/api/external-pricing/admin/prices", priceFilters],
+  // Get active prices with pagination
+  const { data: pricesData, isLoading: pricesLoading } = useQuery<{
+    success: boolean;
+    prices: ExternalPrice[];
+    total: number;
+    page: number;
+    totalPages: number;
+    limit: number;
+  }>({
+    queryKey: ["/api/external-pricing/admin/prices", priceFilters, currentPage],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (priceFilters.countryCode) params.set("countryCode", priceFilters.countryCode);
       if (priceFilters.carrier) params.set("carrier", priceFilters.carrier);
       if (priceFilters.minWeight) params.set("minWeight", priceFilters.minWeight);
       if (priceFilters.maxWeight) params.set("maxWeight", priceFilters.maxWeight);
+      params.set("page", currentPage.toString());
+      params.set("limit", pageSize.toString());
       const res = await fetch(`/api/external-pricing/admin/prices?${params.toString()}`, {
         credentials: "include"
       });
@@ -144,6 +155,12 @@ export default function AdminExternalPrices() {
     },
     enabled: activeTab === "prices"
   });
+
+  // Reset page when filters change
+  const handleFilterChange = (newFilters: typeof priceFilters) => {
+    setPriceFilters(newFilters);
+    setCurrentPage(1);
+  };
 
   // Get service settings
   const { data: servicesData, isLoading: servicesLoading } = useQuery<{ success: boolean; settings: ExternalServiceSetting[] }>({
@@ -672,7 +689,7 @@ export default function AdminExternalPrices() {
                     <Label>Ülke</Label>
                     <Select
                       value={priceFilters.countryCode}
-                      onValueChange={(v) => setPriceFilters({ ...priceFilters, countryCode: v === "all" ? "" : v })}
+                      onValueChange={(v) => handleFilterChange({ ...priceFilters, countryCode: v === "all" ? "" : v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Tüm Ülkeler" />
@@ -692,7 +709,7 @@ export default function AdminExternalPrices() {
                     <Label>Taşıyıcı</Label>
                     <Select
                       value={priceFilters.carrier}
-                      onValueChange={(v) => setPriceFilters({ ...priceFilters, carrier: v === "all" ? "" : v })}
+                      onValueChange={(v) => handleFilterChange({ ...priceFilters, carrier: v === "all" ? "" : v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Tüm Taşıyıcılar" />
@@ -712,7 +729,7 @@ export default function AdminExternalPrices() {
                       type="number"
                       placeholder="0"
                       value={priceFilters.minWeight}
-                      onChange={(e) => setPriceFilters({ ...priceFilters, minWeight: e.target.value })}
+                      onChange={(e) => handleFilterChange({ ...priceFilters, minWeight: e.target.value })}
                     />
                   </div>
 
@@ -722,20 +739,28 @@ export default function AdminExternalPrices() {
                       type="number"
                       placeholder="30"
                       value={priceFilters.maxWeight}
-                      onChange={(e) => setPriceFilters({ ...priceFilters, maxWeight: e.target.value })}
+                      onChange={(e) => handleFilterChange({ ...priceFilters, maxWeight: e.target.value })}
                     />
                   </div>
 
                   <div className="flex items-end">
                     <Button
                       variant="outline"
-                      onClick={() => setPriceFilters({ countryCode: "", carrier: "", minWeight: "", maxWeight: "" })}
+                      onClick={() => handleFilterChange({ countryCode: "", carrier: "", minWeight: "", maxWeight: "" })}
                     >
                       <RefreshCcw className="h-4 w-4 mr-1" />
                       Temizle
                     </Button>
                   </div>
                 </div>
+
+                {/* Info bar */}
+                {pricesData && (
+                  <div className="text-sm text-muted-foreground">
+                    Toplam {pricesData.total.toLocaleString()} fiyat
+                    {pricesData.totalPages > 1 && ` • Sayfa ${pricesData.page}/${pricesData.totalPages}`}
+                  </div>
+                )}
 
                 {/* Prices Table */}
                 {pricesLoading ? (
@@ -814,6 +839,52 @@ export default function AdminExternalPrices() {
                       )}
                     </TableBody>
                   </Table>
+                )}
+
+                {/* Pagination */}
+                {pricesData && pricesData.totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, pricesData.total)} / {pricesData.total.toLocaleString()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                      >
+                        İlk
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="px-3 py-1 text-sm font-medium">
+                        {currentPage} / {pricesData.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(pricesData.totalPages, p + 1))}
+                        disabled={currentPage === pricesData.totalPages}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(pricesData.totalPages)}
+                        disabled={currentPage === pricesData.totalPages}
+                      >
+                        Son
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
