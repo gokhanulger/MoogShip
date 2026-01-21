@@ -13,6 +13,7 @@
   "host_permissions": [
     "https://*.navlungo.com/*",
     "https://quick-price-calculator.navlungo.com/*",
+    "https://app.moogship.com/*",
     "http://localhost:3000/*"
   ],
   "background": {
