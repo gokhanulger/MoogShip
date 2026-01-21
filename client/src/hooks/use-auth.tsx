@@ -889,18 +889,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (verifyRes.ok) {
           const verifiedUser = await verifyRes.json();
-          console.log('[AUTH] LOGIN: Session verified for user:', verifiedUser.username);
+          console.log('[AUTH] LOGIN: Session verified for user:', verifiedUser.username, 'role:', verifiedUser.role);
 
-          // Session is good - do hard reload to dashboard for completely fresh state
+          // Determine redirect path based on user role
+          const redirectPath = verifiedUser.role === 'admin' ? '/admin-shipments' : '/dashboard';
           const cacheBust = Date.now();
-          window.location.href = `/dashboard?_refresh=${cacheBust}`;
+
+          // Session is good - do hard reload for completely fresh state
+          console.log('[AUTH] LOGIN: Redirecting to', redirectPath);
+          window.location.href = `${redirectPath}?_refresh=${cacheBust}`;
         } else {
           console.warn('[AUTH] LOGIN: Session verification failed, using soft redirect');
-          setLocation('/dashboard');
+          // Use role from login response as fallback
+          const redirectPath = user.role === 'admin' ? '/admin-shipments' : '/dashboard';
+          setLocation(redirectPath);
         }
       } catch (e) {
         console.warn('[AUTH] LOGIN: Session verification error, using soft redirect:', e);
-        setLocation('/dashboard');
+        const redirectPath = user.role === 'admin' ? '/admin-shipments' : '/dashboard';
+        setLocation(redirectPath);
       }
     },
     onError: (error: Error) => {
