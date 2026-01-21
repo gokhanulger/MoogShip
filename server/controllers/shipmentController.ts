@@ -1922,11 +1922,16 @@ export const uploadBulkShipments = async (req: FileRequest, res: Response) => {
 export const getMyShipments = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
+
+    // CRITICAL: Prevent caching to avoid showing wrong user's data
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
     const shipments = await storage.getUserShipments(userId);
     return res.status(200).json(shipments);
   } catch (error) {

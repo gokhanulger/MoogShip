@@ -453,6 +453,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
+  // CRITICAL: Add no-cache headers to ALL user-specific API endpoints
+  // This prevents browser from caching responses when users switch accounts
+  const userSpecificEndpoints = [
+    '/api/user',
+    '/api/shipments',
+    '/api/balance',
+    '/api/transactions',
+    '/api/notifications',
+    '/api/billing-reminders',
+    '/api/packages',
+    '/api/addresses',
+    '/api/statistics',
+    '/api/admin/shipments',
+    '/api/admin/fast-tracking',
+    '/api/announcements'
+  ];
+
+  app.use((req, res, next) => {
+    const isUserEndpoint = userSpecificEndpoints.some(endpoint =>
+      req.path.startsWith(endpoint)
+    );
+
+    if (isUserEndpoint) {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      res.set('Surrogate-Control', 'no-store');
+    }
+
+    next();
+  });
+
   // Password reset routes (duplicate removed - using improved version below)
 
   app.post("/api/reset-password", async (req, res) => {
