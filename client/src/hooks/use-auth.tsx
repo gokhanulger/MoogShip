@@ -869,46 +869,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Welcome back, ${user.name}!`,
       });
 
-      // CRITICAL FIX: Verify session is established then hard reload
-      // This ensures completely fresh state with no cached data from previous user
-      console.log('[AUTH] LOGIN: Verifying session before redirect...');
+      // CRITICAL FIX: Always hard reload after login
+      // Check if user changed - if so, clear everything and reload
+      const lastUserId = localStorage.getItem('moogship_last_user_id');
+      const userChanged = lastUserId && parseInt(lastUserId) !== user.id;
 
-      try {
-        // Wait a moment for session cookie to be set
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Verify the session is working
-        const verifyRes = await fetch(getApiUrl('/api/user'), {
-          credentials: 'include',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store',
-            ...getAuthHeaders()
-          }
-        });
-
-        if (verifyRes.ok) {
-          const verifiedUser = await verifyRes.json();
-          console.log('[AUTH] LOGIN: Session verified for user:', verifiedUser.username, 'role:', verifiedUser.role);
-
-          // Determine redirect path based on user role
-          const redirectPath = verifiedUser.role === 'admin' ? '/admin-shipments' : '/dashboard';
-          const cacheBust = Date.now();
-
-          // Session is good - do hard reload for completely fresh state
-          console.log('[AUTH] LOGIN: Redirecting to', redirectPath);
-          window.location.href = `${redirectPath}?_refresh=${cacheBust}`;
-        } else {
-          console.warn('[AUTH] LOGIN: Session verification failed, using soft redirect');
-          // Use role from login response as fallback
-          const redirectPath = user.role === 'admin' ? '/admin-shipments' : '/dashboard';
-          setLocation(redirectPath);
-        }
-      } catch (e) {
-        console.warn('[AUTH] LOGIN: Session verification error, using soft redirect:', e);
-        const redirectPath = user.role === 'admin' ? '/admin-shipments' : '/dashboard';
-        setLocation(redirectPath);
+      if (userChanged) {
+        console.log(`[AUTH] LOGIN: User changed from ${lastUserId} to ${user.id} - aggressive clear`);
+        // Clear absolutely everything
+        localStorage.clear();
+        sessionStorage.clear();
+        // Re-set only what we need
+        localStorage.setItem('moogship_last_user_id', user.id.toString());
+      } else {
+        localStorage.setItem('moogship_last_user_id', user.id.toString());
       }
+
+      // Determine redirect path based on user role
+      const redirectPath = user.role === 'admin' ? '/admin-shipments' : '/dashboard';
+      const cacheBust = Date.now();
+
+      console.log('[AUTH] LOGIN: Hard reload to', redirectPath, 'for user:', user.username);
+
+      // Always do hard reload - most reliable way to prevent stale data
+      window.location.href = `${redirectPath}?_t=${cacheBust}`;
     },
     onError: (error: Error) => {
       console.error("[AUTH] Login failed:", error);
