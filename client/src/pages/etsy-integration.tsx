@@ -2020,7 +2020,8 @@ function EtsyIntegrationContent({ user }: { user: any }) {
                     <TableBody>
                       {orders.flatMap((order: any) => {
                         const rows = [];
-                        const hasShipment = !!getOrderDetail(order.id, 'shipmentId');
+                        // Check both local state and database field for shipment
+                        const hasShipment = !!getOrderDetail(order.id, 'shipmentId') || !!order.moogshipShipmentId;
                         rows.push(
                         <TableRow key={order.id} className={`border-b ${hasShipment ? 'bg-green-50' : ''}`}>
                           {/* Checkbox */}
