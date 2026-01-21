@@ -54,6 +54,16 @@ app.use('/api/register', loginLimiter);
 app.use('/api/forgot-password', loginLimiter);
 app.use('/api/', apiLimiter);
 
+// Redirect www.moogship.com to app.moogship.com
+app.use((req, res, next) => {
+  const host = req.get('host') || '';
+  if (host === 'www.moogship.com' || host === 'moogship.com') {
+    const redirectUrl = `https://app.moogship.com${req.originalUrl}`;
+    return res.redirect(301, redirectUrl);
+  }
+  next();
+});
+
 // Security headers middleware
 app.use((req, res, next) => {
   // Prevent clickjacking
