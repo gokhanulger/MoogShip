@@ -803,91 +803,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: async (user: UserData) => {
       console.log("[AUTH] Processing successful login for:", user.username);
-      
+
       // CRITICAL FIX: Clear any pending delayed refetch from previous login
       if (delayedRefetchTimeoutRef.current) {
         clearTimeout(delayedRefetchTimeoutRef.current);
         delayedRefetchTimeoutRef.current = null;
       }
-      
+
       // CRITICAL FIX: Track login time to prevent immediate soft-401
       const loginTime = Date.now();
       setLastLoginAt(loginTime);
-      
+
       // CRITICAL FIX: Clear logout marker before saving new user
-      // This allows getUserFromStorage() to return the new admin user instead of null
       console.log("[AUTH] Clearing logout marker to enable new session");
       localStorage.removeItem('moogship_logout_marker');
       sessionStorage.removeItem('moogship_logout_marker');
-      
+
       // Store new user data FIRST
       saveUserToStorage(user);
       setLocalUser(user);
-      
+
       // CRITICAL FIX: Reset logout flag AFTER saving new user
-      // This ensures delayed refetch sees hasLoggedOut=false for the NEW session
       setHasLoggedOut(false);
-      
+
       // CRITICAL FIX: Clear Service Worker API cache FIRST
       console.log("[AUTH] CRITICAL: Clearing Service Worker API cache");
       await clearServiceWorkerCache();
-      
+
+      // CRITICAL FIX: Clear browser HTTP cache for API endpoints
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          );
+          console.log("[AUTH] Browser caches cleared");
+        } catch (e) {
+          console.warn("[AUTH] Failed to clear browser caches:", e);
+        }
+      }
+
       // CRITICAL FIX: Clear ALL queries to prevent ANY old data from showing
       console.log("[AUTH] CRITICAL: Clearing ALL React Query cache to prevent old user data");
       queryClient.clear();
-      
+
+      // CRITICAL FIX: Also remove all queries from the query cache
+      queryClient.removeQueries();
+
       // CRITICAL FIX: Directly set the NEW user data after clearing everything
-      // This ensures only the new user's data is in the cache
       queryClient.setQueryData(["/api/user"], user);
-      
+
       // Clear any 401 tracking from previous attempts
       setLast401At(null);
       setConfirmedUnauthorized(false);
-      
-      // CRITICAL: Immediately refetch ALL user-scoped data with the new session
-      // This forces fresh data even with refetchOnMount: false settings
-      console.log('[AUTH] LOGIN: Force refetching all user-scoped queries');
-      const userScopedPrefixes = [
-        '/api/balance',
-        '/api/shipments',
-        '/api/transactions',
-        '/api/notifications',
-        '/api/billing-reminders'
-      ];
-      
-      userScopedPrefixes.forEach(prefix => {
-        queryClient.refetchQueries({ 
-          predicate: (query) => {
-            const queryKey = query.queryKey[0] as string;
-            return queryKey.startsWith(prefix);
-          }
-        });
-      });
-      
-      // Schedule a delayed refetch to get complete user data once session is fully established
-      // Store the timeout ID so it can be cancelled if user logs out before it fires
-      const currentUserId = user.id;
-      delayedRefetchTimeoutRef.current = setTimeout(() => {
-        // Only refetch if the user is still the same (prevents refetch after logout/user switch)
-        const currentLocalUser = getUserFromStorage();
-        if (currentLocalUser && currentLocalUser.id === currentUserId) {
-          console.log("[AUTH] Delayed refetch to ensure fresh user data");
-          queryClient.refetchQueries({ queryKey: ["/api/user"], type: 'active' });
-        } else {
-          console.log("[AUTH] Skipping delayed refetch - user has changed or logged out");
-        }
-        delayedRefetchTimeoutRef.current = null;
-      }, 500);
-      
+
+      // CRITICAL FIX: Set a global cache-bust timestamp that all API calls should use
+      const cacheBustTimestamp = Date.now();
+      (window as any).__MOOGSHIP_CACHE_BUST__ = cacheBustTimestamp;
+      localStorage.setItem('moogship_cache_bust', cacheBustTimestamp.toString());
+
+      console.log('[AUTH] LOGIN: Cache bust timestamp set:', cacheBustTimestamp);
+
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.name}!`,
       });
-      
-      // Redirect to dashboard after successful login
-      if (window.location.pathname === '/auth') {
-        setLocation('/dashboard');
-      }
+
+      // CRITICAL FIX: Force a hard reload to dashboard to ensure completely fresh state
+      // This is the most reliable way to ensure no stale data
+      console.log('[AUTH] LOGIN: Forcing hard reload to dashboard for clean state');
+      setTimeout(() => {
+        window.location.href = `/dashboard?_t=${cacheBustTimestamp}`;
+      }, 100);
     },
     onError: (error: Error) => {
       console.error("[AUTH] Login failed:", error);

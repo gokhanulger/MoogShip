@@ -104,6 +104,12 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+// Helper to get cache-bust timestamp
+function getCacheBustParam(): string {
+  const cacheBust = (window as any).__MOOGSHIP_CACHE_BUST__ || localStorage.getItem('moogship_cache_bust') || '';
+  return cacheBust ? `_cb=${cacheBust}` : '';
+}
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
@@ -111,7 +117,27 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     // Create an AbortController for timeout handling
     const controller = new AbortController();
-    const url = getApiUrl(queryKey[0] as string);
+    let url = getApiUrl(queryKey[0] as string);
+
+    // CRITICAL: Add cache-bust parameter for user-specific endpoints
+    const userEndpoints = [
+      '/api/user',
+      '/api/shipments',
+      '/api/balance',
+      '/api/transactions',
+      '/api/notifications',
+      '/api/billing-reminders',
+      '/api/packages',
+      '/api/addresses',
+      '/api/statistics'
+    ];
+
+    const isUserEndpoint = userEndpoints.some(endpoint => url.includes(endpoint));
+    if (isUserEndpoint) {
+      const cacheBust = getCacheBustParam();
+      const separator = url.includes('?') ? '&' : '?';
+      url = `${url}${separator}${cacheBust}&_t=${Date.now()}`;
+    }
 
     // Set timeout with proper error message
     const timeoutId = setTimeout(() => {
@@ -132,15 +158,19 @@ export const getQueryFn: <T>(options: {
         '/api/notifications',
         '/api/billing-reminders'
       ];
-      
+
       const isCriticalEndpoint = criticalEndpoints.some(endpoint => url.includes(endpoint));
-      
+
       const res = await fetch(url, {
         credentials: "include",
         signal: controller.signal,
         cache: isCriticalEndpoint ? 'no-store' : 'default',
         keepalive: true,
-        headers: getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders(),
+          'Cache-Control': isCriticalEndpoint ? 'no-cache, no-store, must-revalidate' : '',
+          'Pragma': isCriticalEndpoint ? 'no-cache' : '',
+        },
       });
 
       clearTimeout(timeoutId);
