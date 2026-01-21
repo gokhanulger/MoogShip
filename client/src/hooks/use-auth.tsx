@@ -869,8 +869,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Welcome back, ${user.name}!`,
       });
 
-      // Redirect to dashboard using React router (no hard reload)
-      if (window.location.pathname === '/auth' || window.location.pathname === '/mobile-auth') {
+      // CRITICAL FIX: Verify session is established then hard reload
+      // This ensures completely fresh state with no cached data from previous user
+      console.log('[AUTH] LOGIN: Verifying session before redirect...');
+
+      try {
+        // Wait a moment for session cookie to be set
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Verify the session is working
+        const verifyRes = await fetch(getApiUrl('/api/user'), {
+          credentials: 'include',
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store',
+            ...getAuthHeaders()
+          }
+        });
+
+        if (verifyRes.ok) {
+          const verifiedUser = await verifyRes.json();
+          console.log('[AUTH] LOGIN: Session verified for user:', verifiedUser.username);
+
+          // Session is good - do hard reload to dashboard for completely fresh state
+          const cacheBust = Date.now();
+          window.location.href = `/dashboard?_refresh=${cacheBust}`;
+        } else {
+          console.warn('[AUTH] LOGIN: Session verification failed, using soft redirect');
+          setLocation('/dashboard');
+        }
+      } catch (e) {
+        console.warn('[AUTH] LOGIN: Session verification error, using soft redirect:', e);
         setLocation('/dashboard');
       }
     },
