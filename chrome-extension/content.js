@@ -15,6 +15,8 @@ let countryQueue = [];
 let weightQueue = [];
 let currentCountry = '';
 let currentWeight = 0;
+let selectedCountries = []; // User-selected countries (empty = all)
+let availableCountries = []; // All countries from dropdown
 
 // Generate weights: 0.5-10 (every 0.5), 11-30 (every 1)
 function generateWeights(maxWeight = 30) {
@@ -133,7 +135,7 @@ function handleCommand(msg) {
     case 'START':
       isRunning = true;
       allPrices = [];
-      startScrapingInIframe(msg.maxWeight || 30);
+      startScrapingInIframe(msg.maxWeight || 30, msg.countries || []);
       break;
     case 'STOP':
       isRunning = false;
@@ -148,6 +150,15 @@ function handleCommand(msg) {
         country: currentCountry,
         weight: currentWeight
       }, '*');
+      break;
+    case 'GET_COUNTRIES':
+      // Fetch country list and send back
+      getCountriesFromDropdown().then(countries => {
+        window.parent.postMessage({
+          type: 'NAVLUNGO_COUNTRIES',
+          countries: countries.map(c => c.name)
+        }, '*');
+      });
       break;
   }
 }
@@ -181,20 +192,32 @@ function extractPrices(data) {
 
 // ============ IFRAME SCRAPING (runs inside Quick Price Calculator) ============
 
-async function startScrapingInIframe(maxWeight) {
+async function startScrapingInIframe(maxWeight, countriesToScrape = []) {
   console.log('[iframe] Scraping başlıyor...');
 
   // Get countries from dropdown
-  const countries = await getCountriesFromDropdown();
+  const allCountries = await getCountriesFromDropdown();
 
-  if (countries.length === 0) {
+  if (allCountries.length === 0) {
     console.log('[iframe] ❌ Ülke bulunamadı!');
     window.parent.postMessage({ type: 'NAVLUNGO_ERROR', error: 'Ülke listesi alınamadı' }, '*');
     return;
   }
 
-  console.log(`[iframe] ${countries.length} ülke bulundu`);
-  window.parent.postMessage({ type: 'NAVLUNGO_STATUS', status: `${countries.length} ülke bulundu` }, '*');
+  // Filter countries if specific ones selected
+  let countries = allCountries;
+  if (countriesToScrape && countriesToScrape.length > 0) {
+    countries = allCountries.filter(c =>
+      countriesToScrape.some(selected =>
+        c.name.toLowerCase().includes(selected.toLowerCase()) ||
+        selected.toLowerCase().includes(c.name.toLowerCase())
+      )
+    );
+    console.log(`[iframe] ${countriesToScrape.length} ülke seçildi, ${countries.length} eşleşti`);
+  }
+
+  console.log(`[iframe] ${countries.length} ülke işlenecek`);
+  window.parent.postMessage({ type: 'NAVLUNGO_STATUS', status: `${countries.length} ülke işlenecek` }, '*');
 
   countryQueue = [...countries];
   weightQueue = [];
@@ -744,13 +767,15 @@ function createMainPageUI() {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      width: 340px;
+      width: 380px;
       background: white;
       border-radius: 16px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       z-index: 999999;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden;
+      max-height: 90vh;
+      overflow-y: auto;
     ">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px;">
         <div style="font-size: 20px; font-weight: 700;">📦 Navlungo Scraper</div>
@@ -758,8 +783,55 @@ function createMainPageUI() {
       </div>
 
       <div style="padding: 20px;">
+        <!-- Country Selection -->
         <div style="margin-bottom: 16px;">
-          <label style="font-size: 13px; font-weight: 600; color: #333;">Max Ağırlık (kg):</label>
+          <label style="font-size: 13px; font-weight: 600; color: #333;">🌍 Ülke Seçimi:</label>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <button id="load-countries-btn" style="
+              flex: 1;
+              padding: 8px;
+              background: #667eea;
+              color: white;
+              border: none;
+              border-radius: 6px;
+              font-size: 12px;
+              cursor: pointer;
+            ">Ülkeleri Yükle</button>
+            <button id="select-all-btn" style="
+              padding: 8px 12px;
+              background: #e0e0e0;
+              color: #333;
+              border: none;
+              border-radius: 6px;
+              font-size: 12px;
+              cursor: pointer;
+            ">Tümü</button>
+            <button id="clear-selection-btn" style="
+              padding: 8px 12px;
+              background: #e0e0e0;
+              color: #333;
+              border: none;
+              border-radius: 6px;
+              font-size: 12px;
+              cursor: pointer;
+            ">Temizle</button>
+          </div>
+          <div id="country-list" style="
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: none;
+          "></div>
+          <div id="selected-count" style="font-size: 11px; color: #888; margin-top: 4px;">
+            Tüm ülkeler seçili (yüklemek için butona tıklayın)
+          </div>
+        </div>
+
+        <!-- Weight Input -->
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: 600; color: #333;">⚖️ Max Ağırlık (kg):</label>
           <input type="number" id="max-weight-input" value="30" min="10" max="100" style="
             width: 100%;
             margin-top: 6px;
@@ -805,6 +877,19 @@ function createMainPageUI() {
           <div style="color: #666; font-size: 13px;">fiyat toplandı</div>
         </div>
 
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button id="send-server-btn" style="
+            flex: 1;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+          ">📤 Sunucuya Gönder</button>
+        </div>
+
         <div style="display: flex; gap: 8px;">
           <button id="export-csv-btn" style="
             flex: 1;
@@ -847,6 +932,104 @@ function createMainPageUI() {
   document.getElementById('export-csv-btn').onclick = exportCSV;
   document.getElementById('export-json-btn').onclick = exportJSON;
   document.getElementById('clear-btn').onclick = clearAll;
+  document.getElementById('load-countries-btn').onclick = loadCountries;
+  document.getElementById('select-all-btn').onclick = selectAllCountries;
+  document.getElementById('clear-selection-btn').onclick = clearCountrySelection;
+  document.getElementById('send-server-btn').onclick = sendToServer;
+}
+
+// Load countries from iframe
+function loadCountries() {
+  updateStatus('Ülkeler yükleniyor...');
+  const iframe = document.querySelector('iframe[src*="quick-price-calculator"]');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({ type: 'NAVLUNGO_CMD', cmd: 'GET_COUNTRIES' }, '*');
+  } else {
+    showNotification('❌ iframe bulunamadı!', 'error');
+  }
+}
+
+// Render country checkboxes
+function renderCountryList(countries) {
+  availableCountries = countries;
+  const container = document.getElementById('country-list');
+  container.style.display = 'block';
+
+  container.innerHTML = countries.map(c => `
+    <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+      <input type="checkbox" value="${c}" style="margin-right: 8px;" class="country-checkbox">
+      <span style="font-size: 13px;">${c}</span>
+    </label>
+  `).join('');
+
+  // Add change listener
+  container.querySelectorAll('.country-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateSelectedCount);
+  });
+
+  updateSelectedCount();
+}
+
+function selectAllCountries() {
+  document.querySelectorAll('.country-checkbox').forEach(cb => cb.checked = true);
+  updateSelectedCount();
+}
+
+function clearCountrySelection() {
+  document.querySelectorAll('.country-checkbox').forEach(cb => cb.checked = false);
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  const checked = document.querySelectorAll('.country-checkbox:checked');
+  const countEl = document.getElementById('selected-count');
+  if (checked.length === 0) {
+    countEl.textContent = 'Tüm ülkeler seçili (hiçbiri seçilmezse tümü işlenir)';
+    selectedCountries = [];
+  } else {
+    countEl.textContent = `${checked.length} ülke seçili`;
+    selectedCountries = Array.from(checked).map(cb => cb.value);
+  }
+}
+
+// Send prices to MoogShip server
+async function sendToServer() {
+  if (allPrices.length === 0) {
+    showNotification('❌ Gönderilecek fiyat yok!', 'error');
+    return;
+  }
+
+  updateStatus('Sunucuya gönderiliyor...');
+
+  try {
+    const response = await fetch('https://app.moogship.com/api/external-pricing/prices/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prices: allPrices.map(p => ({
+          country: p.country,
+          countryName: p.country,
+          weight: p.weight,
+          carrier: p.carrier,
+          service: p.service,
+          price: p.price,
+          currency: p.currency,
+          transitDays: p.transitTime || p.transitDays || null
+        })),
+        source: 'chrome-extension'
+      })
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      showNotification(`✅ ${result.pricesImported} fiyat gönderildi! Batch #${result.batchId}`);
+      updateStatus(`✅ Batch #${result.batchId} oluşturuldu`);
+    } else {
+      showNotification(`❌ Hata: ${result.error}`, 'error');
+    }
+  } catch (error) {
+    showNotification(`❌ Bağlantı hatası: ${error.message}`, 'error');
+  }
 }
 
 function startFromMainPage() {
@@ -858,13 +1041,22 @@ function startFromMainPage() {
 
   document.getElementById('start-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'block';
-  updateStatus('🚀 Başlatılıyor...');
 
-  // Send command to iframe
+  const countryInfo = selectedCountries.length > 0
+    ? `${selectedCountries.length} ülke`
+    : 'tüm ülkeler';
+  updateStatus(`🚀 Başlatılıyor... (${countryInfo})`);
+
+  // Send command to iframe with selected countries
   const iframe = document.querySelector('iframe[src*="quick-price-calculator"]');
   if (iframe && iframe.contentWindow) {
-    iframe.contentWindow.postMessage({ type: 'NAVLUNGO_CMD', cmd: 'START', maxWeight }, '*');
-    console.log('[main] START komutu iframe\'e gönderildi');
+    iframe.contentWindow.postMessage({
+      type: 'NAVLUNGO_CMD',
+      cmd: 'START',
+      maxWeight,
+      countries: selectedCountries
+    }, '*');
+    console.log(`[main] START komutu iframe'e gönderildi - ${countryInfo}`);
   } else {
     console.log('[main] ❌ iframe bulunamadı!');
     updateStatus('❌ iframe bulunamadı!');
@@ -892,6 +1084,18 @@ window.addEventListener('message', (event) => {
     if (event.data.status) updateStatus(event.data.status);
     if (event.data.count !== undefined) {
       document.getElementById('price-count').textContent = event.data.count;
+    }
+  }
+
+  if (event.data.type === 'NAVLUNGO_COUNTRIES') {
+    // Country list received from iframe
+    console.log(`[main] ${event.data.countries?.length || 0} ülke alındı`);
+    if (event.data.countries && event.data.countries.length > 0) {
+      renderCountryList(event.data.countries);
+      updateStatus(`${event.data.countries.length} ülke yüklendi`);
+      showNotification(`✅ ${event.data.countries.length} ülke yüklendi`);
+    } else {
+      showNotification('❌ Ülke listesi alınamadı', 'error');
     }
   }
 
