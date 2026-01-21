@@ -296,24 +296,55 @@ async function getCountriesFromDropdown() {
   dropdown.dispatchEvent(click);
 
   // Wait for options to load
-  await sleep(2000);
+  await sleep(3000);
 
-  // Get options
-  let options = document.querySelectorAll('[role="option"]');
-  console.log(`[Scraper] ${options.length} option bulundu`);
+  // Try multiple selectors for options
+  const optionSelectors = [
+    '[role="option"]',
+    '[role="listbox"] > div',
+    '[role="listbox"] li',
+    'ul[role="listbox"] > li',
+    '[class*="option"]',
+    '[class*="Option"]',
+    '[class*="menu"] > div',
+    '[class*="Menu"] > div',
+    '[class*="list"] > div',
+    '[class*="dropdown"] li',
+    '[class*="Dropdown"] li'
+  ];
+
+  let options = [];
+  for (const selector of optionSelectors) {
+    options = document.querySelectorAll(selector);
+    console.log(`[Scraper] Selector "${selector}": ${options.length} element`);
+    if (options.length > 5) break; // Found options
+  }
 
   // If still no options, wait more and try again
   if (options.length === 0) {
-    await sleep(1000);
-    options = document.querySelectorAll('[role="option"]');
-    console.log(`[Scraper] Tekrar denendi: ${options.length} option`);
+    console.log('[Scraper] Option bulunamadı, 2 saniye daha bekleniyor...');
+    await sleep(2000);
+    for (const selector of optionSelectors) {
+      options = document.querySelectorAll(selector);
+      if (options.length > 5) {
+        console.log(`[Scraper] Tekrar deneme - "${selector}": ${options.length} element`);
+        break;
+      }
+    }
   }
+
+  // Debug: log first few options
+  console.log('[Scraper] İlk 5 option içeriği:');
+  Array.from(options).slice(0, 5).forEach((opt, i) => {
+    console.log(`  [${i}] ${opt.textContent?.trim()?.substring(0, 50)}`);
+  });
 
   for (const opt of options) {
     const text = opt.textContent?.trim();
     // Skip Turkey (origin country) and placeholder
-    if (text && text.length > 1 &&
+    if (text && text.length > 1 && text.length < 50 &&
         !text.toLowerCase().includes('seçiniz') &&
+        !text.toLowerCase().includes('select') &&
         text !== 'Türkiye' &&
         text !== 'Turkey') {
       countries.push({ name: text });
