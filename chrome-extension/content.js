@@ -17,6 +17,11 @@ let currentCountry = '';
 let currentWeight = 0;
 let selectedCountries = []; // User-selected countries (empty = all)
 let availableCountries = []; // All countries from dropdown
+let pendingPrices = []; // Prices waiting to be sent
+let sentCount = 0; // Total prices sent to server
+let isSending = false; // Flag to prevent concurrent sends
+const AUTO_SEND_BATCH_SIZE = 50; // Send every 50 prices
+const AUTO_SEND_INTERVAL = 10000; // Or every 10 seconds
 
 // Generate weights: 0.1-0.5 (every 0.1), 0.5-10 (every 0.5), 11-30 (every 1)
 function generateWeights(maxWeight = 30) {
@@ -99,6 +104,7 @@ window.addEventListener('message', (event) => {
 
         if (!exists) {
           allPrices.push(priceData);
+          queuePriceForSend(priceData); // Auto-send to server
 
           // Send to parent if in iframe
           if (IS_IFRAME) {
@@ -198,6 +204,11 @@ function extractPrices(data) {
 
 async function startScrapingInIframe(maxWeight, countriesToScrape = []) {
   console.log('[iframe] Scraping başlıyor...');
+
+  // Reset counters for new scrape
+  sentCount = 0;
+  pendingPrices = [];
+  startAutoSendTimer();
 
   // Get countries from dropdown
   const allCountries = await getCountriesFromDropdown();
@@ -457,6 +468,7 @@ async function processNextWeight(maxWeight) {
 
         if (!exists) {
           allPrices.push(priceData);
+          queuePriceForSend(priceData); // Auto-send to server
         }
       }
       updateUI();
@@ -628,22 +640,24 @@ async function fillWeightAndSubmit(weight) {
 
 function finishScraping() {
   isRunning = false;
-  console.log(`[Scraper] ✅ Tamamlandı! ${allPrices.length} fiyat toplandı`);
+  stopAutoSendTimer(); // Send any remaining prices
+  console.log(`[Scraper] ✅ Tamamlandı! ${allPrices.length} fiyat toplandı, ${sentCount} sunucuya gönderildi`);
 
   if (IS_IFRAME) {
     // Send to parent
     window.parent.postMessage({
       type: 'NAVLUNGO_FINISHED',
       count: allPrices.length,
+      sentCount: sentCount,
       prices: allPrices
     }, '*');
   } else {
     // Update local UI
     document.getElementById('start-btn').style.display = 'block';
     document.getElementById('stop-btn').style.display = 'none';
-    updateStatus(`✅ Tamamlandı! ${allPrices.length} fiyat`);
+    updateStatus(`✅ Tamamlandı! ${allPrices.length} fiyat, ${sentCount} gönderildi`);
     updateUI();
-    showNotification(`✅ ${allPrices.length} fiyat toplandı!`);
+    showNotification(`✅ ${allPrices.length} fiyat toplandı, ${sentCount} sunucuya gönderildi!`);
   }
 }
 
@@ -877,8 +891,16 @@ function createMainPageUI() {
         </div>
 
         <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px;">
-          <div id="price-count" style="font-size: 48px; font-weight: 800; color: #667eea;">0</div>
-          <div style="color: #666; font-size: 13px;">fiyat toplandı</div>
+          <div style="display: flex; justify-content: space-around;">
+            <div>
+              <div id="price-count" style="font-size: 36px; font-weight: 800; color: #667eea;">0</div>
+              <div style="color: #666; font-size: 12px;">toplanan</div>
+            </div>
+            <div>
+              <div id="sent-count" style="font-size: 36px; font-weight: 800; color: #27ae60;">0</div>
+              <div style="color: #666; font-size: 12px;">gönderilen</div>
+            </div>
+          </div>
         </div>
 
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
@@ -1060,7 +1082,7 @@ function updateSelectedCount() {
   }
 }
 
-// Send prices to MoogShip server
+// Send prices to MoogShip server (manual - all prices)
 async function sendToServer() {
   if (allPrices.length === 0) {
     showNotification('❌ Gönderilecek fiyat yok!', 'error');
@@ -1100,12 +1122,99 @@ async function sendToServer() {
   }
 }
 
+// Auto-send prices to server (called automatically during scraping)
+async function autoSendPrices() {
+  if (isSending || pendingPrices.length === 0) return;
+
+  isSending = true;
+  const pricesToSend = [...pendingPrices];
+  pendingPrices = []; // Clear pending
+
+  try {
+    const response = await fetch('https://app.moogship.com/api/external-pricing/prices/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prices: pricesToSend.map(p => ({
+          country: p.country,
+          countryName: p.country,
+          weight: p.weight,
+          carrier: p.carrier,
+          service: p.service,
+          price: p.price,
+          currency: p.currency,
+          transitDays: p.transitTime || p.transitDays || null
+        })),
+        source: 'chrome-extension-auto'
+      })
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      sentCount += pricesToSend.length;
+      console.log(`[Scraper] ✅ ${pricesToSend.length} fiyat otomatik gönderildi (toplam: ${sentCount})`);
+      updateSentCount();
+    } else {
+      console.error(`[Scraper] ❌ Auto-send hatası: ${result.error}`);
+      // Put prices back to pending queue
+      pendingPrices = [...pricesToSend, ...pendingPrices];
+    }
+  } catch (error) {
+    console.error(`[Scraper] ❌ Auto-send bağlantı hatası: ${error.message}`);
+    // Put prices back to pending queue
+    pendingPrices = [...pricesToSend, ...pendingPrices];
+  }
+
+  isSending = false;
+}
+
+// Add price to pending queue and trigger auto-send if needed
+function queuePriceForSend(priceData) {
+  pendingPrices.push(priceData);
+
+  // Auto-send when batch size reached
+  if (pendingPrices.length >= AUTO_SEND_BATCH_SIZE) {
+    autoSendPrices();
+  }
+}
+
+// Update sent count display
+function updateSentCount() {
+  const el = document.getElementById('sent-count');
+  if (el) el.textContent = sentCount;
+}
+
+// Start auto-send interval timer
+let autoSendTimer = null;
+function startAutoSendTimer() {
+  if (autoSendTimer) return;
+  autoSendTimer = setInterval(() => {
+    if (isRunning && pendingPrices.length > 0) {
+      autoSendPrices();
+    }
+  }, AUTO_SEND_INTERVAL);
+}
+
+function stopAutoSendTimer() {
+  if (autoSendTimer) {
+    clearInterval(autoSendTimer);
+    autoSendTimer = null;
+  }
+  // Send any remaining prices
+  if (pendingPrices.length > 0) {
+    autoSendPrices();
+  }
+}
+
 function startFromMainPage() {
   const maxWeight = parseInt(document.getElementById('max-weight-input')?.value) || 30;
 
   isRunning = true;
   allPrices = [];
+  sentCount = 0;
+  pendingPrices = [];
   updateUI();
+  updateSentCount();
 
   document.getElementById('start-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'block';
@@ -1174,11 +1283,13 @@ window.addEventListener('message', (event) => {
   if (event.data.type === 'NAVLUNGO_FINISHED') {
     isRunning = false;
     allPrices = event.data.prices || allPrices;
+    sentCount = event.data.sentCount || 0;
     document.getElementById('start-btn').style.display = 'block';
     document.getElementById('stop-btn').style.display = 'none';
-    updateStatus(`✅ Tamamlandı! ${event.data.count} fiyat`);
+    updateStatus(`✅ Tamamlandı! ${event.data.count} fiyat, ${sentCount} gönderildi`);
     updateUI();
-    showNotification(`✅ ${event.data.count} fiyat toplandı!`);
+    updateSentCount();
+    showNotification(`✅ ${event.data.count} fiyat toplandı, ${sentCount} sunucuya gönderildi!`);
   }
 
   if (event.data.type === 'NAVLUNGO_ERROR') {
