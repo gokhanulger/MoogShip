@@ -300,65 +300,54 @@ export async function getBatchPrices(batchId: number): Promise<ExternalPrice[]> 
 }
 
 /**
- * Approve a batch - activate all prices in the batch
+ * Approve a batch - activate all prices in the batch (OPTIMIZED with bulk SQL)
  */
 export async function approveBatch(
   batchId: number,
   adminUserId: number,
   replaceExisting: boolean = true
 ): Promise<{ approvedCount: number }> {
-  const batchPrices = await getBatchPrices(batchId);
+  // Get count first
+  const [countResult] = await db.select({ count: sql<number>`count(*)` })
+    .from(externalPrices)
+    .where(eq(externalPrices.batchId, batchId));
 
-  if (batchPrices.length === 0) {
+  const approvedCount = Number(countResult?.count || 0);
+
+  if (approvedCount === 0) {
     throw new Error("No prices found in batch");
   }
 
-  let approvedCount = 0;
+  console.log(`[ExternalPricing] Starting bulk approval for batch #${batchId} with ${approvedCount} prices`);
 
-  for (const price of batchPrices) {
-    // If replacing existing, disable old prices for same route
-    if (replaceExisting) {
-      await db.update(externalPrices)
-        .set({
-          status: "disabled",
-          isVisibleToCustomers: false,
-          updatedAt: new Date()
-        })
-        .where(and(
-          eq(externalPrices.countryCode, price.countryCode),
-          eq(externalPrices.weight, price.weight),
-          eq(externalPrices.carrier, price.carrier),
-          eq(externalPrices.service, price.service),
-          eq(externalPrices.status, "active")
-        ));
-    }
-
-    // Activate the new price
-    await db.update(externalPrices)
-      .set({
-        status: "active",
-        isVisibleToCustomers: true,
-        approvedAt: new Date(),
-        approvedBy: adminUserId,
-        updatedAt: new Date()
-      })
-      .where(eq(externalPrices.id, price.id));
-
-    // Log the approval
-    await db.insert(externalPriceAuditLogs)
-      .values({
-        priceId: price.id,
-        action: "approved",
-        previousValue: { status: price.status },
-        newValue: { status: "active" },
-        userId: adminUserId,
-        reason: `Batch #${batchId} approved`
-      });
-
-    approvedCount++;
+  // Step 1: If replacing existing, disable ALL old active prices that match any price in this batch
+  // Using a single bulk update with subquery
+  if (replaceExisting) {
+    await db.execute(sql`
+      UPDATE external_prices
+      SET status = 'disabled', is_visible_to_customers = false, updated_at = NOW()
+      WHERE status = 'active'
+      AND id NOT IN (SELECT id FROM external_prices WHERE batch_id = ${batchId})
+      AND (country_code, weight, carrier, service) IN (
+        SELECT country_code, weight, carrier, service
+        FROM external_prices
+        WHERE batch_id = ${batchId}
+      )
+    `);
   }
 
-  // Update batch status
+  // Step 2: Activate ALL prices in this batch with a single UPDATE
+  await db.update(externalPrices)
+    .set({
+      status: "active",
+      isVisibleToCustomers: true,
+      approvedAt: new Date(),
+      approvedBy: adminUserId,
+      updatedAt: new Date()
+    })
+    .where(eq(externalPrices.batchId, batchId));
+
+  // Step 3: Update batch status
   await db.update(externalScrapeBatches)
     .set({
       status: "approved",
@@ -368,7 +357,7 @@ export async function approveBatch(
     })
     .where(eq(externalScrapeBatches.id, batchId));
 
-  console.log(`[ExternalPricing] Batch #${batchId} approved: ${approvedCount} prices activated`);
+  console.log(`[ExternalPricing] Batch #${batchId} approved: ${approvedCount} prices activated (bulk)`);
 
   return { approvedCount };
 }
