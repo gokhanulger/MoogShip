@@ -3,6 +3,12 @@
  * Works in Quick Price Calculator iframe
  */
 
+// Prevent double loading
+if (window.__NAVLUNGO_SCRAPER_LOADED__) {
+  console.log('[Navlungo Scraper] Already loaded, skipping...');
+} else {
+  window.__NAVLUNGO_SCRAPER_LOADED__ = true;
+
 const IS_IFRAME = window.self !== window.top;
 const IS_QUICK_CALC = window.location.hostname === 'quick-price-calculator.navlungo.com';
 const IS_MAIN_PAGE = window.location.hostname === 'ship.navlungo.com';
@@ -20,8 +26,13 @@ let availableCountries = []; // All countries from dropdown
 let pendingPrices = []; // Prices waiting to be sent
 let sentCount = 0; // Total prices sent to server
 let isSending = false; // Flag to prevent concurrent sends
-const AUTO_SEND_BATCH_SIZE = 50; // Send every 50 prices
-const AUTO_SEND_INTERVAL = 10000; // Or every 10 seconds
+let isPaused = false; // Pause flag for user control
+const AUTO_SEND_BATCH_SIZE = 25; // Send every 25 prices (reduced from 50)
+const AUTO_SEND_INTERVAL = 15000; // Or every 15 seconds (increased from 10)
+const MAX_MEMORY_PRICES = 500; // Maximum prices to keep in memory before forced send
+const WEIGHT_DELAY = 2000; // Delay between weight iterations (ms)
+const COUNTRY_DELAY = 3000; // Delay between country iterations (ms)
+const MAX_RETRIES = 3; // Max retries for failed sends
 
 // Generate weights: 0.1-0.5 (every 0.1), 0.5-10 (every 0.5), 11-30 (every 1)
 function generateWeights(maxWeight = 30) {
@@ -144,21 +155,48 @@ function handleCommand(msg) {
   switch(msg.cmd) {
     case 'START':
       isRunning = true;
+      isPaused = false;
       allPrices = [];
+      pendingPrices = [];
+      sentCount = 0;
       startScrapingInIframe(msg.maxWeight || 30, msg.countries || []);
       break;
     case 'STOP':
       isRunning = false;
+      isPaused = false;
       countryQueue = [];
       weightQueue = [];
+      // Send remaining prices before stopping
+      if (pendingPrices.length > 0) {
+        autoSendPrices();
+      }
+      break;
+    case 'PAUSE':
+      isPaused = true;
+      window.parent.postMessage({ type: 'NAVLUNGO_STATUS', status: '⏸️ Duraklatıldı' }, '*');
+      break;
+    case 'RESUME':
+      isPaused = false;
+      window.parent.postMessage({ type: 'NAVLUNGO_STATUS', status: '▶️ Devam ediliyor...' }, '*');
+      // Resume processing
+      if (weightQueue.length > 0) {
+        processNextWeight(30);
+      } else if (countryQueue.length > 0) {
+        processNextCountry(30);
+      }
       break;
     case 'GET_STATUS':
       window.parent.postMessage({
         type: 'NAVLUNGO_STATUS',
         count: allPrices.length,
         running: isRunning,
+        paused: isPaused,
         country: currentCountry,
-        weight: currentWeight
+        weight: currentWeight,
+        pending: pendingPrices.length,
+        sent: sentCount,
+        countriesLeft: countryQueue.length,
+        weightsLeft: weightQueue.length
       }, '*');
       break;
     case 'GET_COUNTRIES':
@@ -236,6 +274,9 @@ async function startScrapingInIframe(maxWeight, countriesToScrape = []) {
 
   countryQueue = [...countries];
   weightQueue = [];
+
+  // Wait a bit before starting to ensure dropdown is fully closed
+  await sleep(1000);
 
   // Process countries
   await processNextCountry(maxWeight);
@@ -353,9 +394,11 @@ async function getCountriesFromDropdown() {
 
   console.log(`[Scraper] ${countries.length} ülke bulundu (Türkiye hariç)`);
 
-  // Close dropdown
+  // Close dropdown properly
   const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
   document.dispatchEvent(escEvent);
+  await sleep(300);
+  document.body.click(); // Extra click to ensure closed
   await sleep(500);
 
   return countries;
@@ -396,8 +439,17 @@ async function processNextCountry(maxWeight) {
 }
 
 async function selectCountry(country) {
+  console.log(`[Scraper] 🔍 selectCountry başladı: "${country.name}"`);
+
+  // First, close any open dropdown
+  const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+  document.dispatchEvent(escEvent);
+  await sleep(500);
+
   // Find destination combobox
   const comboboxes = document.querySelectorAll('[role="combobox"]');
+  console.log(`[Scraper] ${comboboxes.length} combobox bulundu`);
+
   let dropdown = null;
 
   // Try to find by label "Nereye"
@@ -406,20 +458,33 @@ async function selectCountry(country) {
     if (label.textContent?.trim() === 'Nereye') {
       const container = label.closest('div');
       dropdown = container?.querySelector('[role="combobox"]');
-      if (dropdown) break;
+      if (dropdown) {
+        console.log('[Scraper] Nereye label ile dropdown bulundu');
+        break;
+      }
     }
   }
 
   // Fallback: second combobox
   if (!dropdown && comboboxes.length >= 2) {
     dropdown = comboboxes[1];
+    console.log('[Scraper] İkinci combobox kullanılıyor');
   } else if (!dropdown && comboboxes.length === 1) {
     dropdown = comboboxes[0];
+    console.log('[Scraper] Tek combobox kullanılıyor');
   }
 
-  if (!dropdown) return false;
+  if (!dropdown) {
+    console.log('[Scraper] ❌ Dropdown bulunamadı!');
+    return false;
+  }
+
+  // Click somewhere else first to ensure dropdown is closed
+  document.body.click();
+  await sleep(300);
 
   // Click to open with proper events
+  console.log('[Scraper] Dropdown açılıyor...');
   dropdown.focus();
   await sleep(100);
 
@@ -433,44 +498,132 @@ async function selectCountry(country) {
   await sleep(50);
   dropdown.dispatchEvent(click);
 
-  await sleep(2000);
+  // Wait for options to appear with polling
+  console.log('[Scraper] Options bekleniyor...');
+  let options = [];
+  const optionSelectors = [
+    '[role="option"]',
+    '[role="listbox"] > div',
+    '[role="listbox"] li',
+    'ul[role="listbox"] > li',
+    '[class*="option"]',
+    '[class*="Option"]',
+    '[class*="menu"] > div',
+    '[class*="Menu"] > div',
+    '[class*="MenuList"] > div',
+    '[class*="list"] > div',
+    '[class*="dropdown"] li',
+    '[class*="Dropdown"] li',
+    'li[id*="option"]',
+    'div[id*="option"]'
+  ];
 
-  // Find the option
-  const options = document.querySelectorAll('[role="option"]');
+  // Poll for options up to 5 seconds
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await sleep(500);
 
+    for (const selector of optionSelectors) {
+      const found = document.querySelectorAll(selector);
+      if (found.length > options.length) {
+        options = found;
+        console.log(`[Scraper] Selector "${selector}": ${found.length} element`);
+      }
+    }
+
+    if (options.length > 5) {
+      console.log(`[Scraper] ✅ ${options.length} option bulundu (attempt ${attempt + 1})`);
+      break;
+    }
+  }
+
+  if (options.length === 0) {
+    console.log('[Scraper] ❌ Hiç option bulunamadı! DOM yapısı kontrol ediliyor...');
+    // Log what's visible
+    const listboxes = document.querySelectorAll('[role="listbox"]');
+    console.log(`[Scraper] Listbox sayısı: ${listboxes.length}`);
+    listboxes.forEach((lb, i) => {
+      console.log(`[Scraper] Listbox ${i} children: ${lb.children.length}`);
+    });
+
+    // Close and return
+    const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+    document.dispatchEvent(escEvent);
+    return false;
+  }
+
+  console.log(`[Scraper] ${options.length} option bulundu, "${country.name}" aranıyor...`);
+
+  // Try exact match first
   for (const opt of options) {
     const text = opt.textContent?.trim();
     if (text === country.name) {
       opt.click();
-      console.log(`[Scraper] ✅ ${country.name} seçildi`);
+      console.log(`[Scraper] ✅ ${country.name} seçildi (exact match)`);
       await sleep(500);
       return true;
     }
   }
 
+  // Try partial match (case insensitive)
+  for (const opt of options) {
+    const text = opt.textContent?.trim()?.toLowerCase();
+    if (text && text === country.name.toLowerCase()) {
+      opt.click();
+      console.log(`[Scraper] ✅ ${country.name} seçildi (case insensitive)`);
+      await sleep(500);
+      return true;
+    }
+  }
+
+  // Try contains match
+  for (const opt of options) {
+    const text = opt.textContent?.trim()?.toLowerCase();
+    if (text && (text.includes(country.name.toLowerCase()) || country.name.toLowerCase().includes(text))) {
+      opt.click();
+      console.log(`[Scraper] ✅ ${country.name} seçildi (contains match: "${opt.textContent?.trim()}")`);
+      await sleep(500);
+      return true;
+    }
+  }
+
+  console.log(`[Scraper] ❌ "${country.name}" bulunamadı. İlk 5 option:`);
+  Array.from(options).slice(0, 5).forEach((opt, i) => {
+    console.log(`  [${i}] "${opt.textContent?.trim()}"`);
+  });
+
   // Close dropdown if not found
-  const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
-  document.dispatchEvent(escEvent);
+  const escClose = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+  document.dispatchEvent(escClose);
   await sleep(300);
 
   return false;
 }
 
 async function processNextWeight(maxWeight) {
-  if (!isRunning) return;
+  if (!isRunning || isPaused) return;
+
+  // Check memory and wait if too high
+  if (pendingPrices.length > MAX_MEMORY_PRICES * 0.8) {
+    console.log(`[Scraper] ⏳ Memory yüksek (${pendingPrices.length}), gönderim bekleniyor...`);
+    await waitForSendToComplete();
+  }
 
   if (weightQueue.length === 0) {
+    // Add delay between countries
+    await sleep(COUNTRY_DELAY);
     await processNextCountry(maxWeight);
     return;
   }
 
   currentWeight = weightQueue.shift();
 
-  console.log(`[iframe] ⚖️ ${currentCountry} - ${currentWeight}kg`);
+  console.log(`[iframe] ⚖️ ${currentCountry} - ${currentWeight}kg (${weightQueue.length} kaldı)`);
   window.parent.postMessage({
     type: 'NAVLUNGO_STATUS',
     status: `${currentCountry} - ${currentWeight}kg`,
-    count: allPrices.length
+    count: allPrices.length,
+    pending: pendingPrices.length,
+    sent: sentCount
   }, '*');
 
   // Fill weight and submit
@@ -506,8 +659,19 @@ async function processNextWeight(maxWeight) {
     }
   }
 
-  if (isRunning) {
-    await processNextWeight(maxWeight);
+  if (isRunning && !isPaused) {
+    // Add delay between weights to prevent overwhelming the system
+    await sleep(WEIGHT_DELAY);
+    // Use setTimeout to prevent stack overflow on very long runs
+    setTimeout(() => processNextWeight(maxWeight), 0);
+  }
+}
+
+// Wait for pending sends to complete
+async function waitForSendToComplete() {
+  while (pendingPrices.length > AUTO_SEND_BATCH_SIZE && isRunning) {
+    await autoSendPrices();
+    await sleep(2000);
   }
 }
 
@@ -812,7 +976,7 @@ function createMainPageUI() {
   const panel = document.createElement('div');
   panel.id = 'scraper-panel';
   panel.innerHTML = `
-    <div style="
+    <div id="scraper-container" style="
       position: fixed;
       bottom: 20px;
       right: 20px;
@@ -823,15 +987,20 @@ function createMainPageUI() {
       z-index: 999999;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden;
-      max-height: 90vh;
-      overflow-y: auto;
+      transition: all 0.3s ease;
     ">
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px;">
-        <div style="font-size: 20px; font-weight: 700;">📦 Navlungo Scraper</div>
-        <div style="font-size: 13px; opacity: 0.9; margin-top: 4px;" id="status-text">Hazır</div>
+      <div id="scraper-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 18px; font-weight: 700;">📦 Navlungo Scraper</div>
+          <div style="font-size: 12px; opacity: 0.9; margin-top: 2px;" id="status-text">Hazır</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="mini-count" style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">0</span>
+          <button id="toggle-panel-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">▼</button>
+        </div>
       </div>
 
-      <div style="padding: 20px;">
+      <div id="panel-content" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
         <!-- Country Selection -->
         <div style="margin-bottom: 16px;">
           <label style="font-size: 13px; font-weight: 600; color: #333;">🌍 Ülke Seçimi:</label>
@@ -907,9 +1076,32 @@ function createMainPageUI() {
             font-weight: 700;
             cursor: pointer;
           ">▶️ BAŞLAT</button>
-          <button id="stop-btn" style="
+          <button id="pause-btn" style="
             flex: 1;
             padding: 14px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+          ">⏸️ DURAKLAT</button>
+          <button id="resume-btn" style="
+            flex: 1;
+            padding: 14px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+          ">▶️ DEVAM</button>
+          <button id="stop-btn" style="
+            padding: 14px 20px;
             background: #e74c3c;
             color: white;
             border: none;
@@ -918,7 +1110,7 @@ function createMainPageUI() {
             font-weight: 700;
             cursor: pointer;
             display: none;
-          ">⏹️ DURDUR</button>
+          ">⏹️</button>
         </div>
 
         <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px;">
@@ -986,6 +1178,8 @@ function createMainPageUI() {
 
   document.getElementById('start-btn').onclick = startFromMainPage;
   document.getElementById('stop-btn').onclick = stopFromMainPage;
+  document.getElementById('pause-btn').onclick = pauseScraping;
+  document.getElementById('resume-btn').onclick = resumeScraping;
   document.getElementById('export-csv-btn').onclick = exportCSV;
   document.getElementById('export-json-btn').onclick = exportJSON;
   document.getElementById('clear-btn').onclick = clearAll;
@@ -993,6 +1187,57 @@ function createMainPageUI() {
   document.getElementById('select-all-btn').onclick = selectAllCountries;
   document.getElementById('clear-selection-btn').onclick = clearCountrySelection;
   document.getElementById('send-server-btn').onclick = sendToServer;
+  document.getElementById('toggle-panel-btn').onclick = togglePanel;
+  document.getElementById('scraper-header').onclick = (e) => {
+    // Only toggle if clicking header, not the button
+    if (e.target.id !== 'toggle-panel-btn') {
+      togglePanel();
+    }
+  };
+}
+
+// Toggle panel expand/collapse
+let isPanelExpanded = true;
+function togglePanel() {
+  const content = document.getElementById('panel-content');
+  const btn = document.getElementById('toggle-panel-btn');
+  const container = document.getElementById('scraper-container');
+
+  isPanelExpanded = !isPanelExpanded;
+
+  if (isPanelExpanded) {
+    content.style.display = 'block';
+    btn.textContent = '▼';
+    container.style.width = '380px';
+  } else {
+    content.style.display = 'none';
+    btn.textContent = '▲';
+    container.style.width = '280px';
+  }
+}
+
+// Pause scraping
+function pauseScraping() {
+  const iframe = findPriceIframe();
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({ type: 'NAVLUNGO_CMD', cmd: 'PAUSE' }, '*');
+  }
+  isPaused = true;
+  document.getElementById('pause-btn').style.display = 'none';
+  document.getElementById('resume-btn').style.display = 'block';
+  updateStatus('⏸️ Duraklatıldı');
+}
+
+// Resume scraping
+function resumeScraping() {
+  const iframe = findPriceIframe();
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({ type: 'NAVLUNGO_CMD', cmd: 'RESUME' }, '*');
+  }
+  isPaused = false;
+  document.getElementById('pause-btn').style.display = 'block';
+  document.getElementById('resume-btn').style.display = 'none';
+  updateStatus('▶️ Devam ediliyor...');
 }
 
 // Find the price calculator iframe
@@ -1153,55 +1398,83 @@ async function sendToServer() {
   }
 }
 
-// Auto-send prices to server (called automatically during scraping)
-async function autoSendPrices() {
+// Auto-send prices to server via background script (avoids CORS)
+async function autoSendPrices(retryCount = 0) {
   if (isSending || pendingPrices.length === 0) return;
 
   isSending = true;
-  const pricesToSend = [...pendingPrices];
-  pendingPrices = []; // Clear pending
+  const pricesToSend = pendingPrices.splice(0, AUTO_SEND_BATCH_SIZE);
 
   try {
-    const response = await fetch('https://app.moogship.com/api/external-pricing/prices/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prices: pricesToSend.map(p => ({
-          country: p.country,
-          countryName: p.country,
-          weight: p.weight,
-          carrier: p.carrier,
-          service: p.service,
-          price: p.price,
-          currency: p.currency,
-          transitDays: p.transitTime || p.transitDays || null
-        })),
-        source: 'chrome-extension-auto'
-      })
+    // Send via background script to avoid CORS
+    const response = await chrome.runtime.sendMessage({
+      type: 'SEND_PRICES_BATCH',
+      prices: pricesToSend.map(p => ({
+        country: p.country,
+        countryName: p.country,
+        weight: p.weight,
+        carrier: p.carrier,
+        service: p.service,
+        price: p.price,
+        currency: p.currency,
+        transitDays: p.transitTime || p.transitDays || null
+      }))
     });
 
-    const result = await response.json();
-    if (result.success) {
+    if (response && response.success) {
       sentCount += pricesToSend.length;
       console.log(`[Scraper] ✅ ${pricesToSend.length} fiyat otomatik gönderildi (toplam: ${sentCount})`);
       updateSentCount();
+      clearSentPricesFromMemory(pricesToSend);
     } else {
-      console.error(`[Scraper] ❌ Auto-send hatası: ${result.error}`);
-      // Put prices back to pending queue
-      pendingPrices = [...pricesToSend, ...pendingPrices];
+      console.error(`[Scraper] ❌ Auto-send hatası: ${response?.error || 'Unknown error'}`);
+      if (retryCount < MAX_RETRIES) {
+        pendingPrices.unshift(...pricesToSend);
+        setTimeout(() => {
+          isSending = false;
+          autoSendPrices(retryCount + 1);
+        }, 1000 * Math.pow(2, retryCount));
+        return;
+      }
     }
   } catch (error) {
     console.error(`[Scraper] ❌ Auto-send bağlantı hatası: ${error.message}`);
-    // Put prices back to pending queue
-    pendingPrices = [...pricesToSend, ...pendingPrices];
+    if (retryCount < MAX_RETRIES) {
+      pendingPrices.unshift(...pricesToSend);
+      setTimeout(() => {
+        isSending = false;
+        autoSendPrices(retryCount + 1);
+      }, 1000 * Math.pow(2, retryCount));
+      return;
+    }
   }
 
   isSending = false;
 }
 
+// Clear sent prices from memory to prevent buildup
+function clearSentPricesFromMemory(sentPrices) {
+  const sentKeys = new Set(sentPrices.map(p =>
+    `${p.carrier}-${p.service}-${p.country}-${p.weight}`
+  ));
+
+  allPrices = allPrices.filter(p =>
+    !sentKeys.has(`${p.carrier}-${p.service}-${p.country}-${p.weight}`)
+  );
+
+  console.log(`[Scraper] 🧹 Memory temizlendi, kalan: ${allPrices.length} fiyat`);
+}
+
 // Add price to pending queue and trigger auto-send if needed
 function queuePriceForSend(priceData) {
   pendingPrices.push(priceData);
+
+  // Force send when memory limit reached to prevent browser freeze
+  if (pendingPrices.length >= MAX_MEMORY_PRICES) {
+    console.log(`[Scraper] ⚠️ Memory limiti (${MAX_MEMORY_PRICES}) aşıldı, zorla gönderiliyor...`);
+    autoSendPrices();
+    return;
+  }
 
   // Auto-send when batch size reached
   if (pendingPrices.length >= AUTO_SEND_BATCH_SIZE) {
@@ -1241,6 +1514,7 @@ function startFromMainPage() {
   const maxWeight = parseInt(document.getElementById('max-weight-input')?.value) || 30;
 
   isRunning = true;
+  isPaused = false;
   allPrices = [];
   sentCount = 0;
   pendingPrices = [];
@@ -1248,6 +1522,8 @@ function startFromMainPage() {
   updateSentCount();
 
   document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('pause-btn').style.display = 'block';
+  document.getElementById('resume-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'block';
 
   const countryInfo = selectedCountries.length > 0
@@ -1277,6 +1553,7 @@ function startFromMainPage() {
 
 function stopFromMainPage() {
   isRunning = false;
+  isPaused = false;
 
   const iframe = findPriceIframe();
   if (iframe && iframe.contentWindow) {
@@ -1284,6 +1561,8 @@ function stopFromMainPage() {
   }
 
   document.getElementById('start-btn').style.display = 'block';
+  document.getElementById('pause-btn').style.display = 'none';
+  document.getElementById('resume-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'none';
   updateStatus('Durduruldu');
 }
@@ -1296,6 +1575,16 @@ window.addEventListener('message', (event) => {
     if (event.data.status) updateStatus(event.data.status);
     if (event.data.count !== undefined) {
       document.getElementById('price-count').textContent = event.data.count;
+    }
+    if (event.data.sent !== undefined) {
+      sentCount = event.data.sent;
+      updateSentCount();
+    }
+    if (event.data.pending !== undefined) {
+      // Show pending count in status if high
+      if (event.data.pending > 100) {
+        updateStatus(`${event.data.status || ''} (${event.data.pending} bekliyor)`);
+      }
     }
   }
 
@@ -1313,9 +1602,12 @@ window.addEventListener('message', (event) => {
 
   if (event.data.type === 'NAVLUNGO_FINISHED') {
     isRunning = false;
+    isPaused = false;
     allPrices = event.data.prices || allPrices;
     sentCount = event.data.sentCount || 0;
     document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('pause-btn').style.display = 'none';
+    document.getElementById('resume-btn').style.display = 'none';
     document.getElementById('stop-btn').style.display = 'none';
     updateStatus(`✅ Tamamlandı! ${event.data.count} fiyat, ${sentCount} gönderildi`);
     updateUI();
@@ -1332,6 +1624,10 @@ window.addEventListener('message', (event) => {
 function updateUI() {
   const el = document.getElementById('price-count');
   if (el) el.textContent = allPrices.length;
+
+  // Update mini count in header
+  const miniCount = document.getElementById('mini-count');
+  if (miniCount) miniCount.textContent = allPrices.length;
 
   // Also send to parent if in iframe
   if (IS_IFRAME) {
@@ -1452,3 +1748,5 @@ chrome.runtime?.onMessage?.addListener((msg, sender, sendResponse) => {
 });
 
 console.log('[Navlungo Scraper] ✅ Yüklendi!');
+
+} // End of singleton check

@@ -94,6 +94,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .catch(err => sendResponse({ success: false, error: err.message }));
       return true;
 
+    case 'SEND_PRICES_BATCH':
+      // Handle batch send from content script (avoids CORS)
+      sendPricesBatch(message.prices)
+        .then(result => sendResponse(result))
+        .catch(err => sendResponse({ success: false, error: err.message }));
+      return true;
+
     case 'EXPORT_CSV':
       const csv = generateCSV(capturedPrices);
       sendResponse({ success: true, csv });
@@ -136,6 +143,36 @@ function updateBadge(count) {
     chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
   } else {
     chrome.action.setBadgeText({ text: '' });
+  }
+}
+
+// Send batch prices to MoogShip server (called from content script)
+async function sendPricesBatch(prices) {
+  const url = CONFIG.BACKEND_URL + CONFIG.API_PATH;
+  console.log(`[Navlungo BG] Sending batch of ${prices.length} prices to ${url}`);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prices,
+        source: 'chrome-extension-auto'
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('[Navlungo BG] Batch send response:', result);
+
+    return { success: true, result, batchId: result.batchId };
+  } catch (error) {
+    console.error('[Navlungo BG] Batch send failed:', error);
+    return { success: false, error: error.message };
   }
 }
 
