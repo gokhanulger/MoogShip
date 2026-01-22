@@ -347,15 +347,38 @@ export default function AuthPage() {
       
       if (response.ok) {
         const userData = await response.json();
-        
+
+        console.log("[AUTH FORM] Login successful for user:", userData.username);
+
+        // CRITICAL: Set login timestamp BEFORE storing user - this prevents soft-401 from clearing user
+        const loginTime = Date.now();
+        localStorage.setItem('moogship_last_login_at', loginTime.toString());
+        console.log("[AUTH FORM] Set login timestamp:", loginTime);
+
+        // CRITICAL: Clear logout marker to enable new session
+        localStorage.removeItem('moogship_logout_marker');
+        sessionStorage.removeItem('moogship_logout_marker');
+        console.log("[AUTH FORM] Cleared logout markers");
+
+        // Store user data in localStorage
+        localStorage.setItem('moogship_auth_user', JSON.stringify(userData));
+        console.log("[AUTH FORM] Stored user in localStorage");
+
         toast({
           title: "Login successful",
           description: `Welcome back, ${userData.name}!`,
-          duration: 3000,
+          duration: 2000,
         });
-        
-        // Redirect to dashboard
-        setLocation("/dashboard");
+
+        // CRITICAL: Use hard reload instead of setLocation to ensure:
+        // 1. All React Query cache is cleared
+        // 2. Fresh user data is fetched
+        // 3. No stale state from previous user
+        const redirectPath = userData.role === 'admin' ? '/admin-shipments' : '/dashboard';
+        const cacheBust = Date.now();
+        console.log("[AUTH FORM] Hard reload to:", redirectPath);
+
+        window.location.href = `${redirectPath}?_t=${cacheBust}`;
       } else {
         try {
           const errorData = await response.json();
