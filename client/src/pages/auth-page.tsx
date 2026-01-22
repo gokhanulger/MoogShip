@@ -172,6 +172,8 @@ export default function AuthPage() {
         'moogship_mobile_session',
         'moogship_temp_user',
         'moogship_session_user',
+        'moogship_logout_marker',  // CRITICAL: Clear logout marker for new login
+        'moogship_last_login_at',  // Clear old login timestamp
         'mobile_safari_login_success',
         'mobile_safari_authenticated',
         'mobile_login_success',
@@ -281,36 +283,43 @@ export default function AuthPage() {
       
       // Login successful
       console.log("[AUTH FORM] Login successful for user:", data.username);
-      
+
+      // CRITICAL: Set login timestamp BEFORE storing user - this prevents soft-401 from clearing user
+      const loginTime = Date.now();
+      localStorage.setItem('moogship_last_login_at', loginTime.toString());
+      console.log("[AUTH FORM] Set login timestamp:", loginTime);
+
+      // CRITICAL: Clear logout marker again to ensure it's gone
+      localStorage.removeItem('moogship_logout_marker');
+      sessionStorage.removeItem('moogship_logout_marker');
+
       // Store user data in localStorage for mobile compatibility
       localStorage.setItem('moogship_auth_user', JSON.stringify(data));
-      
+
       // Clear any previous mobile session issues
       localStorage.removeItem('mobile_login_failed');
       localStorage.setItem('mobile_login_success', 'true');
-      
+
       toast({
         title: "Login successful",
         description: "Welcome back!",
         duration: 2000,
       });
-      
+
       // Clear the form immediately to prevent resubmission
       loginForm.reset({ username: '', password: '' });
-      
-      // Enhanced navigation for all browsers
+
+      // Enhanced navigation for all browsers - use hard reload to ensure fresh state
       const redirectPath = data.role === 'admin' ? '/admin-shipments' : '/dashboard';
-      
-      if (isMobile) {
-        console.log("[AUTH FORM] Mobile login successful - direct navigation");
-        // Immediate navigation for mobile
-        setLocation(redirectPath);
-      } else {
-        // Short delay for desktop to ensure session is fully established
-        setTimeout(() => {
-          setLocation(redirectPath);
-        }, 300);
-      }
+      const cacheBust = Date.now();
+
+      console.log("[AUTH FORM] Hard reload to:", redirectPath);
+
+      // CRITICAL: Use hard reload instead of setLocation to ensure:
+      // 1. All React Query cache is cleared
+      // 2. Fresh user data is fetched
+      // 3. No stale state from previous user
+      window.location.href = `${redirectPath}?_t=${cacheBust}`;
       
     } catch (error) {
       console.error("Login error:", error);
