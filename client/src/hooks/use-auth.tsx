@@ -343,13 +343,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Initialize with stored user if available
   const [localUser, setLocalUser] = useState<UserData | null>(() => {
+    // CRITICAL DEBUG: Log all relevant localStorage values
+    console.log('[AUTH INIT] Starting user initialization');
+    console.log('[AUTH INIT] localStorage keys:', Object.keys(localStorage).filter(k => k.includes('moogship')));
+    console.log('[AUTH INIT] moogship_auth_user exists:', !!localStorage.getItem('moogship_auth_user'));
+    console.log('[AUTH INIT] moogship_logout_marker:', localStorage.getItem('moogship_logout_marker'));
+    console.log('[AUTH INIT] moogship_last_login_at:', localStorage.getItem('moogship_last_login_at'));
+
+    // CRITICAL FIX: Check if we just logged in (within last 30 seconds)
+    // If so, prioritize the stored user data over any logout marker
+    const lastLoginTime = localStorage.getItem('moogship_last_login_at');
+    if (lastLoginTime) {
+      const timeSinceLogin = Date.now() - parseInt(lastLoginTime, 10);
+      console.log('[AUTH INIT] Time since login:', timeSinceLogin, 'ms');
+
+      if (timeSinceLogin < 30000) {
+        // We just logged in - ignore logout markers and use stored user
+        console.log('[AUTH INIT] Recent login detected - bypassing logout marker check');
+        const storedUser = localStorage.getItem('moogship_auth_user');
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            console.log('[AUTH INIT] Using stored user from recent login:', userData.username);
+            return userData;
+          } catch (e) {
+            console.error('[AUTH INIT] Error parsing stored user:', e);
+          }
+        }
+      }
+    }
+
     const storedUser = getUserFromStorage();
+    console.log('[AUTH INIT] getUserFromStorage returned:', storedUser ? storedUser.username : 'null');
+
     const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-    
+
     if (isMobile && storedUser) {
       // Mobile user initialized from storage
     }
-    
+
     return storedUser;
   });
   
@@ -686,6 +718,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
     const isCapacitorApp = !!(window as any).Capacitor?.isNativePlatform?.();
 
+    // DEBUG: Log the user resolution
+    console.log('[AUTH EFFECTIVE] user from query:', user ? user.username : 'null');
+    console.log('[AUTH EFFECTIVE] localUser:', localUser ? localUser.username : 'null');
+    console.log('[AUTH EFFECTIVE] isLoading:', isLoading);
+
     if ((isMobile && isSafari) || isCapacitorApp) {
       // CRITICAL FIX: Always check for stored authentication first for mobile Safari
       const loginSuccess = localStorage.getItem('mobile_safari_login_success');
@@ -734,7 +771,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
     
-    return user || localUser;
+    // CRITICAL FIX: If we just logged in, always use localUser even if query returned null
+    const lastLoginTime = localStorage.getItem('moogship_last_login_at');
+    if (!user && localUser && lastLoginTime) {
+      const timeSinceLogin = Date.now() - parseInt(lastLoginTime, 10);
+      if (timeSinceLogin < 30000) {
+        console.log('[AUTH EFFECTIVE] Recent login - using localUser:', localUser.username);
+        return localUser;
+      }
+    }
+
+    const result = user || localUser;
+    console.log('[AUTH EFFECTIVE] Final result:', result ? result.username : 'null');
+    return result;
   })();
 
   // Update local storage whenever user data changes from server
