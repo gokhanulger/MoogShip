@@ -62,7 +62,9 @@ function clearUserDataForLogin() {
     'session',
     'sessionId',
     // Also clear logout marker so fresh login works
-    'moogship_logout_marker'
+    'moogship_logout_marker',
+    // Clear old login timestamp (new one will be set after successful login)
+    'moogship_last_login_at'
   ];
 
   keysToRemove.forEach(key => {
@@ -86,7 +88,7 @@ function clearUserFromStorage() {
   } catch (e) {
     console.error('Error setting logout marker:', e);
   }
-  
+
   // Clear all known authentication storage keys
   const keysToRemove = [
     AUTH_STORAGE_KEY,
@@ -105,7 +107,8 @@ function clearUserFromStorage() {
     'user',
     'auth_user',
     'session',
-    'sessionId'
+    'sessionId',
+    'moogship_last_login_at'
   ];
   
   // Remove all known keys from BOTH localStorage and sessionStorage
@@ -374,7 +377,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   
   // CRITICAL FIX: Track last login time to prevent immediate soft-401 resurrection
-  const [lastLoginAt, setLastLoginAt] = useState<number | null>(null);
+  // Initialize from localStorage to survive page reload
+  const [lastLoginAt, setLastLoginAt] = useState<number | null>(() => {
+    try {
+      const stored = localStorage.getItem('moogship_last_login_at');
+      if (stored) {
+        const loginTime = parseInt(stored, 10);
+        const timeSinceLogin = Date.now() - loginTime;
+        // Only consider login timestamp valid if within last 30 seconds
+        if (timeSinceLogin < 30000) {
+          console.log('[AUTH] Restored lastLoginAt from storage, age:', timeSinceLogin, 'ms');
+          return loginTime;
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  });
   
   // CRITICAL FIX: Store timeout ID for delayed refetch so it can be cancelled
   const delayedRefetchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -560,22 +580,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Implement soft-401 handling to prevent transient errors from logging out users
         if (res.status === 401) {
+          const now = Date.now();
+
+          // CRITICAL FIX: Check persisted login timestamp first (survives page reload)
+          let timeSinceLogin = Infinity;
+          if (lastLoginAt) {
+            timeSinceLogin = now - lastLoginAt;
+          } else {
+            // Also check localStorage directly in case state wasn't initialized
+            try {
+              const storedLoginTime = localStorage.getItem('moogship_last_login_at');
+              if (storedLoginTime) {
+                timeSinceLogin = now - parseInt(storedLoginTime, 10);
+              }
+            } catch (e) {}
+          }
+
+          // CRITICAL FIX: If we just logged in, NEVER clear user data
+          // The session cookie may not be established yet on this page load
+          if (timeSinceLogin < 10000) { // Within 10 seconds of login
+            console.log('[AUTH] 401 right after login (', timeSinceLogin, 'ms ago) - returning stored user for retry');
+
+            // Return the stored user data while we wait for session to establish
+            const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+            if (storedUser) {
+              try {
+                const userData = JSON.parse(storedUser);
+                console.log('[AUTH] Returning stored user:', userData.username);
+
+                // Schedule a retry to fetch fresh data
+                setTimeout(() => {
+                  console.log('[AUTH] Retrying user fetch after login');
+                  queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+                }, 2000);
+
+                return userData;
+              } catch (e) {}
+            }
+
+            // No stored user but we just logged in - return null and let retry happen
+            return null;
+          }
+
           // CRITICAL FIX: If user has logged out, never resurrect old user data
           if (hasLoggedOut) {
             console.log('[AUTH] 401 after logout - clearing all data, no fallback to storage');
             setConfirmedUnauthorized(true);
             clearUserFromStorage();
             setLocalUser(null);
-            return null;
-          }
-          
-          // CRITICAL FIX: If we just logged in, NEVER use soft-401 fallback
-          // Cookie might not be established yet - wait for proper fetch
-          const now = Date.now();
-          const timeSinceLogin = lastLoginAt ? now - lastLoginAt : Infinity;
-          if (timeSinceLogin < 5000) { // Within 5 seconds of login
-            console.log('[AUTH] 401 right after login - waiting for session establishment, returning null for retry');
-            // DON'T set confirmedUnauthorized - just return null to let React Query retry
             return null;
           }
           
@@ -849,8 +901,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // CRITICAL FIX: Track login time to prevent immediate soft-401
+      // Also persist to localStorage so it survives page reload
       const loginTime = Date.now();
       setLastLoginAt(loginTime);
+      localStorage.setItem('moogship_last_login_at', loginTime.toString());
+      console.log('[AUTH] LOGIN: Set login timestamp:', loginTime);
 
       // CRITICAL FIX: Clear logout marker before saving new user
       console.log("[AUTH] Clearing logout marker to enable new session");
