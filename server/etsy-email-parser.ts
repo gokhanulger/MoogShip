@@ -82,25 +82,64 @@ export function parseEtsyOrderEmail(parsed: any): any {
     if (parsed.html) {
       // Look for the address HTML structure
       const addressMatch = parsed.html.match(/<address[^>]*>([\s\S]*?)<\/address>/i);
+
+      console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Address block found:', !!addressMatch);
+
       if (addressMatch) {
         const addressHtml = addressMatch[1];
-        
+
+        // Log raw address HTML for debugging (truncated)
+        console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Raw address HTML (first 500 chars):', addressHtml.substring(0, 500));
+
         // Extract name from span class='name'
         const nameMatch = addressHtml.match(/<span\s+class\s*=\s*['"]?name['"]?\s*>([^<]+)<\/span>/i);
         if (nameMatch) {
           order.buyerName = order.shipToName = nameMatch[1].trim();
+          console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Name found:', order.shipToName);
         }
-        
+
         // Extract street from span class='first-line'
         const streetMatch = addressHtml.match(/<span\s+class\s*=\s*['"]?first-line['"]?\s*>([^<]+)<\/span>/i);
         if (streetMatch) {
           order.shipToAddress1 = streetMatch[1].trim();
+          console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Address1 found:', order.shipToAddress1);
         }
 
         // Extract second address line from span class='second-line' (Apt, Unit, etc.)
-        const secondLineMatch = addressHtml.match(/<span\s+class\s*=\s*['"]?second-line['"]?\s*>([^<]+)<\/span>/i);
-        if (secondLineMatch) {
-          order.shipToAddress2 = secondLineMatch[1].trim();
+        // Try multiple regex patterns for robustness
+        const secondLinePatterns = [
+          /<span\s+class\s*=\s*['"]?second-line['"]?\s*>([^<]+)<\/span>/i,
+          /<span\s+class\s*=\s*["']second-line["']\s*>([^<]+)<\/span>/i,
+          /<span\s+class=second-line>([^<]+)<\/span>/i,
+          /class\s*=\s*['"]?second-line['"]?[^>]*>([^<]+)</i
+        ];
+
+        let secondLineFound = false;
+        for (const pattern of secondLinePatterns) {
+          const secondLineMatch = addressHtml.match(pattern);
+          if (secondLineMatch && secondLineMatch[1] && secondLineMatch[1].trim()) {
+            order.shipToAddress2 = secondLineMatch[1].trim();
+            secondLineFound = true;
+            console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Address2 found with pattern', secondLinePatterns.indexOf(pattern), ':', order.shipToAddress2);
+            break;
+          }
+        }
+
+        // Fallback: Check if address HTML contains 'second-line' anywhere but regex didn't match
+        if (!secondLineFound && addressHtml.includes('second-line')) {
+          console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- WARNING: second-line exists in HTML but regex failed to match!');
+          console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Full address HTML:', addressHtml);
+
+          // Try to extract using a more lenient approach
+          const lenientMatch = addressHtml.match(/second-line[^>]*>([^<]+)/i);
+          if (lenientMatch && lenientMatch[1] && lenientMatch[1].trim()) {
+            order.shipToAddress2 = lenientMatch[1].trim();
+            console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Address2 found with lenient match:', order.shipToAddress2);
+          }
+        }
+
+        if (!secondLineFound && !order.shipToAddress2) {
+          console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- No second-line in address HTML');
         }
 
         // Extract city from span class='city'
@@ -108,17 +147,53 @@ export function parseEtsyOrderEmail(parsed: any): any {
         if (cityMatch) {
           order.shipToCity = cityMatch[1].trim();
         }
-        
+
         // Extract state from span class='state'
         const stateMatch = addressHtml.match(/<span\s+class\s*=\s*['"]?state['"]?\s*>([^<]+)<\/span>/i);
         if (stateMatch) {
           order.shipToState = stateMatch[1].trim();
         }
-        
+
         // Extract zip from span class='zip'
         const zipMatch = addressHtml.match(/<span\s+class\s*=\s*['"]?zip['"]?\s*>([^<]+)<\/span>/i);
         if (zipMatch) {
           order.shipToZip = zipMatch[1].trim();
+        }
+
+        // Final address extraction summary
+        console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Address extraction complete:', {
+          name: order.shipToName || '(empty)',
+          address1: order.shipToAddress1 || '(empty)',
+          address2: order.shipToAddress2 || '(empty)',
+          city: order.shipToCity || '(empty)',
+          state: order.shipToState || '(empty)',
+          zip: order.shipToZip || '(empty)'
+        });
+      } else {
+        console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- WARNING: No <address> block found in HTML!');
+      }
+    } else {
+      console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- WARNING: No HTML content in parsed email!');
+    }
+
+    // 5b. Additional fallback: Extract apartment info from address1 if it contains Apt/Unit/Suite
+    if (order.shipToAddress1 && !order.shipToAddress2) {
+      const aptPatterns = [
+        /^(.+?)\s+(apt\.?\s*#?\s*\S+)$/i,
+        /^(.+?)\s+(unit\.?\s*#?\s*\S+)$/i,
+        /^(.+?)\s+(suite\.?\s*#?\s*\S+)$/i,
+        /^(.+?)\s+(#\s*\S+)$/i,
+        /^(.+?),\s*(apt\.?\s*#?\s*\S+.*)$/i,
+        /^(.+?),\s*(unit\.?\s*#?\s*\S+.*)$/i
+      ];
+
+      for (const pattern of aptPatterns) {
+        const match = order.shipToAddress1.match(pattern);
+        if (match && match[1] && match[2]) {
+          console.log('[EMAIL-PARSER] Order:', order.orderNumber, '- Extracting apartment from address1:', match[2]);
+          order.shipToAddress2 = match[2].trim();
+          order.shipToAddress1 = match[1].trim();
+          break;
         }
       }
     }
