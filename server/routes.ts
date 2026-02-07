@@ -386,7 +386,7 @@ import {
   markAnnouncementViewed,
 } from "./controllers/announcementController";
 import { calculatePrice } from "./controllers/priceController";
-import { calculateMoogShipPricing } from "./services/moogship-pricing";
+import { calculateCombinedPricing } from "./services/moogship-pricing";
 import { storage } from "./storage";
 import { registerCmsRoutes } from "./cms-routes";
 import { db } from "./db";
@@ -3916,7 +3916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Found ${aramexRates.length} Aramex rates`);
 
       // Also test the main pricing service with Aramex integration
-      const moogShipPricing = await calculateMoogShipPricing(
+      const moogShipPricing = await calculateCombinedPricing(
         testParams.packageLength,
         testParams.packageWidth,
         testParams.packageHeight,
@@ -4058,8 +4058,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Import the same MoogShip pricing service used by shipment-create
-      const { calculateMoogShipPricing } = await import(
+      // Import the combined pricing service (external first, Ship Entegra fallback)
+      const { calculateCombinedPricing } = await import(
         "./services/moogship-pricing"
       );
 
@@ -4097,9 +4097,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               `Bulk pricing shipment ${index + 1}: ${length}x${width}x${height}cm, Weight: ${actualWeight}kg, Billable: ${billableWeight.toFixed(2)}kg`,
             );
 
-            // Use the same MoogShip pricing service as shipment-create with user multiplier
+            // Use combined pricing (external first, Ship Entegra fallback) with user multiplier
             // Pass userId for user-specific pricing rules (overrides global rules)
-            const pricingResult = await calculateMoogShipPricing(
+            const pricingResult = await calculateCombinedPricing(
               length,
               width,
               height,
@@ -4110,7 +4110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               user.id, // userId for user-specific pricing rules
             );
 
-            // No additional multiplier needed - calculateMoogShipPricing already applies it
+            // No additional multiplier needed - calculateCombinedPricing already applies it
             if (
               !pricingResult ||
               !pricingResult.success ||
@@ -4127,7 +4127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             // Transform the MoogShip pricing result to match bulk upload format
-            // Use the exact pricing options as returned from calculateMoogShipPricing without modification
+            // Use the exact pricing options as returned from calculateCombinedPricing without modification
             const pricingOptions = pricingResult.options.map((option: any) => ({
               id: option.id,
               serviceName: option.serviceName,
@@ -4298,9 +4298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `💰 Using price multiplier: ${userPriceMultiplier} for user ${user.username}`,
       );
 
-      // Import the Shipentegra service
-      const { calculateShippingPrice } = await import("./services/shipentegra");
-
       // Process each shipment in parallel
       const shipmentsWithPricingPromises = shipments.map(
         async (shipment, index) => {
@@ -4315,14 +4312,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const volumetricWeight = (length * width * height) / 5000;
             const billableWeight = Math.max(actualWeight, volumetricWeight);
 
-            // Import the unified MoogShip pricing service
-            const { calculateMoogShipPricing } = await import(
+            // Import the combined pricing service (external first, Ship Entegra fallback)
+            const { calculateCombinedPricing } = await import(
               "./services/moogship-pricing"
             );
 
-            // Call the unified pricing system that includes both Shipentegra and AFS Transport
+            // Call combined pricing (external first, Ship Entegra fallback)
             // Pass userPriceMultiplier and userId for user-specific pricing rules
-            const pricingResult = await calculateMoogShipPricing(
+            const pricingResult = await calculateCombinedPricing(
               length,
               width,
               height,
@@ -7883,7 +7880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(
         "🇬🇧 UK PRICING DEBUG: Testing UK pricing with enhanced debugging...",
       );
-      const result = await moogshipPricing.calculateMoogShipPricing(
+      const result = await moogshipPricing.calculateCombinedPricing(
         25, // length
         20, // width
         5, // height
@@ -12053,8 +12050,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`💰 Weight calculation: actual=${actualWeight}kg, volumetric=${volumetricWeight.toFixed(2)}kg, billable=${billableWeight.toFixed(2)}kg`);
 
-      // Import the pricing service
-      const { calculateMoogShipPricing } = await import('./services/moogship-pricing');
+      // Import the combined pricing service (external first, Ship Entegra fallback)
+      const { calculateCombinedPricing } = await import('./services/moogship-pricing');
 
       // Get user multiplier based on role and context
       // ADMIN: Always sees COST prices (multiplier = 1) unless creating for a specific customer
@@ -12120,9 +12117,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? userId
         : req.user?.id;
 
-      // Calculate pricing options with user-specific rules
+      // Calculate pricing options: external (Navlungo) first, Ship Entegra fallback
       // Use billableWeight for weight-based pricing rules (max of actual and volumetric)
-      const pricingResult = await calculateMoogShipPricing(
+      const pricingResult = await calculateCombinedPricing(
         length,
         width,
         height,
@@ -12477,15 +12474,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const volumetricWeight = (length * width * height) / 5000;
       const billableWeight = Math.max(actualWeight, volumetricWeight);
 
-      // Import the pricing service
-      const { calculateMoogShipPricing } = await import('./services/moogship-pricing');
+      // Import the combined pricing service (external first, Ship Entegra fallback)
+      const { calculateCombinedPricing } = await import('./services/moogship-pricing');
 
       // Use 1.0 multiplier for public pricing (no markup)
       const userMultiplier = 1.0;
       console.log(`💰 Public pricing: actual=${actualWeight}kg, volumetric=${volumetricWeight.toFixed(2)}kg, billable=${billableWeight.toFixed(2)}kg`);
 
-      // Calculate pricing options with billable weight
-      const pricingResult = await calculateMoogShipPricing(
+      // Calculate pricing options: external (Navlungo) first, Ship Entegra fallback
+      const pricingResult = await calculateCombinedPricing(
         length,
         width,
         height,

@@ -4982,8 +4982,8 @@ export const validateBulkShipments = async (req: FileRequest, res: Response) => 
 
     // Calculate prices for all shipments immediately with multiple service options
     try {
-      // Import the MoogShip pricing service that returns multiple options
-      const { calculateMoogShipPricing } = await import('../services/moogship-pricing');
+      // Import the combined pricing service (external first, Ship Entegra fallback)
+      const { calculateCombinedPricing } = await import('../services/moogship-pricing');
 
       // Get user data for pricing calculations
       const user = req.user;
@@ -5010,9 +5010,9 @@ export const validateBulkShipments = async (req: FileRequest, res: Response) => 
             productItems: shipment.productItems || []
           }];
           
-          // Call calculateMoogShipPricing with user multiplier and userId for user-specific rules
-          // calculateMoogShipPricing already applies the multiplier, so no manual multiplication needed
-          const pricingData = await calculateMoogShipPricing(
+          // Call combined pricing (external first, Ship Entegra fallback) with user multiplier
+          // calculateCombinedPricing already applies the multiplier, so no manual multiplication needed
+          const pricingData = await calculateCombinedPricing(
             shipment.length,
             shipment.width,
             shipment.height,
@@ -5028,7 +5028,7 @@ export const validateBulkShipments = async (req: FileRequest, res: Response) => 
           console.log(`💰 Got ${pricingOptions?.length || 0} pricing options for shipment to ${shipment.receiverName}`);
 
           if (pricingOptions && pricingOptions.length > 0) {
-            // Pricing options already have multiplier applied by calculateMoogShipPricing
+            // Pricing options already have multiplier applied by calculateCombinedPricing
             // Add pricing options directly to the shipment
             shipment.pricingOptions = pricingOptions;
 

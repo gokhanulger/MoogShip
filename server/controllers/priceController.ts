@@ -6,7 +6,7 @@ enum ServiceLevel {
   EXPRESS = 'express', 
   PRIORITY = 'priority'
 }
-import { calculateShippingPrice } from '../services/shipentegra';
+import { calculateCombinedPricing } from '../services/moogship-pricing';
 import USITCDutyService from '../services/usitc-duty-rates';
 
 const priceCalculationSchema = z.object({
@@ -59,23 +59,37 @@ export const calculatePrice = async (req: Request, res: Response) => {
 
     const data = result.data;
     
-    // Get basic shipping price
-    const priceData = await calculateShippingPrice(
-      data.senderPostalCode,
-      data.senderCity,
-      data.receiverPostalCode,
-      data.receiverCity,
-      data.receiverCountry,
+    // Get pricing: external (Navlungo) first, Ship Entegra fallback
+    const combinedResult = await calculateCombinedPricing(
       data.packageLength,
       data.packageWidth,
       data.packageHeight,
       data.packageWeight,
-      data.serviceLevel
+      data.receiverCountry,
+      1.0,       // userMultiplier (this endpoint doesn't apply multiplier)
+      false,     // skipMultiplier
+      data.userId
     );
 
-    if (!priceData || !priceData.totalPrice) {
-      return res.status(500).json({ 
-        message: 'Failed to calculate shipping price - invalid API response'
+    // Backward-compatible flat format (frontend expects totalPrice, basePrice at top level)
+    const bestOption = combinedResult.options?.[0];
+    const priceData = {
+      success: combinedResult.success,
+      options: combinedResult.options || [],
+      bestOption: combinedResult.bestOption,
+      currency: combinedResult.currency || 'USD',
+      rawApiResponses: combinedResult.rawApiResponses,
+      // Legacy top-level fields for frontend compatibility
+      basePrice: bestOption?.cargoPrice || 0,
+      fuelCharge: bestOption?.fuelCost || 0,
+      totalPrice: bestOption?.totalPrice || 0,
+      estimatedDeliveryDays: bestOption ? (parseInt(bestOption.deliveryTime) || 5) : 5,
+      carrierName: bestOption?.displayName || 'MoogShip',
+    };
+
+    if (!priceData.success || !priceData.totalPrice) {
+      return res.status(500).json({
+        message: 'Failed to calculate shipping price - no pricing available'
       });
     }
 

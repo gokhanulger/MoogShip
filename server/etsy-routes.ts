@@ -4,7 +4,7 @@ import axios from "axios";
 import { z } from "zod";
 import { storage } from "./storage";
 import { authenticateToken } from "./middlewares/auth";
-import { calculateShippingPrice } from "./services/shipentegra";
+import { calculateCombinedPricing } from "./services/moogship-pricing";
 import USITCDutyService from "./services/usitc-duty-rates";
 
 const router = Router();
@@ -404,40 +404,36 @@ router.patch("/orders/:id", authenticateToken, async (req, res) => {
 // Test pricing endpoint for debugging
 router.get("/test-pricing", async (req, res) => {
   try {
-    console.log('[TEST] Starting pricing test...');
-    const { calculateShippingPrice } = await import('./services/shipentegra');
-    
-    // Test without specifying carrier to get all options
-    const priceData = await calculateShippingPrice(
-      '34000', // Turkey
-      'Istanbul',
-      '10001',
-      'New York',
-      'US',
+    console.log('[TEST] Starting pricing test (combined: external first, Ship Entegra fallback)...');
+    const { calculateCombinedPricing: combinedPricing } = await import('./services/moogship-pricing');
+
+    // Test combined pricing (external first, Ship Entegra fallback)
+    const priceData = await combinedPricing(
       15, // length
       10, // width
       1,  // height
       0.5, // weight in kg
-      'standard' as any
+      'US'
     );
-    
+
     console.log('[TEST] Price data received');
     console.log('[TEST] Has options:', !!(priceData && priceData.options));
     console.log('[TEST] Options count:', priceData?.options?.length || 0);
-    console.log('[TEST] Has totalPrice:', !!(priceData && priceData.totalPrice));
-    
+    console.log('[TEST] Success:', priceData?.success);
+
     if (priceData?.options && priceData.options.length > 0) {
       console.log('[TEST] Available options:');
       priceData.options.forEach((opt: any, idx: number) => {
         console.log(`  ${idx + 1}. ${opt.displayName || opt.serviceName}: $${(opt.totalPrice/100).toFixed(2)}`);
       });
     }
-    
+
+    const bestOption = priceData?.options?.[0];
     res.json({
       message: 'Check server logs for price data structure',
       hasOptions: !!(priceData && priceData.options),
       optionsCount: priceData?.options?.length || 0,
-      hasTotalPrice: !!(priceData && priceData.totalPrice),
+      hasTotalPrice: !!(bestOption && bestOption.totalPrice),
       priceData: priceData
     });
   } catch (error: any) {
@@ -475,22 +471,18 @@ router.post("/calculate-bulk-prices", authenticateToken, async (req, res) => {
         
         // Make a single call to get base pricing
         try {
-          const priceData = await calculateShippingPrice(
-            '34000', // Default sender postal code (Turkey)
-            'Istanbul', // Default sender city
-            orderData.destination?.zip || '10001',
-            orderData.destination?.city || 'New York',
-            orderData.destination?.country || 'US',
+          const combinedResult = await calculateCombinedPricing(
             orderData.package?.length || 15,
             orderData.package?.width || 10,
             orderData.package?.height || 1,
             orderData.package?.weight || 0.5,
-            'standard' as any
+            orderData.destination?.country || 'US',
+            userMultiplier
           );
-          
+
           // Always create three distinct service levels
-          // Base price from API or fallback
-          const basePrice = priceData?.totalPrice || 2000; // $20 fallback
+          // Base price from best option or fallback
+          const basePrice = combinedResult?.options?.[0]?.totalPrice || 2000; // $20 fallback
           
           // Define service levels with different pricing multipliers
           const serviceLevels = [
