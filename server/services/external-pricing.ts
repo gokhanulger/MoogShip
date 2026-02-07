@@ -664,9 +664,10 @@ export async function getPriceStatistics(): Promise<{
  */
 export async function seedDefaultServiceSettings(): Promise<void> {
   const defaults = [
-    { carrier: "FEDEX", service: "Express", displayName: "MoogShip FedEx Express", sortOrder: 1 },
-    { carrier: "THY", service: "Ekonomi", displayName: "MoogShip Eco", sortOrder: 2 },
-    { carrier: "ARAMEX", service: "Express", displayName: "MoogShip Aramex Express", sortOrder: 3 },
+    { carrier: "UPS", service: "Express", displayName: "MoogShip UPS Express", sortOrder: 1 },
+    { carrier: "FEDEX", service: "Express", displayName: "MoogShip FedEx Express", sortOrder: 2 },
+    { carrier: "THY", service: "Ekonomi", displayName: "MoogShip Widect Eco", sortOrder: 3 },
+    { carrier: "ARAMEX", service: "Express", displayName: "MoogShip Aramex Express", sortOrder: 4 },
   ];
 
   for (const setting of defaults) {
