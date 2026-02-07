@@ -2056,21 +2056,23 @@ export class DatabaseStorage {
           if (shippingProvider) {
             return shippingProvider;
           }
-          
+
           // Otherwise, detect based on service characteristics
           const serviceName = selectedService || providerServiceCode || '';
-          
+          const svc = serviceName.toLowerCase();
+
+          // External pricing services (ext-carrier-service format)
+          if (svc.includes('ext-ups')) return 'shipentegra';
+          if (svc.includes('ext-fedex')) return 'shipentegra';
+          if (svc.includes('ext-thy')) return 'shipentegra';
+          if (svc.includes('ext-aramex')) return 'aramex';
+
           // Aramex services: check for aramex in service names
-          if (serviceName.toLowerCase().includes('aramex')) {
-            return 'aramex';
-          }
-          
+          if (svc.includes('aramex')) return 'aramex';
+
           // AFS services: check for afs- prefix or EcoAFS in names
-          if (serviceName.toLowerCase().includes('afs-') || 
-              serviceName.toLowerCase().includes('ecoafs')) {
-            return 'afs';
-          }
-          
+          if (svc.includes('afs-') || svc.includes('ecoafs')) return 'afs';
+
           // Default to shipentegra for other services
           return 'shipentegra';
         })(),
@@ -2084,21 +2086,23 @@ export class DatabaseStorage {
           if (carrierName) {
             return carrierName;
           }
-          
+
           // Otherwise, detect based on service characteristics
           const serviceName = selectedService || providerServiceCode || '';
-          
-          // Aramex services: return appropriate Aramex carrier name
-          if (serviceName.toLowerCase().includes('aramex')) {
-            return 'Aramex';
-          }
-          
-          // AFS services: return appropriate AFS carrier name
-          if (serviceName.toLowerCase().includes('afs-') || 
-              serviceName.toLowerCase().includes('ecoafs')) {
-            return 'AFS Transport';
-          }
-          
+          const svc = serviceName.toLowerCase();
+
+          // External pricing services - use MoogShip branded names
+          if (svc.includes('ext-ups')) return 'MoogShip UPS Express';
+          if (svc.includes('ext-fedex')) return 'MoogShip FedEx Express';
+          if (svc.includes('ext-thy')) return 'MoogShip Widect Eco';
+          if (svc.includes('ext-aramex')) return 'MoogShip Aramex Express';
+
+          // Aramex services
+          if (svc.includes('aramex')) return 'Aramex';
+
+          // AFS services
+          if (svc.includes('afs-') || svc.includes('ecoafs')) return 'AFS Transport';
+
           // Default to Shipentegra for other services
           return 'Shipentegra';
         })(),

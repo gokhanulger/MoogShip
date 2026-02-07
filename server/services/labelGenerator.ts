@@ -309,7 +309,21 @@ function drawShippingLabel(
   const serviceStr = selectedService.toLowerCase();
 
   // Enhanced service detection logic to handle all variations
-  if (serviceStr.includes("eco") || serviceStr.includes("shipentegra-eco")) {
+  // External pricing services (ext-carrier-service format)
+  if (serviceStr.includes("ext-ups")) {
+    serviceName = "MOOGSHIP UPS EXPRESS";
+    deliveryEstimate = "1-4 Days";
+  } else if (serviceStr.includes("ext-fedex")) {
+    serviceName = "MOOGSHIP FEDEX EXPRESS";
+    deliveryEstimate = "2-5 Days";
+  } else if (serviceStr.includes("ext-thy")) {
+    serviceName = "MOOGSHIP WIDECT ECO";
+    deliveryEstimate = "7-14 Days";
+  } else if (serviceStr.includes("ext-aramex")) {
+    serviceName = "MOOGSHIP ARAMEX EXPRESS";
+    deliveryEstimate = "2-4 Days";
+  // Legacy Ship Entegra services
+  } else if (serviceStr.includes("eco") || serviceStr.includes("shipentegra-eco")) {
     serviceName = "DHL E-COMMERCE";
     deliveryEstimate = "7-14 Days";
   } else if (serviceStr.includes("gls") || serviceStr.includes("afs-gls")) {
