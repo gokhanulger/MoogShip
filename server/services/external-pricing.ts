@@ -657,3 +657,27 @@ export async function getPriceStatistics(): Promise<{
     lastUpdated: lastBatch?.scrapedAt || null
   };
 }
+
+/**
+ * Seed default service settings for external pricing.
+ * Idempotent - safe to call multiple times (upsert logic).
+ */
+export async function seedDefaultServiceSettings(): Promise<void> {
+  const defaults = [
+    { carrier: "FEDEX", service: "Express", displayName: "MoogShip FedEx Express", sortOrder: 1 },
+    { carrier: "THY", service: "Ekonomi", displayName: "MoogShip Eco", sortOrder: 2 },
+    { carrier: "ARAMEX", service: "Express", displayName: "MoogShip Aramex Express", sortOrder: 3 },
+  ];
+
+  for (const setting of defaults) {
+    await upsertServiceSetting(
+      setting.carrier,
+      setting.service,
+      setting.displayName,
+      true,
+      setting.sortOrder
+    );
+  }
+
+  console.log(`[ExternalPricing] Seeded ${defaults.length} default service settings`);
+}

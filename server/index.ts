@@ -467,6 +467,11 @@ app.use((req, res, next) => {
       }, () => {
         log(`serving on port ${portToTry}`);
         
+        // Seed default external pricing service settings (idempotent)
+        import('./services/external-pricing').then(m => m.seedDefaultServiceSettings()).catch(err =>
+          console.error('[ExternalPricing] Failed to seed service settings:', err)
+        );
+
         // Start the automatic tracking scheduler after server is running
         startTrackingScheduler();
         
