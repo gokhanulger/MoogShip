@@ -176,6 +176,10 @@ export interface IStorage {
       shipmentStatusUpdates?: string;
       accountNotifications?: boolean;
       adminNotifications?: boolean;
+      trackingDeliveryNotifications?: boolean;
+      refundReturnNotifications?: boolean;
+      supportTicketNotifications?: boolean;
+      customsNotifications?: boolean;
     },
   ): Promise<User | undefined>;
   updateCarrierLabelAccess(
@@ -1802,6 +1806,10 @@ export class DatabaseStorage {
       shipmentStatusUpdates?: string;
       accountNotifications?: boolean;
       adminNotifications?: boolean;
+      trackingDeliveryNotifications?: boolean;
+      refundReturnNotifications?: boolean;
+      supportTicketNotifications?: boolean;
+      customsNotifications?: boolean;
     },
   ): Promise<User | undefined> {
     return this.updateUser(userId, preferences);
@@ -3650,6 +3658,10 @@ export class MemStorage {
       shipmentStatusUpdates?: string;
       accountNotifications?: boolean;
       adminNotifications?: boolean;
+      trackingDeliveryNotifications?: boolean;
+      refundReturnNotifications?: boolean;
+      supportTicketNotifications?: boolean;
+      customsNotifications?: boolean;
     },
   ): Promise<User | undefined> {
     return this.updateUser(userId, preferences);
@@ -5342,6 +5354,10 @@ export class DatabaseOnlyStorage implements IStorage {
       shipmentStatusUpdates?: string;
       accountNotifications?: boolean;
       adminNotifications?: boolean;
+      trackingDeliveryNotifications?: boolean;
+      refundReturnNotifications?: boolean;
+      supportTicketNotifications?: boolean;
+      customsNotifications?: boolean;
     },
   ): Promise<User | undefined> {
     return this.updateUser(userId, preferences);

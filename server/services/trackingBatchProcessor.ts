@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { sendConsolidatedUserTrackingReport, sendConsolidatedAdminTrackingReport } from "../notification-emails";
+import { sendConsolidatedUserTrackingReport, sendConsolidatedAdminTrackingReport, shouldSendNotification } from "../notification-emails";
 import { TrackingUpdateBatch, User, Shipment } from "@shared/schema";
 
 /**
@@ -117,20 +117,24 @@ export class TrackingBatchProcessor {
 
   /**
    * Send consolidated email notifications to users
+   * Respects user notification preferences (tracking_delivery)
    */
   private async sendUserNotifications(
     updatesByUser: Map<number, (TrackingUpdateBatch & { shipment: Shipment; user: User })[]>
   ): Promise<void> {
-    console.log(`📧 Sending consolidated emails to ${updatesByUser.size} users`);
-
     for (const [userId, userUpdates] of Array.from(updatesByUser)) {
       try {
-        // Get the user (we already have it in the updates, but get the first one)
         const user = userUpdates[0].user;
+
+        // Check user notification preferences
+        const shouldSend = await shouldSendNotification(userId, 'tracking_delivery', false);
+        if (!shouldSend) {
+          console.log(`📧 Consolidated tracking report skipped for user ${user.email} - preference disabled`);
+          continue;
+        }
 
         console.log(`📬 Sending consolidated tracking report to ${user.email} (${userUpdates.length} updates)`);
 
-        // Send consolidated email to the user
         const result = await sendConsolidatedUserTrackingReport(user, userUpdates);
 
         if (result.success) {

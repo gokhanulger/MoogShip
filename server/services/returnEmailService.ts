@@ -1,5 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import type { Return, User } from '@shared/schema';
+import { shouldSendNotification } from '../notification-emails';
 
 if (!process.env.SENDGRID_API_KEY) {
   throw new Error("SENDGRID_API_KEY environment variable must be set");
@@ -172,14 +173,21 @@ Bu e-posta MoogShip İade Yönetim Sistemi tarafından otomatik olarak gönderil
 };
 
 export const sendStatusUpdateEmail = async (
-  returnData: Return, 
-  sellerEmail: string, 
-  newStatus: string, 
+  returnData: Return,
+  sellerEmail: string,
+  newStatus: string,
   adminNotes?: string
 ): Promise<{ success: boolean; error?: any }> => {
   try {
+    // Check seller notification preferences
+    const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
+    if (!shouldSend) {
+      console.log(`Return status email skipped for seller ${returnData.sellerId} - preference disabled`);
+      return { success: true };
+    }
+
     const template = getStatusUpdateTemplate(returnData, newStatus, adminNotes);
-    
+
     await mailService.send({
       to: sellerEmail,
       from: FROM_EMAIL,
@@ -197,13 +205,20 @@ export const sendStatusUpdateEmail = async (
 };
 
 export const sendPhotoUploadEmail = async (
-  returnData: Return, 
-  sellerEmail: string, 
+  returnData: Return,
+  sellerEmail: string,
   photoCount: number
 ): Promise<{ success: boolean; error?: any }> => {
   try {
+    // Check seller notification preferences
+    const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
+    if (!shouldSend) {
+      console.log(`Return photo email skipped for seller ${returnData.sellerId} - preference disabled`);
+      return { success: true };
+    }
+
     const template = getPhotoUploadTemplate(returnData, photoCount);
-    
+
     await mailService.send({
       to: sellerEmail,
       from: FROM_EMAIL,

@@ -1,5 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import { User, Shipment, RefundRequest } from '@shared/schema';
+import { shouldSendNotification } from './notification-emails';
 
 if (!process.env.SENDGRID_API_KEY) {
   throw new Error("SENDGRID_API_KEY environment variable must be set");
@@ -23,6 +24,13 @@ export async function sendRefundStatusUpdateNotification(
   adminNotes?: string
 ): Promise<boolean> {
   try {
+    // Check user notification preferences
+    const shouldSend = await shouldSendNotification(user.id, 'refund_return', false);
+    if (!shouldSend) {
+      console.log(`Refund status notification skipped for user ${user.id} (${user.email}) - preference disabled`);
+      return true;
+    }
+
     const isApproved = newStatus === 'approved';
     const totalAmount = shipments.reduce((sum, s) => sum + (s.totalPrice || 0), 0);
     

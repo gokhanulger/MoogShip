@@ -1,4 +1,5 @@
 import { sendEmail } from '../email.js';
+import { shouldSendNotification } from '../notification-emails.js';
 
 interface TicketEmailData {
   ticketId: number;
@@ -9,6 +10,7 @@ interface TicketEmailData {
   status: string;
   userName: string;
   userEmail: string;
+  userId?: number;
   assignedToName?: string;
   assignedToEmail?: string;
   adminName?: string;
@@ -260,42 +262,35 @@ function createTicketEmailTemplate(data: TicketEmailData, type: 'created' | 'upd
 
 export async function sendTicketCreatedNotification(ticketData: TicketEmailData): Promise<void> {
   try {
-    // Send notification to customer
-    const customerEmail: EmailTemplate = {
-      to: ticketData.userEmail,
-      from: FROM_EMAIL,
-      subject: `Destek Talebi Oluşturuldu - #${ticketData.ticketId}: ${ticketData.subject}`,
-      text: createTicketEmailTextTemplate(ticketData, 'created', false),
-      html: createTicketEmailTemplate(ticketData, 'created', false)
-    };
+    // Check customer notification preferences
+    let shouldSendToCustomer = true;
+    if (ticketData.userId) {
+      shouldSendToCustomer = await shouldSendNotification(ticketData.userId, 'support_ticket', false);
+    }
 
-    // Send notification to admins (exclude customer email to avoid duplicates)
+    // Send notification to customer (if preference allows)
+    let customerResult = { success: true };
+    if (shouldSendToCustomer) {
+      customerResult = await sendEmail({
+        to: ticketData.userEmail,
+        from: FROM_EMAIL,
+        subject: `Destek Talebi Oluşturuldu - #${ticketData.ticketId}: ${ticketData.subject}`,
+        text: createTicketEmailTextTemplate(ticketData, 'created', false),
+        html: createTicketEmailTemplate(ticketData, 'created', false)
+      });
+    } else {
+      console.log(`Ticket creation customer email skipped for user ${ticketData.userId} - preference disabled`);
+    }
+
+    // Send notification to admins (always)
     const adminEmailsFiltered = ADMIN_EMAILS.filter(adminEmail => adminEmail !== ticketData.userEmail);
-    const adminEmails: EmailTemplate[] = adminEmailsFiltered.map(adminEmail => ({
-      to: adminEmail,
-      from: FROM_EMAIL,
-      subject: `🎫 Yeni Destek Talebi #${ticketData.ticketId} - ${formatPriority(ticketData.priority).replace(/<[^>]*>/g, '')} Öncelik`,
-      text: createTicketEmailTextTemplate(ticketData, 'created', true),
-      html: createTicketEmailTemplate(ticketData, 'created', true)
-    }));
-
-    // Send customer email
-    const customerResult = await sendEmail({
-      to: customerEmail.to,
-      from: customerEmail.from,
-      subject: customerEmail.subject,
-      text: customerEmail.text,
-      html: customerEmail.html
-    });
-
-    // Send admin emails
     const adminResults = await Promise.all(
-      adminEmails.map(email => sendEmail({
-        to: email.to,
-        from: email.from,
-        subject: email.subject,
-        text: email.text,
-        html: email.html
+      adminEmailsFiltered.map(adminEmail => sendEmail({
+        to: adminEmail,
+        from: FROM_EMAIL,
+        subject: `🎫 Yeni Destek Talebi #${ticketData.ticketId} - ${formatPriority(ticketData.priority).replace(/<[^>]*>/g, '')} Öncelik`,
+        text: createTicketEmailTextTemplate(ticketData, 'created', true),
+        html: createTicketEmailTemplate(ticketData, 'created', true)
       }))
     );
 
@@ -322,18 +317,27 @@ export async function sendTicketCreatedNotification(ticketData: TicketEmailData)
 export async function sendTicketUpdatedNotification(ticketData: TicketEmailData, updateType: 'status_change' | 'assignment' | 'general'): Promise<void> {
   try {
     const emailType = updateType === 'assignment' ? 'assigned' : 'updated';
-    
-    // Send notification to customer
-    const customerEmail: EmailTemplate = {
-      to: ticketData.userEmail,
-      from: FROM_EMAIL,
-      subject: `Support Ticket Updated - #${ticketData.ticketId}: ${ticketData.subject}`,
-      text: createTicketEmailTextTemplate(ticketData, emailType, false),
-      html: createTicketEmailTemplate(ticketData, emailType, false)
-    };
 
-    // Send notification to assigned admin if exists
-    const emails: EmailTemplate[] = [customerEmail];
+    // Check customer notification preferences
+    let shouldSendToCustomer = true;
+    if (ticketData.userId) {
+      shouldSendToCustomer = await shouldSendNotification(ticketData.userId, 'support_ticket', false);
+    }
+
+    const emails: EmailTemplate[] = [];
+
+    // Send notification to customer (if preference allows)
+    if (shouldSendToCustomer) {
+      emails.push({
+        to: ticketData.userEmail,
+        from: FROM_EMAIL,
+        subject: `Support Ticket Updated - #${ticketData.ticketId}: ${ticketData.subject}`,
+        text: createTicketEmailTextTemplate(ticketData, emailType, false),
+        html: createTicketEmailTemplate(ticketData, emailType, false)
+      });
+    } else {
+      console.log(`Ticket update customer email skipped for user ${ticketData.userId} - preference disabled`);
+    }
     
     if (ticketData.assignedToEmail && updateType !== 'assignment') {
       emails.push({
@@ -407,17 +411,26 @@ export async function sendTicketClosedNotification(ticketData: TicketEmailData, 
     const adminClosureTextTemplate = createTicketEmailTextTemplate(ticketData, 'closed', true) + 
       (closureReason ? `\n\nClosure Reason:\n${closureReason}` : '');
 
-    // Send notification to customer
-    const customerEmail: EmailTemplate = {
-      to: ticketData.userEmail,
-      from: FROM_EMAIL,
-      subject: `Support Ticket Resolved - #${ticketData.ticketId}: ${ticketData.subject}`,
-      text: customerClosureTextTemplate,
-      html: customerClosureTemplate
-    };
+    // Check customer notification preferences
+    let shouldSendToCustomer = true;
+    if (ticketData.userId) {
+      shouldSendToCustomer = await shouldSendNotification(ticketData.userId, 'support_ticket', false);
+    }
 
-    // Send notification to assigned admin if exists
-    const emails: EmailTemplate[] = [customerEmail];
+    const emails: EmailTemplate[] = [];
+
+    // Send notification to customer (if preference allows)
+    if (shouldSendToCustomer) {
+      emails.push({
+        to: ticketData.userEmail,
+        from: FROM_EMAIL,
+        subject: `Support Ticket Resolved - #${ticketData.ticketId}: ${ticketData.subject}`,
+        text: customerClosureTextTemplate,
+        html: customerClosureTemplate
+      });
+    } else {
+      console.log(`Ticket closure customer email skipped for user ${ticketData.userId} - preference disabled`);
+    }
     
     if (ticketData.assignedToEmail) {
       emails.push({
@@ -559,14 +572,22 @@ export async function sendTicketResponseNotification(responseData: TicketRespons
 
     switch (type) {
       case 'admin_to_customer':
-        // Admin responded - notify customer
-        emails.push({
-          to: responseData.userEmail,
-          from: FROM_EMAIL,
-          subject: `💬 New Response to Your Support Ticket #${responseData.ticketId}`,
-          text: generateTextContent(createTicketResponseEmailTemplate(responseData, 'admin_to_customer')),
-          html: createTicketResponseEmailTemplate(responseData, 'admin_to_customer')
-        });
+        // Admin responded - notify customer (if preference allows)
+        let shouldSendToCustomer = true;
+        if (responseData.userId) {
+          shouldSendToCustomer = await shouldSendNotification(responseData.userId, 'support_ticket', false);
+        }
+        if (shouldSendToCustomer) {
+          emails.push({
+            to: responseData.userEmail,
+            from: FROM_EMAIL,
+            subject: `💬 New Response to Your Support Ticket #${responseData.ticketId}`,
+            text: generateTextContent(createTicketResponseEmailTemplate(responseData, 'admin_to_customer')),
+            html: createTicketResponseEmailTemplate(responseData, 'admin_to_customer')
+          });
+        } else {
+          console.log(`Ticket response customer email skipped for user ${responseData.userId} - preference disabled`);
+        }
         break;
 
       case 'customer_to_admin':

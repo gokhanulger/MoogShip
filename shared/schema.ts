@@ -60,7 +60,11 @@ export const users = pgTable("users", {
   shipmentStatusUpdates: text("shipment_status_updates").default("immediate"), // immediate, daily_digest, off
   accountNotifications: boolean("account_notifications").default(true), // Account-related notifications on/off
   adminNotifications: boolean("admin_notifications").default(true), // Admin notifications on/off
-  
+  trackingDeliveryNotifications: boolean("tracking_delivery_notifications").default(true), // Tracking & delivery notifications
+  refundReturnNotifications: boolean("refund_return_notifications").default(true), // Refund & return notifications
+  supportTicketNotifications: boolean("support_ticket_notifications").default(true), // Support ticket notifications
+  customsNotifications: boolean("customs_notifications").default(true), // Customs charges notifications
+
   createdAt: timestamp("created_at").defaultNow()
 });
 

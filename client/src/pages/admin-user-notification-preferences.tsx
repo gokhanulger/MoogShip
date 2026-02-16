@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Mail, Package, Settings, User, Search, Filter, Clock, ExternalLink } from "lucide-react";
+import { Bell, Mail, Package, Settings, User, Search, Filter, Clock, ExternalLink, Truck, RotateCcw, MessageSquare, ShieldAlert } from "lucide-react";
 import Layout from "@/components/layout";
 
 interface UserNotificationPreferences {
@@ -22,6 +22,10 @@ interface UserNotificationPreferences {
   shipmentStatusUpdates: string;
   accountNotifications: boolean;
   adminNotifications: boolean;
+  trackingDeliveryNotifications: boolean;
+  refundReturnNotifications: boolean;
+  supportTicketNotifications: boolean;
+  customsNotifications: boolean;
 }
 
 interface NotificationLog {
@@ -62,6 +66,10 @@ export default function AdminUserNotificationPreferences() {
       emailMarketingCampaigns: !!user.emailMarketingCampaigns,
       accountNotifications: !!user.accountNotifications,
       adminNotifications: !!user.adminNotifications,
+      trackingDeliveryNotifications: user.trackingDeliveryNotifications !== false,
+      refundReturnNotifications: user.refundReturnNotifications !== false,
+      supportTicketNotifications: user.supportTicketNotifications !== false,
+      customsNotifications: user.customsNotifications !== false,
       shipmentStatusUpdates: String(user.shipmentStatusUpdates || 'immediate'),
     })),
   });
@@ -139,6 +147,10 @@ export default function AdminUserNotificationPreferences() {
     shipmentDigest: usersWithLocalToggles.filter(u => u.shipmentStatusUpdates === 'daily_digest').length,
     accountNotifications: usersWithLocalToggles.filter(u => !u.accountNotifications).length,
     adminNotifications: usersWithLocalToggles.filter(u => !u.adminNotifications).length,
+    trackingDelivery: usersWithLocalToggles.filter(u => !u.trackingDeliveryNotifications).length,
+    refundReturn: usersWithLocalToggles.filter(u => !u.refundReturnNotifications).length,
+    supportTicket: usersWithLocalToggles.filter(u => !u.supportTicketNotifications).length,
+    customs: usersWithLocalToggles.filter(u => !u.customsNotifications).length,
   } : null;
 
   // Helper functions to handle preference updates
@@ -187,6 +199,54 @@ export default function AdminUserNotificationPreferences() {
     updateUserNotificationMutation.mutate({
       userId: user.id,
       preferences: { adminNotifications: newValue }
+    });
+  };
+
+  const toggleTrackingDelivery = (user: UserNotificationPreferences) => {
+    const newValue = !user.trackingDeliveryNotifications;
+    setLocalToggles(prev => ({
+      ...prev,
+      [user.id]: { ...prev[user.id], trackingDeliveryNotifications: newValue }
+    }));
+    updateUserNotificationMutation.mutate({
+      userId: user.id,
+      preferences: { trackingDeliveryNotifications: newValue }
+    });
+  };
+
+  const toggleRefundReturn = (user: UserNotificationPreferences) => {
+    const newValue = !user.refundReturnNotifications;
+    setLocalToggles(prev => ({
+      ...prev,
+      [user.id]: { ...prev[user.id], refundReturnNotifications: newValue }
+    }));
+    updateUserNotificationMutation.mutate({
+      userId: user.id,
+      preferences: { refundReturnNotifications: newValue }
+    });
+  };
+
+  const toggleSupportTicket = (user: UserNotificationPreferences) => {
+    const newValue = !user.supportTicketNotifications;
+    setLocalToggles(prev => ({
+      ...prev,
+      [user.id]: { ...prev[user.id], supportTicketNotifications: newValue }
+    }));
+    updateUserNotificationMutation.mutate({
+      userId: user.id,
+      preferences: { supportTicketNotifications: newValue }
+    });
+  };
+
+  const toggleCustoms = (user: UserNotificationPreferences) => {
+    const newValue = !user.customsNotifications;
+    setLocalToggles(prev => ({
+      ...prev,
+      [user.id]: { ...prev[user.id], customsNotifications: newValue }
+    }));
+    updateUserNotificationMutation.mutate({
+      userId: user.id,
+      preferences: { customsNotifications: newValue }
     });
   };
 
@@ -304,7 +364,7 @@ export default function AdminUserNotificationPreferences() {
 
         {/* Summary Cards */}
         {optOutCounts && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -379,6 +439,66 @@ export default function AdminUserNotificationPreferences() {
                 <p className="text-xs text-muted-foreground">users opted out</p>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  Tracking
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {optOutCounts.trackingDelivery}
+                </div>
+                <p className="text-xs text-muted-foreground">users opted out</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <RotateCcw className="h-4 w-4" />
+                  Refund/Return
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {optOutCounts.refundReturn}
+                </div>
+                <p className="text-xs text-muted-foreground">users opted out</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Support
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {optOutCounts.supportTicket}
+                </div>
+                <p className="text-xs text-muted-foreground">users opted out</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4" />
+                  Customs
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {optOutCounts.customs}
+                </div>
+                <p className="text-xs text-muted-foreground">users opted out</p>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -419,6 +539,10 @@ export default function AdminUserNotificationPreferences() {
                     <TableHead className="text-center">Shipment Updates</TableHead>
                     <TableHead className="text-center">Account Notifications</TableHead>
                     <TableHead className="text-center">Admin Notifications</TableHead>
+                    <TableHead className="text-center">Tracking</TableHead>
+                    <TableHead className="text-center">Refund/Return</TableHead>
+                    <TableHead className="text-center">Support</TableHead>
+                    <TableHead className="text-center">Customs</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -495,6 +619,42 @@ export default function AdminUserNotificationPreferences() {
                             onCheckedChange={() => toggleAdminNotifications(user)}
                             disabled={updateUserNotificationMutation.isPending}
                             data-testid={`switch-admin-notifications-${user.id}`}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          <Switch
+                            checked={user.trackingDeliveryNotifications}
+                            onCheckedChange={() => toggleTrackingDelivery(user)}
+                            disabled={updateUserNotificationMutation.isPending}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          <Switch
+                            checked={user.refundReturnNotifications}
+                            onCheckedChange={() => toggleRefundReturn(user)}
+                            disabled={updateUserNotificationMutation.isPending}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          <Switch
+                            checked={user.supportTicketNotifications}
+                            onCheckedChange={() => toggleSupportTicket(user)}
+                            disabled={updateUserNotificationMutation.isPending}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          <Switch
+                            checked={user.customsNotifications}
+                            onCheckedChange={() => toggleCustoms(user)}
+                            disabled={updateUserNotificationMutation.isPending}
                           />
                         </div>
                       </TableCell>

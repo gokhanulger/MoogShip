@@ -1653,7 +1653,7 @@ Tespit zamanı: ${formattedStatusTime}
   console.log(`Sending customs charges notification for shipment ${shipmentData.id} to admin (${adminEmail}) and customer (${customerEmail})`);
   
   try {
-    // Send to both admin and customer
+    // Send to admin (always)
     const adminResult = await sendEmail({
       to: adminEmail,
       from: senderEmail,
@@ -1661,15 +1661,31 @@ Tespit zamanı: ${formattedStatusTime}
       text: emailText,
       html: emailHtml
     });
-    
-    const customerResult = await sendEmail({
-      to: customerEmail,
-      from: senderEmail,
-      subject: emailSubject,
-      text: emailText,
-      html: emailHtml
-    });
-    
+
+    // Check customer notification preferences before sending
+    let customerResult = { success: true } as any;
+    let shouldSendToCustomer = true;
+    try {
+      const { storage } = await import('./storage');
+      const user = await storage.getUser(userData.id);
+      if (user && user.customsNotifications === false) {
+        shouldSendToCustomer = false;
+        console.log(`Customs notification customer email skipped for user ${userData.id} - preference disabled`);
+      }
+    } catch (err) {
+      console.error('Error checking customs notification preference:', err);
+    }
+
+    if (shouldSendToCustomer) {
+      customerResult = await sendEmail({
+        to: customerEmail,
+        from: senderEmail,
+        subject: emailSubject,
+        text: emailText,
+        html: emailHtml
+      });
+    }
+
     // Check results
     const adminSuccess = adminResult.success;
     const customerSuccess = customerResult.success;

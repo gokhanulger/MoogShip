@@ -30,7 +30,7 @@ function getBase64Logo(): string {
  */
 export async function shouldSendNotification(
   userId: number,
-  notificationType: 'marketing' | 'shipment_immediate' | 'shipment_digest' | 'account' | 'admin',
+  notificationType: 'marketing' | 'shipment_immediate' | 'shipment_digest' | 'account' | 'admin' | 'tracking_delivery' | 'refund_return' | 'support_ticket' | 'customs',
   isCritical: boolean = false
 ): Promise<boolean> {
   try {
@@ -50,6 +50,14 @@ export async function shouldSendNotification(
         return user.accountNotifications === true;
       case 'admin':
         return user.adminNotifications === true;
+      case 'tracking_delivery':
+        return user.trackingDeliveryNotifications === true;
+      case 'refund_return':
+        return user.refundReturnNotifications === true;
+      case 'support_ticket':
+        return user.supportTicketNotifications === true;
+      case 'customs':
+        return user.customsNotifications === true;
       default:
         return false;
     }
@@ -1811,34 +1819,44 @@ export async function sendDeliveryIssueNotification(
       }),
     );
 
-    // Send to customer
-    const customerPromise = sendEmail({
-      to: customerEmail,
-      from: senderEmail,
-      subject: customerSubject,
-      html: customerEmailHtml,
-    });
-
-    // Send all emails
-    const [adminResults, customerResult] = await Promise.all([
-      Promise.all(adminPromises),
-      customerPromise
-    ]);
-
-    // Check results
+    // Send to admin team (always)
+    const adminResults = await Promise.all(
+      adminEmails.map((adminEmail) =>
+        sendEmail({
+          to: adminEmail,
+          from: senderEmail,
+          subject: emailSubject,
+          html: emailHtml,
+        }),
+      ),
+    );
     const adminSuccess = adminResults.some(result => result.success);
-    const customerSuccess = customerResult.success;
+
+    // Send to customer (only if preference allows)
+    let customerSuccess = true;
+    const shouldSendToCustomer = await shouldSendNotification(user.id, 'tracking_delivery', false);
+    if (shouldSendToCustomer) {
+      const customerResult = await sendEmail({
+        to: customerEmail,
+        from: senderEmail,
+        subject: customerSubject,
+        html: customerEmailHtml,
+      });
+      customerSuccess = customerResult.success;
+    } else {
+      console.log(`Delivery issue customer email skipped for user ${user.id} (${customerEmail}) - preference disabled`);
+    }
 
     if (adminSuccess && customerSuccess) {
       console.log(
-        `Delivery issue notification sent successfully to both admin team and customer ${customerEmail} for shipment ${shipment.id}`,
+        `Delivery issue notification sent successfully for shipment ${shipment.id}`,
       );
       return { success: true };
     } else if (adminSuccess || customerSuccess) {
       console.warn(`Delivery issue notification partially sent for shipment ${shipment.id}: Admin=${adminSuccess}, Customer=${customerSuccess}`);
       return { success: true, partialFailure: true };
     } else {
-      console.error(`Failed to send delivery issue notification for shipment ${shipment.id} to both recipients`);
+      console.error(`Failed to send delivery issue notification for shipment ${shipment.id}`);
       return { success: false, error: "Failed to send to both admin and customer" };
     }
   } catch (error) {
@@ -1859,12 +1877,19 @@ export async function sendTrackingNumberNotification(
   user: User,
 ): Promise<{ success: boolean; error?: any }> {
   try {
+    // Check user notification preferences
+    const shouldSend = await shouldSendNotification(user.id, 'tracking_delivery', false);
+    if (!shouldSend) {
+      console.log(`Tracking notification skipped for user ${user.id} (${user.email}) - preference disabled`);
+      return { success: true };
+    }
+
     // Security validation: Only send emails for legitimate major carriers
     // Prevent emails for internal services but allow MoogShip branded names
     const carrierName = shipment.carrierName?.toLowerCase() || "";
     const allowedCarriers = [
       "ups",
-      "usps", 
+      "usps",
       "dhl",
       "fedex",
       "aramex",
@@ -2579,45 +2604,45 @@ Please do not reply to this email.
       `Sending tracking exception notification to admin team and customer - Issue: ${issueType}, Shipment: #${shipment.id}`,
     );
 
-    // Send to admin team
-    const adminPromises = adminRecipients.map((recipient) =>
-      sendEmail({
-        to: recipient,
-        from: senderEmail,
-        subject: emailSubject,
-        text: emailText,
-        html: emailHtml,
-      }),
+    // Send to admin team (always)
+    const adminResults = await Promise.all(
+      adminRecipients.map((recipient) =>
+        sendEmail({
+          to: recipient,
+          from: senderEmail,
+          subject: emailSubject,
+          text: emailText,
+          html: emailHtml,
+        }),
+      ),
     );
-
-    // Send to customer
-    const customerPromise = sendEmail({
-      to: customerEmail,
-      from: senderEmail,
-      subject: customerSubject,
-      html: customerEmailHtml,
-    });
-
-    // Send all emails
-    const [adminResults, customerResult] = await Promise.all([
-      Promise.all(adminPromises),
-      customerPromise
-    ]);
-
-    // Check results
     const adminSuccess = adminResults.some(result => result.success);
-    const customerSuccess = customerResult.success;
+
+    // Send to customer (only if preference allows)
+    let customerSuccess = true;
+    const shouldSendToCustomer = await shouldSendNotification(user.id, 'tracking_delivery', false);
+    if (shouldSendToCustomer) {
+      const customerResult = await sendEmail({
+        to: customerEmail,
+        from: senderEmail,
+        subject: customerSubject,
+        html: customerEmailHtml,
+      });
+      customerSuccess = customerResult.success;
+    } else {
+      console.log(`Tracking exception customer email skipped for user ${user.id} (${customerEmail}) - preference disabled`);
+    }
 
     if (adminSuccess && customerSuccess) {
       console.log(
-        `Tracking exception notification sent successfully to both admin team and customer ${customerEmail} for shipment ${shipment.id}`,
+        `Tracking exception notification sent successfully for shipment ${shipment.id}`,
       );
       return { success: true };
     } else if (adminSuccess || customerSuccess) {
       console.warn(`Tracking exception notification partially sent for shipment ${shipment.id}: Admin=${adminSuccess}, Customer=${customerSuccess}`);
       return { success: true, partialFailure: true };
     } else {
-      console.error(`Failed to send tracking exception notification for shipment ${shipment.id} to both recipients`);
+      console.error(`Failed to send tracking exception notification for shipment ${shipment.id}`);
       return { success: false, error: "Failed to send to both admin and customer" };
     }
   } catch (error) {
@@ -2635,6 +2660,13 @@ export async function sendDeliveryNotification(
   user: User,
 ): Promise<{ success: boolean; error?: any }> {
   try {
+    // Check user notification preferences
+    const shouldSend = await shouldSendNotification(user.id, 'tracking_delivery', false);
+    if (!shouldSend) {
+      console.log(`Delivery notification skipped for user ${user.id} (${user.email}) - preference disabled`);
+      return { success: true };
+    }
+
     const senderEmail =
       process.env.SENDGRID_VERIFIED_SENDER || "cs@moogship.com";
     const logoBase64 = getBase64Logo();

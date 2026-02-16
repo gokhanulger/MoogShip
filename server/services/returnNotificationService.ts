@@ -1,5 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import type { Return, User } from '@shared/schema';
+import { shouldSendNotification } from '../notification-emails';
 
 if (!process.env.SENDGRID_API_KEY) {
   console.error("SENDGRID_API_KEY environment variable is required");
@@ -86,6 +87,12 @@ export class ReturnNotificationService {
     `;
 
     if (returnData.customerEmail) {
+      // Check seller notification preferences
+      const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
+      if (!shouldSend) {
+        console.log(`Return notification skipped for seller ${returnData.sellerId} - preference disabled`);
+        return;
+      }
       await sendEmail({
         to: returnData.customerEmail,
         from: FROM_EMAIL,
@@ -142,6 +149,12 @@ export class ReturnNotificationService {
     `;
 
     if (returnData.customerEmail) {
+      // Check seller notification preferences
+      const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
+      if (!shouldSend) {
+        console.log(`Return status update notification skipped for seller ${returnData.sellerId} - preference disabled`);
+        return;
+      }
       await sendEmail({
         to: returnData.customerEmail,
         from: FROM_EMAIL,

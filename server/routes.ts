@@ -4615,6 +4615,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shipmentStatusUpdates: user.shipmentStatusUpdates,
         accountNotifications: user.accountNotifications,
         adminNotifications: user.adminNotifications,
+        trackingDeliveryNotifications: user.trackingDeliveryNotifications,
+        refundReturnNotifications: user.refundReturnNotifications,
+        supportTicketNotifications: user.supportTicketNotifications,
+        customsNotifications: user.customsNotifications,
       };
 
       res.json(preferences);
@@ -4635,17 +4639,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      const { 
-        emailMarketingCampaigns, 
-        shipmentStatusUpdates, 
-        accountNotifications, 
-        adminNotifications 
+      const {
+        emailMarketingCampaigns,
+        shipmentStatusUpdates,
+        accountNotifications,
+        adminNotifications,
+        trackingDeliveryNotifications,
+        refundReturnNotifications,
+        supportTicketNotifications,
+        customsNotifications,
       } = req.body;
 
       // Validate shipmentStatusUpdates value
       if (shipmentStatusUpdates && !['immediate', 'daily_digest', 'off'].includes(shipmentStatusUpdates)) {
-        return res.status(400).json({ 
-          message: "Invalid shipmentStatusUpdates value. Must be 'immediate', 'daily_digest', or 'off'" 
+        return res.status(400).json({
+          message: "Invalid shipmentStatusUpdates value. Must be 'immediate', 'daily_digest', or 'off'"
         });
       }
 
@@ -4655,6 +4663,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (shipmentStatusUpdates !== undefined) preferences.shipmentStatusUpdates = shipmentStatusUpdates;
       if (accountNotifications !== undefined) preferences.accountNotifications = accountNotifications;
       if (adminNotifications !== undefined) preferences.adminNotifications = adminNotifications;
+      if (trackingDeliveryNotifications !== undefined) preferences.trackingDeliveryNotifications = trackingDeliveryNotifications;
+      if (refundReturnNotifications !== undefined) preferences.refundReturnNotifications = refundReturnNotifications;
+      if (supportTicketNotifications !== undefined) preferences.supportTicketNotifications = supportTicketNotifications;
+      if (customsNotifications !== undefined) preferences.customsNotifications = customsNotifications;
 
       // Update notification preferences
       const updatedUser = await storage.updateNotificationPreferences(userId, preferences);
@@ -4669,6 +4681,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shipmentStatusUpdates: updatedUser.shipmentStatusUpdates,
         accountNotifications: updatedUser.accountNotifications,
         adminNotifications: updatedUser.adminNotifications,
+        trackingDeliveryNotifications: updatedUser.trackingDeliveryNotifications,
+        refundReturnNotifications: updatedUser.refundReturnNotifications,
+        supportTicketNotifications: updatedUser.supportTicketNotifications,
+        customsNotifications: updatedUser.customsNotifications,
       };
 
       res.json(updatedPreferences);
@@ -4695,6 +4711,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shipmentStatusUpdates: user.shipmentStatusUpdates,
         accountNotifications: user.accountNotifications,
         adminNotifications: user.adminNotifications,
+        trackingDeliveryNotifications: user.trackingDeliveryNotifications,
+        refundReturnNotifications: user.refundReturnNotifications,
+        supportTicketNotifications: user.supportTicketNotifications,
+        customsNotifications: user.customsNotifications,
       }));
 
       res.json(userPreferences);
@@ -4710,7 +4730,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/user-notification-preferences/:userId", authenticateToken, isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const { emailMarketingCampaigns, shipmentStatusUpdates, accountNotifications, adminNotifications } = req.body;
+      const {
+        emailMarketingCampaigns, shipmentStatusUpdates, accountNotifications, adminNotifications,
+        trackingDeliveryNotifications, refundReturnNotifications, supportTicketNotifications, customsNotifications
+      } = req.body;
 
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
@@ -4733,6 +4756,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (shipmentStatusUpdates !== undefined) preferences.shipmentStatusUpdates = shipmentStatusUpdates;
       if (accountNotifications !== undefined) preferences.accountNotifications = accountNotifications;
       if (adminNotifications !== undefined) preferences.adminNotifications = adminNotifications;
+      if (trackingDeliveryNotifications !== undefined) preferences.trackingDeliveryNotifications = trackingDeliveryNotifications;
+      if (refundReturnNotifications !== undefined) preferences.refundReturnNotifications = refundReturnNotifications;
+      if (supportTicketNotifications !== undefined) preferences.supportTicketNotifications = supportTicketNotifications;
+      if (customsNotifications !== undefined) preferences.customsNotifications = customsNotifications;
 
       // Update notification preferences
       const updatedUser = await storage.updateNotificationPreferences(userId, preferences);
@@ -4751,6 +4778,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shipmentStatusUpdates: updatedUser.shipmentStatusUpdates,
         accountNotifications: updatedUser.accountNotifications,
         adminNotifications: updatedUser.adminNotifications,
+        trackingDeliveryNotifications: updatedUser.trackingDeliveryNotifications,
+        refundReturnNotifications: updatedUser.refundReturnNotifications,
+        supportTicketNotifications: updatedUser.supportTicketNotifications,
+        customsNotifications: updatedUser.customsNotifications,
       };
 
       res.json(updatedPreferences);
@@ -8525,6 +8556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: ticket.status,
             userName: user.name,
             userEmail: user.email,
+            userId: user.id,
             createdAt: ticket.createdAt,
           });
           console.log(`✅ Email notifications sent for ticket #${ticket.id}`);
@@ -8600,6 +8632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: ticket.status,
               userName: user.name,
               userEmail: user.email,
+              userId: user.id,
               adminName: adminUser.name,
               createdAt: ticket.createdAt,
             });
@@ -8888,6 +8921,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: fullTicket.status,
                 userName: fullTicket.userName || "",
                 userEmail: fullTicket.userEmail || "",
+                userId: fullTicket.userId,
                 assignedToName: fullTicket.assignedTo
                   ? adminUser.name
                   : undefined,
@@ -8954,6 +8988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: fullTicket.status,
                 userName: fullTicket.userName || "",
                 userEmail: fullTicket.userEmail || "",
+                userId: fullTicket.userId,
                 assignedToName: adminUser.name,
                 assignedToEmail: adminUser.email,
                 createdAt: fullTicket.createdAt,
@@ -9028,6 +9063,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: fullTicket.status,
                 userName: fullTicket.userName || "",
                 userEmail: fullTicket.userEmail || "",
+                userId: fullTicket.userId,
                 assignedToName: adminUser.name,
                 assignedToEmail: adminUser.email,
                 createdAt: fullTicket.createdAt,
@@ -9619,6 +9655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: ticket.status,
             userName: ticket.userName || "",
             userEmail: ticket.userEmail || "",
+            userId: ticket.userId,
             assignedToName: ticket.assignedTo ? currentUser.name : undefined,
             assignedToEmail: ticket.assignedTo ? currentUser.email : undefined,
             createdAt: ticket.createdAt,
