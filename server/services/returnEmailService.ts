@@ -1,6 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import type { Return, User } from '@shared/schema';
-import { shouldSendNotification } from '../notification-emails';
+import { shouldSendNotification, isGlobalEmailEnabled } from '../notification-emails';
 
 if (!process.env.SENDGRID_API_KEY) {
   throw new Error("SENDGRID_API_KEY environment variable must be set");
@@ -179,7 +179,11 @@ export const sendStatusUpdateEmail = async (
   adminNotes?: string
 ): Promise<{ success: boolean; error?: any }> => {
   try {
-    // Check seller notification preferences
+    // Global toggle check + seller notification preferences
+    if (!await isGlobalEmailEnabled("return_status")) {
+      console.log(`[GLOBAL TOGGLE] return_status disabled - skipping`);
+      return { success: true };
+    }
     const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
     if (!shouldSend) {
       console.log(`Return status email skipped for seller ${returnData.sellerId} - preference disabled`);
@@ -210,7 +214,11 @@ export const sendPhotoUploadEmail = async (
   photoCount: number
 ): Promise<{ success: boolean; error?: any }> => {
   try {
-    // Check seller notification preferences
+    // Global toggle check + seller notification preferences
+    if (!await isGlobalEmailEnabled("return_status")) {
+      console.log(`[GLOBAL TOGGLE] return_status disabled - skipping`);
+      return { success: true };
+    }
     const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
     if (!shouldSend) {
       console.log(`Return photo email skipped for seller ${returnData.sellerId} - preference disabled`);

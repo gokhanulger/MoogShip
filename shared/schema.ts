@@ -2096,3 +2096,46 @@ export const ExternalBatchStatusColors = {
   approved: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800"
 };
+
+// Email Notification Settings - global toggles for customer-facing emails
+export const emailNotificationSettings = pgTable("email_notification_settings", {
+  id: serial("id").primaryKey(),
+  emailType: text("email_type").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  isEnabled: boolean("is_enabled").notNull().default(true),
+  isCritical: boolean("is_critical").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: integer("updated_by"),
+});
+
+export const insertEmailNotificationSettingSchema = createInsertSchema(emailNotificationSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertEmailNotificationSetting = z.infer<typeof insertEmailNotificationSettingSchema>;
+export type EmailNotificationSetting = typeof emailNotificationSettings.$inferSelect;
+
+// Admin Email Recipients - configurable admin notification recipients
+export const adminEmailRecipients = pgTable("admin_email_recipients", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  name: text("name"),
+  category: text("category").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueEmailCategory: uniqueIndex("unique_admin_email_category").on(table.email, table.category),
+}));
+
+export const insertAdminEmailRecipientSchema = createInsertSchema(adminEmailRecipients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAdminEmailRecipient = z.infer<typeof insertAdminEmailRecipientSchema>;
+export type AdminEmailRecipient = typeof adminEmailRecipients.$inferSelect;

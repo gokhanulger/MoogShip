@@ -385,7 +385,16 @@ export default function Sidebar() {
                   <Bell className={`${isExpanded ? 'mr-3' : ''} h-5 w-5 ${location === "/admin-user-notification-preferences" ? "text-blue-500" : "text-purple-500 group-hover:text-purple-400"}`} />
                   {isExpanded && 'User Notifications'}
                 </Link>
-                
+
+                <Link href="/admin-email-settings" className={`${
+                    location === "/admin-email-settings"
+                      ? "bg-blue-50/70 text-blue-600 font-medium border-l-4 border-blue-400"
+                      : "text-gray-600 hover:bg-blue-50/40 hover:text-blue-500"
+                  } group flex items-center ${isExpanded ? 'px-3' : 'px-1 justify-center'} py-2 text-sm rounded-r-lg transition-all duration-150 ease-in-out`}
+                  title={!isExpanded ? 'Email Settings' : undefined}>
+                  <Mail className={`${isExpanded ? 'mr-3' : ''} h-5 w-5 ${location === "/admin-email-settings" ? "text-blue-500" : "text-teal-500 group-hover:text-teal-400"}`} />
+                  {isExpanded && 'Email Settings'}
+                </Link>
 
               </div>
             </div>

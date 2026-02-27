@@ -1,6 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import { User, Shipment, RefundRequest } from '@shared/schema';
-import { shouldSendNotification } from './notification-emails';
+import { shouldSendNotification, isGlobalEmailEnabled, getAdminRecipients } from './notification-emails';
 
 if (!process.env.SENDGRID_API_KEY) {
   throw new Error("SENDGRID_API_KEY environment variable must be set");
@@ -8,13 +8,6 @@ if (!process.env.SENDGRID_API_KEY) {
 
 const mailService = new MailService();
 mailService.setApiKey(process.env.SENDGRID_API_KEY);
-
-const ADMIN_EMAILS = [
-  'info@moogship.com',
-  'sercan@moogship.com',
-  'gokhan@moogco.com',
-  'oguzhan@moogco.com'
-];
 
 export async function sendRefundStatusUpdateNotification(
   user: User,
@@ -24,6 +17,12 @@ export async function sendRefundStatusUpdateNotification(
   adminNotes?: string
 ): Promise<boolean> {
   try {
+    // Global toggle check
+    if (!await isGlobalEmailEnabled("refund_status")) {
+      console.log(`[GLOBAL TOGGLE] refund_status disabled - skipping`);
+      return true;
+    }
+
     // Check user notification preferences
     const shouldSend = await shouldSendNotification(user.id, 'refund_return', false);
     if (!shouldSend) {
@@ -206,8 +205,9 @@ ${shipmentList}
 Lütfen bu iade talebini admin panelinde inceleyin.
     `;
 
-    // Send to all admin emails
-    for (const email of ADMIN_EMAILS) {
+    // Send to all admin emails from database
+    const adminEmails = await getAdminRecipients("refund_request");
+    for (const email of adminEmails) {
       await mailService.send({
         to: email,
         from: 'cs@moogship.com',
