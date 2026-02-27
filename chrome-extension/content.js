@@ -212,29 +212,62 @@ function handleCommand(msg) {
 }
 
 function extractPrices(data) {
-  if (!data) return [];
-  const prices = [];
-  const tryArrays = [data, data.data, data.quotes, data.prices, data.rates, data.results, data.offers, data.items];
+  if (!data) {
+    console.log('[Scraper] extractPrices: data boş');
+    return [];
+  }
 
-  for (const arr of tryArrays) {
-    if (Array.isArray(arr)) {
+  const prices = [];
+  const tryArrays = [
+    { name: 'root', arr: data },
+    { name: 'data', arr: data.data },
+    { name: 'quotes', arr: data.quotes },
+    { name: 'prices', arr: data.prices },
+    { name: 'rates', arr: data.rates },
+    { name: 'results', arr: data.results },
+    { name: 'offers', arr: data.offers },
+    { name: 'items', arr: data.items },
+    { name: 'services', arr: data.services },
+    { name: 'carriers', arr: data.carriers }
+  ];
+
+  for (const { name, arr } of tryArrays) {
+    if (Array.isArray(arr) && arr.length > 0) {
+      console.log(`[Scraper] extractPrices: "${name}" dizisinde ${arr.length} eleman var`);
       for (const item of arr) {
         if (item && typeof item === 'object') {
-          const price = item.price ?? item.totalPrice ?? item.total ?? item.amount ?? item.cost;
-          if (price && price > 0) {
-            prices.push({
-              carrier: item.carrier || item.carrierName || item.provider || item.name || 'Unknown',
-              service: item.service || item.serviceName || item.type || 'Standard',
+          // Try multiple price field names
+          const price = item.price ?? item.totalPrice ?? item.total ?? item.amount ?? item.cost ??
+                       item.Price ?? item.TotalPrice ?? item.netPrice ?? item.grossPrice;
+
+          if (price && Number(price) > 0) {
+            const extracted = {
+              carrier: item.carrier || item.carrierName || item.provider || item.name ||
+                      item.Carrier || item.CarrierName || item.providerName || 'Unknown',
+              service: item.service || item.serviceName || item.type || item.productName ||
+                      item.Service || item.ServiceName || 'Standard',
               price: Number(price),
-              currency: item.currency || 'TRY',
-              transitDays: item.transitDays || item.transitTime || null
-            });
+              currency: item.currency || item.Currency || item.currencyCode || 'TRY',
+              transitDays: item.transitDays || item.transitTime || item.deliveryDays ||
+                          item.TransitDays || item.eta || null
+            };
+            prices.push(extracted);
+            console.log(`[Scraper] 💰 Fiyat çıkarıldı: ${extracted.carrier} ${extracted.service} - ${extracted.price} ${extracted.currency}`);
           }
         }
       }
-      if (prices.length > 0) return prices;
+      if (prices.length > 0) {
+        console.log(`[Scraper] extractPrices: Toplam ${prices.length} fiyat çıkarıldı`);
+        return prices;
+      }
     }
   }
+
+  // If no prices found, log the data structure for debugging
+  if (prices.length === 0 && data) {
+    console.log('[Scraper] ⚠️ Fiyat bulunamadı. Data yapısı:', JSON.stringify(data).substring(0, 500));
+  }
+
   return prices;
 }
 
@@ -287,31 +320,44 @@ async function getCountriesFromDropdown() {
 
   console.log('[Scraper] Dropdown aranıyor...');
 
-  // Find destination dropdown - second combobox (first is origin)
-  const comboboxes = document.querySelectorAll('[role="combobox"]');
-  console.log(`[Scraper] ${comboboxes.length} combobox bulundu`);
-
+  // Find destination dropdown - Radix UI Select trigger
+  // Try multiple selectors for Radix UI
   let dropdown = null;
 
-  // Try to find by label "Nereye"
-  const labels = document.querySelectorAll('label');
-  for (const label of labels) {
-    if (label.textContent?.trim() === 'Nereye') {
-      const container = label.closest('div');
-      dropdown = container?.querySelector('[role="combobox"]');
-      if (dropdown) {
-        console.log('[Scraper] Nereye label ile dropdown bulundu');
-        break;
+  // Strategy 1: Find by placeholder text "Nereye"
+  const triggers = document.querySelectorAll('[role="combobox"], [data-slot="select-trigger"]');
+  console.log(`[Scraper] ${triggers.length} trigger bulundu`);
+
+  for (const trigger of triggers) {
+    const text = trigger.textContent?.toLowerCase() || '';
+    if (text.includes('nereye') || text.includes('varış') || text.includes('destination')) {
+      dropdown = trigger;
+      console.log('[Scraper] Nereye text ile dropdown bulundu');
+      break;
+    }
+  }
+
+  // Strategy 2: Find by label
+  if (!dropdown) {
+    const labels = document.querySelectorAll('label');
+    for (const label of labels) {
+      if (label.textContent?.trim() === 'Nereye') {
+        const container = label.closest('div');
+        dropdown = container?.querySelector('[role="combobox"], [data-slot="select-trigger"], button');
+        if (dropdown) {
+          console.log('[Scraper] Nereye label ile dropdown bulundu');
+          break;
+        }
       }
     }
   }
 
-  // Fallback: second combobox
-  if (!dropdown && comboboxes.length >= 2) {
-    dropdown = comboboxes[1];
-    console.log('[Scraper] İkinci combobox kullanılıyor');
-  } else if (!dropdown && comboboxes.length === 1) {
-    dropdown = comboboxes[0];
+  // Strategy 3: Second combobox (first is origin)
+  if (!dropdown && triggers.length >= 2) {
+    dropdown = triggers[1];
+    console.log('[Scraper] İkinci trigger kullanılıyor');
+  } else if (!dropdown && triggers.length === 1) {
+    dropdown = triggers[0];
   }
 
   if (!dropdown) {
@@ -319,45 +365,87 @@ async function getCountriesFromDropdown() {
     return countries;
   }
 
-  // Click to open dropdown with proper events
-  console.log('[Scraper] Dropdown açılıyor...');
+  // Click to open Radix UI dropdown
+  console.log('[Scraper] Dropdown açılıyor (Radix UI)...');
+  console.log(`[Scraper] Dropdown data-state: ${dropdown.getAttribute('data-state')}`);
 
-  // Simulate real click with mouse events
+  // For Radix UI, we need to properly trigger the select
   dropdown.focus();
   await sleep(100);
 
-  const mouseDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window });
-  const mouseUp = new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window });
-  const click = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+  // Try click first
+  dropdown.click();
+  await sleep(500);
 
-  dropdown.dispatchEvent(mouseDown);
-  await sleep(50);
-  dropdown.dispatchEvent(mouseUp);
-  await sleep(50);
-  dropdown.dispatchEvent(click);
+  // Check if opened
+  let isOpen = dropdown.getAttribute('data-state') === 'open' ||
+               dropdown.getAttribute('aria-expanded') === 'true';
+
+  if (!isOpen) {
+    console.log('[Scraper] Click ile açılmadı, pointer events deneniyor...');
+    // Try with pointer events (Radix UI uses these)
+    const pointerDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, view: window, pointerType: 'mouse' });
+    const pointerUp = new PointerEvent('pointerup', { bubbles: true, cancelable: true, view: window, pointerType: 'mouse' });
+
+    dropdown.dispatchEvent(pointerDown);
+    await sleep(50);
+    dropdown.dispatchEvent(pointerUp);
+    await sleep(500);
+  }
+
+  // Check again
+  isOpen = dropdown.getAttribute('data-state') === 'open' ||
+           dropdown.getAttribute('aria-expanded') === 'true';
+  console.log(`[Scraper] Dropdown açık mı: ${isOpen}`);
 
   // Wait for options to load
-  await sleep(3000);
+  await sleep(2000);
 
   // Try multiple selectors for options
+  // Radix UI and similar libraries render options in a portal at the end of body
   const optionSelectors = [
+    // Radix UI Select (highest priority)
+    '[data-radix-select-viewport] [role="option"]',
+    '[data-radix-select-viewport] > div',
+    '[data-radix-select-item]',
+    '[data-slot="select-item"]',
+    '[data-radix-collection-item]',
+    // Generic role-based
     '[role="option"]',
+    '[role="listbox"] [role="option"]',
     '[role="listbox"] > div',
     '[role="listbox"] li',
     'ul[role="listbox"] > li',
+    // Class-based
+    '[class*="SelectItem"]',
+    '[class*="select-item"]',
     '[class*="option"]',
     '[class*="Option"]',
     '[class*="menu"] > div',
     '[class*="Menu"] > div',
+    '[class*="MenuList"] > div',
+    '[class*="menuList"] > div',
     '[class*="list"] > div',
     '[class*="dropdown"] li',
-    '[class*="Dropdown"] li'
+    '[class*="Dropdown"] li',
+    // React Select specific
+    '[class*="react-select"] [class*="option"]',
+    '[class*="select__option"]',
+    '[class*="Select__option"]',
+    '[id*="react-select"][id*="option"]',
+    // Radix UI portal
+    '[data-radix-popper-content-wrapper] [role="option"]',
+    '[data-radix-popper-content-wrapper] > div > div',
+    // Other portals
+    '[data-floating-ui-portal] [role="option"]'
   ];
 
   let options = [];
   for (const selector of optionSelectors) {
     options = document.querySelectorAll(selector);
-    console.log(`[Scraper] Selector "${selector}": ${options.length} element`);
+    if (options.length > 0) {
+      console.log(`[Scraper] Selector "${selector}": ${options.length} element`);
+    }
     if (options.length > 5) break; // Found options
   }
 
@@ -365,11 +453,38 @@ async function getCountriesFromDropdown() {
   if (options.length === 0) {
     console.log('[Scraper] Option bulunamadı, 2 saniye daha bekleniyor...');
     await sleep(2000);
-    for (const selector of optionSelectors) {
-      options = document.querySelectorAll(selector);
-      if (options.length > 5) {
-        console.log(`[Scraper] Tekrar deneme - "${selector}": ${options.length} element`);
-        break;
+
+    // Debug: Log all elements that might be options
+    console.log('[Scraper] DOM araştırması yapılıyor...');
+    const allDivs = document.querySelectorAll('div');
+    let potentialOptions = [];
+    allDivs.forEach(div => {
+      const text = div.textContent?.trim();
+      // Look for country-like text
+      if (text && text.length > 2 && text.length < 40 && !text.includes('\n') &&
+          (text.match(/^[A-ZÇĞİÖŞÜ][a-zçğıöşü]+/) || text.match(/^[A-Z][a-z]+/))) {
+        const classes = div.className || '';
+        const role = div.getAttribute('role') || '';
+        if (classes.includes('option') || classes.includes('Option') ||
+            classes.includes('menu') || classes.includes('Menu') ||
+            classes.includes('item') || classes.includes('Item') ||
+            role === 'option' || role === 'menuitem') {
+          potentialOptions.push(div);
+        }
+      }
+    });
+
+    if (potentialOptions.length > 5) {
+      console.log(`[Scraper] Potansiyel option bulundu: ${potentialOptions.length}`);
+      options = potentialOptions;
+    } else {
+      // Last resort: try to find any clickable items in recently added DOM nodes
+      for (const selector of optionSelectors) {
+        options = document.querySelectorAll(selector);
+        if (options.length > 5) {
+          console.log(`[Scraper] Tekrar deneme - "${selector}": ${options.length} element`);
+          break;
+        }
       }
     }
   }
@@ -446,32 +561,44 @@ async function selectCountry(country) {
   document.dispatchEvent(escEvent);
   await sleep(500);
 
-  // Find destination combobox
-  const comboboxes = document.querySelectorAll('[role="combobox"]');
-  console.log(`[Scraper] ${comboboxes.length} combobox bulundu`);
+  // Find destination dropdown - Radix UI Select
+  const triggers = document.querySelectorAll('[role="combobox"], [data-slot="select-trigger"]');
+  console.log(`[Scraper] ${triggers.length} trigger bulundu`);
 
   let dropdown = null;
 
-  // Try to find by label "Nereye"
-  const labels = document.querySelectorAll('label');
-  for (const label of labels) {
-    if (label.textContent?.trim() === 'Nereye') {
-      const container = label.closest('div');
-      dropdown = container?.querySelector('[role="combobox"]');
-      if (dropdown) {
-        console.log('[Scraper] Nereye label ile dropdown bulundu');
-        break;
+  // Strategy 1: Find by placeholder text
+  for (const trigger of triggers) {
+    const text = trigger.textContent?.toLowerCase() || '';
+    if (text.includes('nereye') || text.includes('varış') || text.includes('destination')) {
+      dropdown = trigger;
+      console.log('[Scraper] Nereye text ile dropdown bulundu');
+      break;
+    }
+  }
+
+  // Strategy 2: Find by label
+  if (!dropdown) {
+    const labels = document.querySelectorAll('label');
+    for (const label of labels) {
+      if (label.textContent?.trim() === 'Nereye') {
+        const container = label.closest('div');
+        dropdown = container?.querySelector('[role="combobox"], [data-slot="select-trigger"], button');
+        if (dropdown) {
+          console.log('[Scraper] Nereye label ile dropdown bulundu');
+          break;
+        }
       }
     }
   }
 
-  // Fallback: second combobox
-  if (!dropdown && comboboxes.length >= 2) {
-    dropdown = comboboxes[1];
-    console.log('[Scraper] İkinci combobox kullanılıyor');
-  } else if (!dropdown && comboboxes.length === 1) {
-    dropdown = comboboxes[0];
-    console.log('[Scraper] Tek combobox kullanılıyor');
+  // Strategy 3: Second combobox
+  if (!dropdown && triggers.length >= 2) {
+    dropdown = triggers[1];
+    console.log('[Scraper] İkinci trigger kullanılıyor');
+  } else if (!dropdown && triggers.length === 1) {
+    dropdown = triggers[0];
+    console.log('[Scraper] Tek trigger kullanılıyor');
   }
 
   if (!dropdown) {
@@ -483,39 +610,72 @@ async function selectCountry(country) {
   document.body.click();
   await sleep(300);
 
-  // Click to open with proper events
-  console.log('[Scraper] Dropdown açılıyor...');
+  // Click to open Radix UI dropdown
+  console.log('[Scraper] Dropdown açılıyor (Radix UI)...');
   dropdown.focus();
   await sleep(100);
 
-  const mouseDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window });
-  const mouseUp = new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window });
-  const click = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+  // Use click for Radix UI
+  dropdown.click();
+  await sleep(500);
 
-  dropdown.dispatchEvent(mouseDown);
-  await sleep(50);
-  dropdown.dispatchEvent(mouseUp);
-  await sleep(50);
-  dropdown.dispatchEvent(click);
+  // Check if opened
+  let isOpen = dropdown.getAttribute('data-state') === 'open' ||
+               dropdown.getAttribute('aria-expanded') === 'true';
+
+  if (!isOpen) {
+    // Try pointer events
+    const pointerDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, view: window, pointerType: 'mouse' });
+    const pointerUp = new PointerEvent('pointerup', { bubbles: true, cancelable: true, view: window, pointerType: 'mouse' });
+    dropdown.dispatchEvent(pointerDown);
+    await sleep(50);
+    dropdown.dispatchEvent(pointerUp);
+    await sleep(500);
+  }
+
+  console.log(`[Scraper] Dropdown data-state: ${dropdown.getAttribute('data-state')}`);
+  console.log(`[Scraper] Dropdown aria-expanded: ${dropdown.getAttribute('aria-expanded')}`);
 
   // Wait for options to appear with polling
   console.log('[Scraper] Options bekleniyor...');
   let options = [];
   const optionSelectors = [
+    // Radix UI Select (highest priority)
+    '[data-radix-select-viewport] [role="option"]',
+    '[data-radix-select-viewport] > div',
+    '[data-radix-select-item]',
+    '[data-slot="select-item"]',
+    '[data-radix-collection-item]',
+    // Generic role-based
     '[role="option"]',
+    '[role="listbox"] [role="option"]',
     '[role="listbox"] > div',
     '[role="listbox"] li',
     'ul[role="listbox"] > li',
+    // Class-based
+    '[class*="SelectItem"]',
+    '[class*="select-item"]',
     '[class*="option"]',
     '[class*="Option"]',
     '[class*="menu"] > div',
     '[class*="Menu"] > div',
     '[class*="MenuList"] > div',
+    '[class*="menuList"] > div',
     '[class*="list"] > div',
     '[class*="dropdown"] li',
     '[class*="Dropdown"] li',
     'li[id*="option"]',
-    'div[id*="option"]'
+    'div[id*="option"]',
+    // React Select specific
+    '[class*="react-select"] [class*="option"]',
+    '[class*="select__option"]',
+    '[class*="Select__option"]',
+    '[id*="react-select"][id*="option"]',
+    // Radix UI portal
+    '[data-radix-popper-content-wrapper] [role="option"]',
+    '[data-radix-popper-content-wrapper] > div > div',
+    // Other portals
+    '[data-floating-ui-portal] [role="option"]'
   ];
 
   // Poll for options up to 5 seconds
@@ -526,7 +686,33 @@ async function selectCountry(country) {
       const found = document.querySelectorAll(selector);
       if (found.length > options.length) {
         options = found;
-        console.log(`[Scraper] Selector "${selector}": ${found.length} element`);
+        if (found.length > 0) {
+          console.log(`[Scraper] Selector "${selector}": ${found.length} element`);
+        }
+      }
+    }
+
+    // Also try to find by text content pattern (country names)
+    if (options.length === 0) {
+      const allDivs = document.querySelectorAll('div, li, button, span');
+      const potentialOptions = [];
+      allDivs.forEach(el => {
+        const text = el.textContent?.trim();
+        const parent = el.parentElement;
+        const parentClass = parent?.className || '';
+        // Look for elements that look like dropdown options
+        if (text && text.length > 2 && text.length < 40 && !text.includes('\n') &&
+            (parentClass.includes('menu') || parentClass.includes('Menu') ||
+             parentClass.includes('list') || parentClass.includes('List') ||
+             parentClass.includes('option') || parentClass.includes('Option') ||
+             el.getAttribute('role') === 'option' ||
+             el.getAttribute('data-value'))) {
+          potentialOptions.push(el);
+        }
+      });
+      if (potentialOptions.length > options.length) {
+        options = potentialOptions;
+        console.log(`[Scraper] Text pattern ile ${potentialOptions.length} potansiyel option bulundu`);
       }
     }
 
@@ -626,37 +812,76 @@ async function processNextWeight(maxWeight) {
     sent: sentCount
   }, '*');
 
-  // Fill weight and submit
-  const success = await fillWeightAndSubmit(currentWeight);
+  // Fill weight and submit with retry
+  let retryCount = 0;
+  const maxRetries = 3;
+  let prices = [];
 
-  if (success) {
-    // Wait for results to load
-    await sleep(3000);
+  while (retryCount < maxRetries && prices.length === 0) {
+    const success = await fillWeightAndSubmit(currentWeight);
 
-    // Read prices from DOM
-    const prices = readPricesFromDOM();
-    if (prices.length > 0) {
-      console.log(`[Scraper] ✅ ${prices.length} fiyat bulundu`);
-      for (const p of prices) {
-        const priceData = {
-          ...p,
-          country: currentCountry,
-          weight: currentWeight,
-          timestamp: new Date().toISOString()
-        };
+    if (success) {
+      // Wait for results with progressive delay
+      const waitTime = 3000 + (retryCount * 2000); // 3s, 5s, 7s
+      console.log(`[Scraper] ⏳ Fiyat bekleniyor (${waitTime/1000}s)...`);
+      await sleep(waitTime);
 
-        // Avoid duplicates
-        const exists = allPrices.some(x =>
-          x.carrier === p.carrier && x.country === currentCountry && x.weight === currentWeight
-        );
+      // Read prices from DOM
+      prices = readPricesFromDOM();
 
-        if (!exists) {
-          allPrices.push(priceData);
-          queuePriceForSend(priceData); // Auto-send to server
+      // Also check if API interceptor caught any prices for this weight
+      const apiPrices = allPrices.filter(p =>
+        p.country === currentCountry &&
+        p.weight === currentWeight
+      );
+
+      if (apiPrices.length > 0 && prices.length === 0) {
+        console.log(`[Scraper] ℹ️ DOM'da fiyat yok ama API'dan ${apiPrices.length} fiyat gelmiş`);
+        prices = apiPrices; // Use API prices
+      }
+
+      if (prices.length === 0) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`[Scraper] ⚠️ ${currentCountry} ${currentWeight}kg - fiyat bulunamadı, tekrar deneniyor (${retryCount}/${maxRetries})...`);
+          await sleep(1000);
         }
       }
-      updateUI();
+    } else {
+      console.log(`[Scraper] ❌ ${currentCountry} ${currentWeight}kg - form gönderilemedi`);
+      break;
     }
+  }
+
+  if (prices.length > 0) {
+    console.log(`[Scraper] ✅ ${currentCountry} ${currentWeight}kg - ${prices.length} fiyat bulundu`);
+    for (const p of prices) {
+      const priceData = {
+        ...p,
+        country: currentCountry,
+        weight: currentWeight,
+        timestamp: new Date().toISOString()
+      };
+
+      // Avoid duplicates
+      const exists = allPrices.some(x =>
+        x.carrier === p.carrier && x.country === currentCountry && x.weight === currentWeight
+      );
+
+      if (!exists) {
+        allPrices.push(priceData);
+        queuePriceForSend(priceData); // Auto-send to server
+      }
+    }
+    updateUI();
+  } else {
+    console.log(`[Scraper] ❌ ${currentCountry} ${currentWeight}kg - ${maxRetries} denemeden sonra fiyat bulunamadı!`);
+    // Log this failure to parent for visibility
+    window.parent.postMessage({
+      type: 'NAVLUNGO_STATUS',
+      status: `⚠️ ${currentCountry} ${currentWeight}kg - fiyat yok`,
+      count: allPrices.length
+    }, '*');
   }
 
   if (isRunning && !isPaused) {
@@ -675,161 +900,330 @@ async function waitForSendToComplete() {
   }
 }
 
-// Read prices directly from DOM
+// Read prices directly from DOM - Navlungo specific structure
 function readPricesFromDOM() {
   const prices = [];
-  const allText = document.body.innerText;
-  const lines = allText.split('\n').map(l => l.trim()).filter(l => l);
 
-  // Carrier names (case insensitive matching)
-  const carrierPatterns = ['Ups', 'UPS', 'Fedex', 'FedEx', 'Dhl', 'DHL', 'Tnt', 'TNT', 'Ptt', 'PTT', 'Aramex', 'EMS', 'Yurtiçi', 'Aras', 'MNG', 'Sürat'];
+  console.log('[Scraper] 📖 DOM\'dan fiyat okunuyor (Navlungo yapısı)...');
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  // Navlungo uses: div.relative.py-4.px-4 for each price row
+  // Structure: carrier (img alt + span.font-medium), service (badge), transit time, price (span.font-semibold)
 
-    for (const carrierName of carrierPatterns) {
-      if (line === carrierName || line.toLowerCase() === carrierName.toLowerCase()) {
-        // Found a carrier line, look for service type and price in next lines
-        let service = 'Standard';
-        let transitTime = '';
-        let price = 0;
-        let currency = 'USD';
+  // Find all price rows
+  const priceRows = document.querySelectorAll('div.relative.py-4.px-4, div[class*="py-4"][class*="px-4"]');
+  console.log(`[Scraper] ${priceRows.length} fiyat satırı bulundu`);
 
-        // Check next 4 lines for service, transit time, and price
-        for (let j = 1; j <= 4 && i + j < lines.length; j++) {
-          const nextLine = lines[i + j];
-
-          // Service type
-          if (nextLine === 'Express' || nextLine === 'Ekonomi' || nextLine === 'Economy' || nextLine === 'Standard') {
-            service = nextLine;
-          }
-
-          // Transit time
-          if (nextLine.includes('iş günü') || nextLine.includes('gün')) {
-            transitTime = nextLine;
-          }
-
-          // Currency and price (e.g., "USD" then "158.60")
-          if (nextLine === 'USD' || nextLine === 'EUR' || nextLine === 'TRY' || nextLine === 'TL') {
-            currency = nextLine === 'TL' ? 'TRY' : nextLine;
-            // Price should be in the next line
-            if (i + j + 1 < lines.length) {
-              const priceLine = lines[i + j + 1];
-              const priceNum = parseFloat(priceLine.replace(/,/g, '.'));
-              if (!isNaN(priceNum) && priceNum > 0) {
-                price = priceNum;
-              }
-            }
-          }
-
-          // Or price pattern in same line
-          const priceMatch = nextLine.match(/^([\d.,]+)$/);
-          if (priceMatch && price === 0) {
-            const priceNum = parseFloat(priceMatch[1].replace(/,/g, '.'));
-            if (!isNaN(priceNum) && priceNum > 0 && priceNum < 100000) {
-              price = priceNum;
-            }
-          }
+  for (const row of priceRows) {
+    try {
+      // Get carrier name from img alt or span.font-medium
+      let carrier = '';
+      const img = row.querySelector('img[alt]');
+      if (img) {
+        carrier = img.alt;
+      }
+      if (!carrier) {
+        const carrierSpan = row.querySelector('span.font-medium');
+        if (carrierSpan) {
+          carrier = carrierSpan.textContent?.trim() || '';
         }
+      }
 
-        if (price > 0) {
-          // Avoid duplicates with same carrier+service+price
+      if (!carrier) continue;
+
+      // Get service type from badge
+      let service = 'Standard';
+      const badges = row.querySelectorAll('[data-slot="badge"]');
+      for (const badge of badges) {
+        const badgeText = badge.textContent?.trim() || '';
+        if (badgeText === 'Express' || badgeText === 'Ekonomi' || badgeText === 'Economy' || badgeText === 'Standard') {
+          service = badgeText;
+          break;
+        }
+      }
+
+      // Get transit time
+      let transitTime = '';
+      const mutedSpans = row.querySelectorAll('span.text-muted-foreground');
+      for (const span of mutedSpans) {
+        const text = span.textContent?.trim() || '';
+        if (text.includes('iş günü') || text.includes('gün')) {
+          transitTime = text;
+          break;
+        }
+      }
+
+      // Get price - look for span.text-lg.font-semibold
+      let price = 0;
+      let currency = 'USD';
+
+      const priceSpan = row.querySelector('span.text-lg.font-semibold');
+      if (priceSpan) {
+        const priceText = priceSpan.textContent?.trim() || '';
+        price = parseFloat(priceText.replace(/,/g, '.'));
+      }
+
+      // Get currency from nearby span
+      for (const span of mutedSpans) {
+        const text = span.textContent?.trim() || '';
+        if (text === 'USD' || text === 'EUR' || text === 'TRY' || text === 'TL') {
+          currency = text === 'TL' ? 'TRY' : text;
+          break;
+        }
+      }
+
+      if (carrier && price > 0) {
+        // Check for duplicates (same carrier + service + price)
+        const exists = prices.some(p =>
+          p.carrier.toLowerCase() === carrier.toLowerCase() &&
+          p.service === service &&
+          Math.abs(p.price - price) < 0.01
+        );
+
+        if (!exists) {
+          prices.push({
+            carrier: carrier.toUpperCase(),
+            service,
+            price,
+            currency,
+            transitTime
+          });
+          console.log(`[Scraper] 💰 ${carrier} ${service}: ${price} ${currency} (${transitTime})`);
+        }
+      }
+    } catch (e) {
+      console.log('[Scraper] Row parse hatası:', e);
+    }
+  }
+
+  // Fallback: If no prices found with structured approach, try text-based
+  if (prices.length === 0) {
+    console.log('[Scraper] Yapısal parse başarısız, metin bazlı deneniyor...');
+
+    // Look for all font-semibold spans that might be prices
+    const allPriceSpans = document.querySelectorAll('span.font-semibold, span[class*="font-semibold"]');
+    console.log(`[Scraper] ${allPriceSpans.length} potansiyel fiyat span'ı bulundu`);
+
+    for (const span of allPriceSpans) {
+      const priceText = span.textContent?.trim() || '';
+      const priceNum = parseFloat(priceText.replace(/,/g, '.'));
+
+      if (!isNaN(priceNum) && priceNum > 10 && priceNum < 10000) {
+        // Find carrier by going up to parent container
+        const container = span.closest('div.relative') || span.closest('div[class*="py-4"]');
+        if (container) {
+          const img = container.querySelector('img[alt]');
+          const carrier = img?.alt || 'Unknown';
+
+          // Get service
+          let service = 'Standard';
+          const badge = container.querySelector('[data-slot="badge"]');
+          if (badge) {
+            const badgeText = badge.textContent?.trim() || '';
+            if (['Express', 'Ekonomi', 'Economy', 'Standard'].includes(badgeText)) {
+              service = badgeText;
+            }
+          }
+
           const exists = prices.some(p =>
-            p.carrier.toLowerCase() === carrierName.toLowerCase() &&
-            p.service === service &&
-            Math.abs(p.price - price) < 0.01
+            p.carrier.toLowerCase() === carrier.toLowerCase() &&
+            Math.abs(p.price - priceNum) < 0.01
           );
 
-          if (!exists) {
+          if (!exists && carrier !== 'Unknown') {
             prices.push({
-              carrier: carrierName.toUpperCase(),
+              carrier: carrier.toUpperCase(),
               service,
-              price,
-              currency,
-              transitTime
+              price: priceNum,
+              currency: 'USD',
+              transitTime: ''
             });
-            console.log(`[Scraper] 💰 ${carrierName} ${service}: ${price} ${currency}`);
+            console.log(`[Scraper] 💰 Fallback: ${carrier} ${service}: ${priceNum} USD`);
           }
         }
-        break;
       }
     }
   }
 
+  console.log(`[Scraper] 📊 Toplam ${prices.length} fiyat okundu:`, JSON.stringify(prices, null, 2));
   return prices;
 }
 
 async function fillWeightAndSubmit(weight) {
-  // Find weight input
-  let input = document.querySelector('input[placeholder*="Ağırlık"], input[placeholder*="ağırlık"], input[placeholder*="kg"]');
+  console.log(`[Scraper] 🔢 fillWeightAndSubmit: ${weight}kg giriliyor...`);
 
+  // Find weight input - try multiple strategies
+  let input = null;
+
+  // Strategy 1: By placeholder
+  const placeholderSelectors = [
+    'input[placeholder*="Ağırlık"]',
+    'input[placeholder*="ağırlık"]',
+    'input[placeholder*="kg"]',
+    'input[placeholder*="Kg"]',
+    'input[placeholder*="KG"]',
+    'input[placeholder*="weight"]',
+    'input[placeholder*="Weight"]'
+  ];
+  for (const sel of placeholderSelectors) {
+    input = document.querySelector(sel);
+    if (input) {
+      console.log(`[Scraper] Input bulundu (placeholder): ${sel}`);
+      break;
+    }
+  }
+
+  // Strategy 2: By label
   if (!input) {
-    // Try finding by label
     const labels = document.querySelectorAll('label, [class*="label"], [class*="Label"]');
     for (const label of labels) {
-      if (label.textContent?.includes('Ağırlık') || label.textContent?.includes('kg')) {
-        const container = label.closest('[class*="FormControl"], [class*="form"], div');
-        input = container?.querySelector('input');
-        if (input) break;
+      const text = label.textContent?.toLowerCase() || '';
+      if (text.includes('ağırlık') || text.includes('kg') || text.includes('weight')) {
+        const container = label.closest('[class*="FormControl"], [class*="form"], [class*="Form"], div');
+        input = container?.querySelector('input[type="number"], input[inputmode="numeric"], input[inputmode="decimal"], input');
+        if (input) {
+          console.log(`[Scraper] Input bulundu (label): "${label.textContent?.trim()}"`);
+          break;
+        }
       }
     }
   }
 
+  // Strategy 3: By nearby text
   if (!input) {
-    // Try any number input
-    const inputs = document.querySelectorAll('input[type="number"], input[inputmode="numeric"]');
+    const inputs = document.querySelectorAll('input[type="number"], input[inputmode="numeric"], input[inputmode="decimal"]');
     for (const inp of inputs) {
-      const placeholder = inp.placeholder?.toLowerCase() || '';
-      const nearby = inp.closest('div')?.textContent?.toLowerCase() || '';
-      if (placeholder.includes('ağırlık') || placeholder.includes('kg') || nearby.includes('ağırlık')) {
+      const container = inp.closest('div');
+      const nearbyText = container?.textContent?.toLowerCase() || '';
+      if (nearbyText.includes('ağırlık') || nearbyText.includes('kg') || nearbyText.includes('weight')) {
         input = inp;
+        console.log(`[Scraper] Input bulundu (nearby text)`);
         break;
       }
     }
   }
 
+  // Strategy 4: By aria-label
   if (!input) {
-    console.log('[iframe] ❌ Ağırlık input bulunamadı');
+    input = document.querySelector('input[aria-label*="ağırlık"], input[aria-label*="weight"], input[aria-label*="kg"]');
+    if (input) console.log(`[Scraper] Input bulundu (aria-label)`);
+  }
+
+  if (!input) {
+    console.log('[Scraper] ❌ Ağırlık input bulunamadı! DOM kontrol ediliyor...');
+    const allInputs = document.querySelectorAll('input');
+    console.log(`[Scraper] Toplam ${allInputs.length} input var`);
+    allInputs.forEach((inp, i) => {
+      console.log(`  [${i}] type=${inp.type}, placeholder="${inp.placeholder}", aria-label="${inp.getAttribute('aria-label')}"`);
+    });
     return false;
   }
 
   // Fill value using React-compatible method
   const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
 
+  // Clear and focus
   input.focus();
   await sleep(100);
 
+  // Clear existing value
   nativeSetter.call(input, '');
   input.dispatchEvent(new Event('input', { bubbles: true }));
-  await sleep(50);
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }));
+  await sleep(100);
 
-  nativeSetter.call(input, weight.toString());
+  // Enter new value
+  const weightStr = weight.toString();
+  nativeSetter.call(input, weightStr);
+
+  // Dispatch multiple events for React compatibility
   input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, data: weightStr }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
-  input.dispatchEvent(new Event('blur', { bubbles: true }));
+  await sleep(100);
 
-  await sleep(300);
+  // Blur to trigger validation
+  input.dispatchEvent(new Event('blur', { bubbles: true }));
+  await sleep(200);
+
+  // Verify value was set
+  if (input.value !== weightStr) {
+    console.log(`[Scraper] ⚠️ Input değeri beklenenden farklı: "${input.value}" vs "${weightStr}"`);
+    // Try again with direct value assignment
+    input.value = weightStr;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await sleep(100);
+  }
+
+  console.log(`[Scraper] ✅ Input değeri: ${input.value}`);
 
   // Find and click submit button
-  const buttons = document.querySelectorAll('button');
+  const buttonTexts = ['fiyat hesapla', 'hesapla', 'ara', 'search', 'calculate', 'bul', 'getir', 'sorgula', 'göster', 'gönder'];
+  const buttons = document.querySelectorAll('button, [role="button"], [data-slot="button"]');
+
+  console.log(`[Scraper] ${buttons.length} buton bulundu, aranıyor...`);
+
+  // First try exact match for "Fiyat Hesapla"
   for (const btn of buttons) {
-    const text = btn.textContent?.toLowerCase() || '';
-    if (text.includes('hesapla') || text.includes('ara') || text.includes('search') || text.includes('calculate')) {
+    const text = btn.textContent?.trim() || '';
+    if (text === 'Fiyat Hesapla' || text === 'fiyat hesapla') {
+      console.log(`[Scraper] 🔘 "Fiyat Hesapla" butonu bulundu, tıklanıyor...`);
+      btn.focus();
+      await sleep(100);
       btn.click();
-      console.log(`[iframe] ✅ ${weight}kg için buton tıklandı`);
+      await sleep(200);
       return true;
     }
   }
 
-  // Try clicking any primary button
-  const primaryBtns = document.querySelectorAll('[class*="primary"], [class*="Primary"], button[type="submit"]');
-  if (primaryBtns.length > 0) {
-    primaryBtns[0].click();
-    console.log(`[iframe] ✅ ${weight}kg için primary buton tıklandı`);
-    return true;
+  // Then try partial match
+  for (const btn of buttons) {
+    const text = btn.textContent?.toLowerCase()?.trim() || '';
+    const ariaLabel = btn.getAttribute('aria-label')?.toLowerCase() || '';
+
+    for (const searchText of buttonTexts) {
+      if (text.includes(searchText) || ariaLabel.includes(searchText)) {
+        console.log(`[Scraper] 🔘 Buton tıklanıyor: "${btn.textContent?.trim()}"`);
+        btn.focus();
+        await sleep(100);
+        btn.click();
+        await sleep(200);
+        return true;
+      }
+    }
   }
 
-  console.log('[iframe] ❌ Submit butonu bulunamadı');
+  // Try clicking any primary/submit button
+  const primarySelectors = [
+    '[data-slot="button"][class*="primary"]',
+    '[data-slot="button"][class*="bg-primary"]',
+    'button[class*="bg-primary"]',
+    'button[type="submit"]',
+    '[class*="primary"]',
+    '[class*="Primary"]',
+    '[class*="submit"]',
+    '[class*="Submit"]',
+    '[class*="calculate"]',
+    '[class*="search"]'
+  ];
+
+  for (const sel of primarySelectors) {
+    const btn = document.querySelector(sel);
+    if (btn && !btn.disabled) {
+      console.log(`[Scraper] 🔘 Primary buton tıklanıyor (${sel}): "${btn.textContent?.trim()}"`);
+      btn.focus();
+      await sleep(100);
+      btn.click();
+      await sleep(200);
+      return true;
+    }
+  }
+
+  console.log('[Scraper] ❌ Submit butonu bulunamadı! Butonlar:');
+  buttons.forEach((btn, i) => {
+    console.log(`  [${i}] "${btn.textContent?.trim()?.substring(0, 30)}" class="${btn.className?.substring(0, 50)}"`);
+  });
+
   return false;
 }
 
@@ -1334,6 +1728,9 @@ function renderCountryList(countries) {
   });
 
   updateSelectedCount();
+
+  // Update status to show countries loaded successfully
+  updateStatus(`✅ ${countries.length} ülke yüklendi`);
 }
 
 function selectAllCountries() {

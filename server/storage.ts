@@ -2074,6 +2074,7 @@ export class DatabaseStorage {
           if (svc.includes('ext-fedex')) return 'shipentegra';
           if (svc.includes('ext-thy')) return 'shipentegra';
           if (svc.includes('ext-aramex')) return 'aramex';
+          if (svc.includes('ext-widect')) return 'shipentegra';
 
           // Aramex services: check for aramex in service names
           if (svc.includes('aramex')) return 'aramex';
@@ -2104,6 +2105,7 @@ export class DatabaseStorage {
           if (svc.includes('ext-fedex')) return 'MoogShip FedEx Express';
           if (svc.includes('ext-thy')) return 'MoogShip Widect Eco';
           if (svc.includes('ext-aramex')) return 'MoogShip Aramex Express';
+          if (svc.includes('ext-widect')) return 'MoogShip-Widect';
 
           // Aramex services
           if (svc.includes('aramex')) return 'Aramex';

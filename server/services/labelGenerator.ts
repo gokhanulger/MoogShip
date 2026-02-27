@@ -322,6 +322,9 @@ function drawShippingLabel(
   } else if (serviceStr.includes("ext-aramex")) {
     serviceName = "MOOGSHIP ARAMEX EXPRESS";
     deliveryEstimate = "2-4 Days";
+  } else if (serviceStr.includes("ext-widect")) {
+    serviceName = "MOOGSHIP-WIDECT";
+    deliveryEstimate = "5-10 Days";
   // Legacy Ship Entegra services
   } else if (serviceStr.includes("eco") || serviceStr.includes("shipentegra-eco")) {
     serviceName = "DHL E-COMMERCE";

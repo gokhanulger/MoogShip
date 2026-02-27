@@ -668,6 +668,7 @@ export async function seedDefaultServiceSettings(): Promise<void> {
     { carrier: "FEDEX", service: "Express", displayName: "MoogShip FedEx Express", sortOrder: 2 },
     { carrier: "THY", service: "Ekonomi", displayName: "MoogShip Widect Eco", sortOrder: 3 },
     { carrier: "ARAMEX", service: "Express", displayName: "MoogShip Aramex Express", sortOrder: 4 },
+    { carrier: "WIDECT", service: "Standard", displayName: "MoogShip-Widect", sortOrder: 5 },
   ];
 
   for (const setting of defaults) {
