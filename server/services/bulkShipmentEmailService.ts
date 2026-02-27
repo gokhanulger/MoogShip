@@ -1,5 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import type { User } from '@shared/schema';
+import { isGlobalEmailEnabled, getAdminRecipients } from '../notification-emails.js';
 
 if (!process.env.SENDGRID_API_KEY) {
   throw new Error("SENDGRID_API_KEY environment variable must be set");
@@ -334,8 +335,14 @@ cs@moogship.com | www.moogship.com
 
 export const sendBulkShipmentNotification = async (data: BulkShipmentEmailData): Promise<boolean> => {
   try {
+    // Global toggle check
+    if (!await isGlobalEmailEnabled("bulk_shipment_notification")) {
+      console.log(`[GLOBAL TOGGLE] bulk_shipment_notification disabled - skipping`);
+      return true;
+    }
+
     const template = getBulkShipmentNotificationTemplate(data);
-    
+
     await mailService.send({
       to: data.user.email,
       from: FROM_EMAIL,
@@ -356,8 +363,8 @@ export const sendAdminBulkApprovalNotification = async (data: BulkShipmentEmailD
   try {
     const template = getAdminBulkApprovalTemplate(data);
     
-    // Send to admin email addresses
-    const adminEmails = ['info@moogship.com', 'gokhan@moogco.com', 'oguzhan@moogco.com'];
+    // Get admin email addresses from database
+    const adminEmails = await getAdminRecipients("bulk_shipment_admin");
     
     console.log(`📧 Attempting to send admin notifications to: ${adminEmails.join(', ')}`);
     console.log(`📧 From: ${FROM_EMAIL}`);

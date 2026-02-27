@@ -1,5 +1,5 @@
 import { sendEmail } from '../email.js';
-import { shouldSendNotification } from '../notification-emails.js';
+import { shouldSendNotification, isGlobalEmailEnabled, getAdminRecipients } from '../notification-emails.js';
 
 interface TicketEmailData {
   ticketId: number;
@@ -32,7 +32,10 @@ interface EmailTemplate {
 }
 
 const FROM_EMAIL = 'cs@moogship.com';
-const ADMIN_EMAILS = ['info@moogship.com', 'gokhan@moogco.com', 'oguzhan@moogco.com'];
+
+async function getTicketAdminEmails(): Promise<string[]> {
+  return getAdminRecipients("support_ticket");
+}
 
 // Simple function to convert HTML to text
 function generateTextContent(html: string): string {
@@ -262,9 +265,9 @@ function createTicketEmailTemplate(data: TicketEmailData, type: 'created' | 'upd
 
 export async function sendTicketCreatedNotification(ticketData: TicketEmailData): Promise<void> {
   try {
-    // Check customer notification preferences
-    let shouldSendToCustomer = true;
-    if (ticketData.userId) {
+    // Check global toggle and customer notification preferences
+    let shouldSendToCustomer = await isGlobalEmailEnabled("support_ticket");
+    if (shouldSendToCustomer && ticketData.userId) {
       shouldSendToCustomer = await shouldSendNotification(ticketData.userId, 'support_ticket', false);
     }
 
@@ -283,6 +286,7 @@ export async function sendTicketCreatedNotification(ticketData: TicketEmailData)
     }
 
     // Send notification to admins (always)
+    const ADMIN_EMAILS = await getTicketAdminEmails();
     const adminEmailsFiltered = ADMIN_EMAILS.filter(adminEmail => adminEmail !== ticketData.userEmail);
     const adminResults = await Promise.all(
       adminEmailsFiltered.map(adminEmail => sendEmail({
@@ -318,9 +322,9 @@ export async function sendTicketUpdatedNotification(ticketData: TicketEmailData,
   try {
     const emailType = updateType === 'assignment' ? 'assigned' : 'updated';
 
-    // Check customer notification preferences
-    let shouldSendToCustomer = true;
-    if (ticketData.userId) {
+    // Check global toggle and customer notification preferences
+    let shouldSendToCustomer = await isGlobalEmailEnabled("support_ticket");
+    if (shouldSendToCustomer && ticketData.userId) {
       shouldSendToCustomer = await shouldSendNotification(ticketData.userId, 'support_ticket', false);
     }
 
@@ -338,7 +342,7 @@ export async function sendTicketUpdatedNotification(ticketData: TicketEmailData,
     } else {
       console.log(`Ticket update customer email skipped for user ${ticketData.userId} - preference disabled`);
     }
-    
+
     if (ticketData.assignedToEmail && updateType !== 'assignment') {
       emails.push({
         to: ticketData.assignedToEmail,
@@ -351,6 +355,7 @@ export async function sendTicketUpdatedNotification(ticketData: TicketEmailData,
 
     // For new assignments, notify all admins
     if (updateType === 'assignment') {
+      const ADMIN_EMAILS = await getTicketAdminEmails();
       ADMIN_EMAILS.forEach(adminEmail => {
         emails.push({
           to: adminEmail,
@@ -411,9 +416,9 @@ export async function sendTicketClosedNotification(ticketData: TicketEmailData, 
     const adminClosureTextTemplate = createTicketEmailTextTemplate(ticketData, 'closed', true) + 
       (closureReason ? `\n\nClosure Reason:\n${closureReason}` : '');
 
-    // Check customer notification preferences
-    let shouldSendToCustomer = true;
-    if (ticketData.userId) {
+    // Check global toggle and customer notification preferences
+    let shouldSendToCustomer = await isGlobalEmailEnabled("support_ticket");
+    if (shouldSendToCustomer && ticketData.userId) {
       shouldSendToCustomer = await shouldSendNotification(ticketData.userId, 'support_ticket', false);
     }
 
@@ -431,7 +436,7 @@ export async function sendTicketClosedNotification(ticketData: TicketEmailData, 
     } else {
       console.log(`Ticket closure customer email skipped for user ${ticketData.userId} - preference disabled`);
     }
-    
+
     if (ticketData.assignedToEmail) {
       emails.push({
         to: ticketData.assignedToEmail,
@@ -569,12 +574,13 @@ function createTicketResponseEmailTemplate(data: TicketResponseEmailData, type: 
 export async function sendTicketResponseNotification(responseData: TicketResponseEmailData, type: 'admin_to_customer' | 'customer_to_admin' | 'admin_response_internal'): Promise<void> {
   try {
     const emails: EmailTemplate[] = [];
+    const ADMIN_EMAILS = await getTicketAdminEmails();
 
     switch (type) {
       case 'admin_to_customer':
-        // Admin responded - notify customer (if preference allows)
-        let shouldSendToCustomer = true;
-        if (responseData.userId) {
+        // Admin responded - notify customer (if global toggle and preference allows)
+        let shouldSendToCustomer = await isGlobalEmailEnabled("support_ticket");
+        if (shouldSendToCustomer && responseData.userId) {
           shouldSendToCustomer = await shouldSendNotification(responseData.userId, 'support_ticket', false);
         }
         if (shouldSendToCustomer) {

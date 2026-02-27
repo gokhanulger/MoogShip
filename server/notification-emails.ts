@@ -70,6 +70,28 @@ export async function shouldSendNotification(
 }
 
 /**
+ * Check if an email type is globally enabled by admin.
+ * This is a GLOBAL gate checked BEFORE per-user preferences.
+ * Returns true (enabled) if the setting does not exist in DB (safe default).
+ */
+export async function isGlobalEmailEnabled(emailType: string): Promise<boolean> {
+  try {
+    return await storage.isEmailTypeEnabled(emailType);
+  } catch (error) {
+    console.error(`[EMAIL GATE] Error checking global toggle for ${emailType}:`, error);
+    return true; // Fail open
+  }
+}
+
+/**
+ * Get admin email recipients for a specific category from the database.
+ * Falls back to hardcoded defaults if DB is unavailable.
+ */
+export async function getAdminRecipients(category: string): Promise<string[]> {
+  return storage.getAdminEmailRecipients(category);
+}
+
+/**
  * Sends a notification email to administrators when a new user registers
  *
  * @param user The newly registered user
@@ -79,14 +101,9 @@ export async function sendNewUserRegistrationNotification(
   user: User,
 ): Promise<{ success: boolean; error?: any }> {
   try {
-    // Admin emails to notify
-    const notificationRecipients = [
-      "info@moogship.com",
-      "oguzhan@moogco.com",
-      "gokhan@moogship.com",
-      "gulsah@moogship.com",
-      "sercan@moogship.com",
-    ];
+    // Admin emails from database
+    const notificationRecipients = await getAdminRecipients("new_user_registration");
+    if (notificationRecipients.length === 0) return { success: true };
 
     // Use custom sender email if specified in environment, defaulting to cs@moogship.com
     const senderEmail =
@@ -328,14 +345,9 @@ export async function sendNewShipmentNotification(
   user: User,
 ): Promise<{ success: boolean; error?: any }> {
   try {
-    // Admin emails to notify
-    const notificationRecipients = [
-      "info@moogship.com",
-      "oguzhan@moogco.com",
-      "gokhan@moogship.com",
-      "gulsah@moogship.com",
-      "sercan@moogship.com",
-    ];
+    // Admin emails from database
+    const notificationRecipients = await getAdminRecipients("new_shipment");
+    if (notificationRecipients.length === 0) return { success: true };
 
     // Use custom sender email if specified in environment, defaulting to cs@moogship.com
     const senderEmail =
@@ -635,6 +647,12 @@ export async function sendBulkShipmentApprovalEmail(
       return { success: false, error: "Invalid shipments or user data" };
     }
 
+    // Global toggle check
+    if (!await isGlobalEmailEnabled("bulk_shipment_approval")) {
+      console.log(`[GLOBAL TOGGLE] bulk_shipment_approval disabled - skipping`);
+      return { success: true, skipped: true };
+    }
+
     // Check if user wants to receive shipment status notifications (immediate)
     const shouldSend = await shouldSendNotification(user.id, 'shipment_immediate', false);
     if (!shouldSend) {
@@ -824,6 +842,12 @@ export async function sendShipmentApprovalEmail(
         hasEmail: !!user?.email,
       });
       return { success: false, error: "Invalid shipment or user data" };
+    }
+
+    // Global toggle check
+    if (!await isGlobalEmailEnabled("shipment_approval")) {
+      console.log(`[GLOBAL TOGGLE] shipment_approval disabled - skipping`);
+      return { success: true, skipped: true };
     }
 
     // Check if user wants to receive shipment status notifications (immediate)
@@ -1275,6 +1299,12 @@ export async function sendUserApprovalEmail(
       return { success: false, error: "Invalid user data" };
     }
 
+    // Global toggle check (critical - will be blocked by API from being disabled)
+    if (!await isGlobalEmailEnabled("user_approval")) {
+      console.log(`[GLOBAL TOGGLE] user_approval disabled - skipping`);
+      return { success: true, skipped: true };
+    }
+
     // Check if user wants to receive account notifications
     const shouldSend = await shouldSendNotification(user.id, 'account', true);
     if (!shouldSend) {
@@ -1487,14 +1517,9 @@ export async function sendDeliveryIssueNotification(
   issueDescription: string,
 ): Promise<{ success: boolean; error?: any }> {
   try {
-    // Admin email addresses for delivery issue notifications
-    const adminEmails = [
-      "info@moogship.com",
-      "gokhan@moogco.com",
-      "oguzhan@moogco.com",
-      "sercan@moogship.com",
-    ];
-    
+    // Admin emails from database
+    const adminEmails = await getAdminRecipients("delivery_issue");
+
     // Customer email
     const customerEmail = user.email;
 
@@ -1832,9 +1857,10 @@ export async function sendDeliveryIssueNotification(
     );
     const adminSuccess = adminResults.some(result => result.success);
 
-    // Send to customer (only if preference allows)
+    // Send to customer (only if global toggle and preference allows)
     let customerSuccess = true;
-    const shouldSendToCustomer = await shouldSendNotification(user.id, 'tracking_delivery', false);
+    const globalEnabled = await isGlobalEmailEnabled("delivery_issue");
+    const shouldSendToCustomer = globalEnabled && await shouldSendNotification(user.id, 'tracking_delivery', false);
     if (shouldSendToCustomer) {
       const customerResult = await sendEmail({
         to: customerEmail,
@@ -1844,7 +1870,7 @@ export async function sendDeliveryIssueNotification(
       });
       customerSuccess = customerResult.success;
     } else {
-      console.log(`Delivery issue customer email skipped for user ${user.id} (${customerEmail}) - preference disabled`);
+      console.log(`Delivery issue customer email skipped for user ${user.id} (${customerEmail}) - ${!globalEnabled ? 'globally disabled' : 'preference disabled'}`);
     }
 
     if (adminSuccess && customerSuccess) {
@@ -1877,6 +1903,12 @@ export async function sendTrackingNumberNotification(
   user: User,
 ): Promise<{ success: boolean; error?: any }> {
   try {
+    // Global toggle check
+    if (!await isGlobalEmailEnabled("tracking_number")) {
+      console.log(`[GLOBAL TOGGLE] tracking_number disabled - skipping`);
+      return { success: true };
+    }
+
     // Check user notification preferences
     const shouldSend = await shouldSendNotification(user.id, 'tracking_delivery', false);
     if (!shouldSend) {
@@ -2234,15 +2266,9 @@ export async function sendTrackingExceptionNotification(
   statusDescription: string,
 ): Promise<{ success: boolean; error?: any }> {
   try {
-    // Admin notification recipients for tracking exceptions
-    const adminRecipients = [
-      "info@moogship.com",
-      "gulsah@moogship.com",
-      "gokhan@moogco.com",
-      "oguzhan@moogco.com",
-      "sercan@moogship.com",
-    ];
-    
+    // Admin emails from database
+    const adminRecipients = await getAdminRecipients("tracking_exception");
+
     // Customer email
     const customerEmail = user.email;
 
@@ -2618,9 +2644,10 @@ Please do not reply to this email.
     );
     const adminSuccess = adminResults.some(result => result.success);
 
-    // Send to customer (only if preference allows)
+    // Send to customer (only if global toggle and preference allows)
     let customerSuccess = true;
-    const shouldSendToCustomer = await shouldSendNotification(user.id, 'tracking_delivery', false);
+    const globalExceptionEnabled = await isGlobalEmailEnabled("tracking_exception");
+    const shouldSendToCustomer = globalExceptionEnabled && await shouldSendNotification(user.id, 'tracking_delivery', false);
     if (shouldSendToCustomer) {
       const customerResult = await sendEmail({
         to: customerEmail,
@@ -2630,7 +2657,7 @@ Please do not reply to this email.
       });
       customerSuccess = customerResult.success;
     } else {
-      console.log(`Tracking exception customer email skipped for user ${user.id} (${customerEmail}) - preference disabled`);
+      console.log(`Tracking exception customer email skipped for user ${user.id} (${customerEmail}) - ${!globalExceptionEnabled ? 'globally disabled' : 'preference disabled'}`);
     }
 
     if (adminSuccess && customerSuccess) {
@@ -2660,6 +2687,12 @@ export async function sendDeliveryNotification(
   user: User,
 ): Promise<{ success: boolean; error?: any }> {
   try {
+    // Global toggle check
+    if (!await isGlobalEmailEnabled("delivery")) {
+      console.log(`[GLOBAL TOGGLE] delivery disabled - skipping`);
+      return { success: true };
+    }
+
     // Check user notification preferences
     const shouldSend = await shouldSendNotification(user.id, 'tracking_delivery', false);
     if (!shouldSend) {
@@ -2944,6 +2977,12 @@ export async function sendConsolidatedUserTrackingReport(
   trackingUpdates: (TrackingUpdateBatch & { shipment: Shipment })[]
 ): Promise<{ success: boolean; error?: any }> {
   try {
+    // Global toggle check
+    if (!await isGlobalEmailEnabled("daily_digest")) {
+      console.log(`[GLOBAL TOGGLE] daily_digest disabled - skipping`);
+      return { success: true };
+    }
+
     const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || "cs@moogship.com";
     const logoBase64 = getBase64Logo();
 
@@ -3144,14 +3183,9 @@ export async function sendConsolidatedAdminTrackingReport(
   trackingUpdates: (TrackingUpdateBatch & { shipment: Shipment; user: User })[]
 ): Promise<{ success: boolean; error?: any }> {
   try {
-    // Admin notification recipients for tracking reports
-    const adminRecipients = [
-      "info@moogship.com",
-      "gulsah@moogship.com",
-      "gokhan@moogco.com",
-      "oguzhan@moogco.com",
-      "sercan@moogship.com",
-    ];
+    // Admin emails from database
+    const adminRecipients = await getAdminRecipients("admin_tracking_report");
+    if (adminRecipients.length === 0) return { success: true };
 
     const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || "cs@moogship.com";
     const logoBase64 = getBase64Logo();

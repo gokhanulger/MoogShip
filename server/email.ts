@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
+import { storage } from './storage';
 
 // Set up SendGrid if API key is available
 let mailService: MailService | null = null;
@@ -293,9 +294,10 @@ export async function sendPickupNotificationEmail(pickupData: {
   pickupNotes?: string;
   shipmentCount: number;
 }): Promise<{success: boolean, error?: any, sentCount?: number, totalCount?: number}> {
-  // Set recipient addresses
-  const recipientEmails = ['oguzhan@moogco.com', 'info@moogship.com', 'sercan@moogship.com', 'gokhan@moogco.com'];
-  
+  // Get admin recipients from database
+  const recipientEmails = await storage.getAdminEmailRecipients("pickup_scheduled");
+  if (recipientEmails.length === 0) return { success: true, sentCount: 0, totalCount: 0 };
+
   // Use custom sender email if specified in environment, defaulting to cs@moogship.com
   const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || 'cs@moogship.com';
   
@@ -1127,9 +1129,16 @@ export async function sendPickupApprovalEmail(pickupData: {
   pickupNotes?: string;
   shipmentCount: number;
 }, userEmail: string): Promise<{success: boolean, error?: any}> {
+  // Global toggle check
+  const globalEnabled = await storage.isEmailTypeEnabled("pickup_approval");
+  if (!globalEnabled) {
+    console.log(`[GLOBAL TOGGLE] pickup_approval disabled - skipping`);
+    return { success: true };
+  }
+
   // Use custom sender email if specified in environment, defaulting to cs@moogship.com
   const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || 'cs@moogship.com';
-  
+
   // Format the pickup date nicely with error handling
   let formattedDate;
   try {
@@ -1431,7 +1440,7 @@ export async function sendCustomsChargesNotification(
   
   // Use custom sender email if specified in environment, defaulting to cs@moogship.com
   const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || 'cs@moogship.com';
-  const adminEmail = 'info@moogship.com';
+  const adminEmails = await storage.getAdminEmailRecipients("customs_charges");
   const customerEmail = userData.email;
   
   // Format the status time nicely
@@ -1650,27 +1659,35 @@ Tespit zamanı: ${formattedStatusTime}
 © 2025 MoogShip Global Shipping Solutions. Tüm hakları saklıdır.
   `;
   
-  console.log(`Sending customs charges notification for shipment ${shipmentData.id} to admin (${adminEmail}) and customer (${customerEmail})`);
-  
-  try {
-    // Send to admin (always)
-    const adminResult = await sendEmail({
-      to: adminEmail,
-      from: senderEmail,
-      subject: emailSubject,
-      text: emailText,
-      html: emailHtml
-    });
+  console.log(`Sending customs charges notification for shipment ${shipmentData.id} to admin (${adminEmails.join(',')}) and customer (${customerEmail})`);
 
-    // Check customer notification preferences before sending
+  try {
+    // Send to admin(s) (always)
+    const adminResults = await Promise.all(
+      adminEmails.map(email => sendEmail({
+        to: email,
+        from: senderEmail,
+        subject: emailSubject,
+        text: emailText,
+        html: emailHtml
+      }))
+    );
+    const adminSuccess = adminResults.length === 0 || adminResults.some(r => r.success);
+
+    // Check customer notification preferences and global toggle before sending
     let customerResult = { success: true } as any;
     let shouldSendToCustomer = true;
     try {
-      const { storage } = await import('./storage');
-      const user = await storage.getUser(userData.id);
-      if (user && user.customsNotifications === false) {
+      const globalEnabled = await storage.isEmailTypeEnabled("customs_charges");
+      if (!globalEnabled) {
         shouldSendToCustomer = false;
-        console.log(`Customs notification customer email skipped for user ${userData.id} - preference disabled`);
+        console.log(`Customs notification customer email skipped - globally disabled`);
+      } else {
+        const user = await storage.getUser(userData.id);
+        if (user && user.customsNotifications === false) {
+          shouldSendToCustomer = false;
+          console.log(`Customs notification customer email skipped for user ${userData.id} - preference disabled`);
+        }
       }
     } catch (err) {
       console.error('Error checking customs notification preference:', err);
@@ -1687,7 +1704,6 @@ Tespit zamanı: ${formattedStatusTime}
     }
 
     // Check results
-    const adminSuccess = adminResult.success;
     const customerSuccess = customerResult.success;
     
     if (adminSuccess && customerSuccess) {
@@ -1696,14 +1712,14 @@ Tespit zamanı: ${formattedStatusTime}
     } else if (adminSuccess || customerSuccess) {
       console.warn(`Customs charges notification partially sent for shipment ${shipmentData.id}: Admin=${adminSuccess}, Customer=${customerSuccess}`);
       const errors = [];
-      if (!adminSuccess) errors.push(`Admin: ${adminResult.error}`);
+      if (!adminSuccess) errors.push(`Admin: send failed`);
       if (!customerSuccess) errors.push(`Customer: ${customerResult.error}`);
-      return { success: true, partialFailure: true, errors };
+      return { success: true, error: errors.join(', ') };
     } else {
       console.error(`Failed to send customs charges notification for shipment ${shipmentData.id} to both recipients`);
-      return { 
-        success: false, 
-        error: `Admin: ${adminResult.error}, Customer: ${customerResult.error}` 
+      return {
+        success: false,
+        error: `Admin and customer send failed`
       };
     }
   } catch (error) {

@@ -104,6 +104,12 @@ import {
   TaskStatus,
   TaskPriority,
   TaskType,
+  emailNotificationSettings,
+  type EmailNotificationSetting,
+  type InsertEmailNotificationSetting,
+  adminEmailRecipients,
+  type AdminEmailRecipient,
+  type InsertAdminEmailRecipient,
 } from "@shared/schema";
 
 import {
@@ -753,6 +759,21 @@ export interface IStorage {
   getEtsyOrderByReceiptId(receiptId: string): Promise<schema.EtsyOrder | undefined>;
   updateEtsyOrder(id: number, data: Partial<schema.EtsyOrder>): Promise<schema.EtsyOrder | undefined>;
   getUnshippedEtsyOrders(userId: number): Promise<schema.EtsyOrder[]>;
+
+  // Email notification settings (global toggles)
+  getEmailNotificationSettings(): Promise<EmailNotificationSetting[]>;
+  getEmailNotificationSetting(emailType: string): Promise<EmailNotificationSetting | undefined>;
+  isEmailTypeEnabled(emailType: string): Promise<boolean>;
+  updateEmailNotificationSetting(emailType: string, isEnabled: boolean, updatedBy: number): Promise<EmailNotificationSetting | undefined>;
+  seedDefaultEmailNotificationSettings(): Promise<void>;
+
+  // Admin email recipients
+  getAdminEmailRecipients(category: string): Promise<string[]>;
+  getAllAdminEmailRecipients(): Promise<AdminEmailRecipient[]>;
+  addAdminEmailRecipient(data: InsertAdminEmailRecipient): Promise<AdminEmailRecipient>;
+  updateAdminEmailRecipient(id: number, data: Partial<AdminEmailRecipient>): Promise<AdminEmailRecipient | undefined>;
+  deleteAdminEmailRecipient(id: number): Promise<void>;
+  seedDefaultAdminEmailRecipients(): Promise<void>;
 }
 
 // Database storage implementation class
@@ -9221,6 +9242,185 @@ export class DatabaseOnlyStorage implements IStorage {
     } catch (error) {
       console.error("Error fetching unshipped Etsy orders:", error);
       return [];
+    }
+  }
+
+  // ========== Email Notification Settings ==========
+
+  async getEmailNotificationSettings(): Promise<EmailNotificationSetting[]> {
+    return db.select().from(emailNotificationSettings).orderBy(emailNotificationSettings.category, emailNotificationSettings.emailType);
+  }
+
+  async getEmailNotificationSetting(emailType: string): Promise<EmailNotificationSetting | undefined> {
+    const [setting] = await db.select().from(emailNotificationSettings)
+      .where(eq(emailNotificationSettings.emailType, emailType));
+    return setting;
+  }
+
+  async isEmailTypeEnabled(emailType: string): Promise<boolean> {
+    try {
+      const setting = await this.getEmailNotificationSetting(emailType);
+      if (!setting) return true; // Default to enabled if not found
+      return setting.isEnabled;
+    } catch {
+      return true; // Fail open
+    }
+  }
+
+  async updateEmailNotificationSetting(emailType: string, isEnabled: boolean, updatedBy: number): Promise<EmailNotificationSetting | undefined> {
+    const [updated] = await db.update(emailNotificationSettings)
+      .set({ isEnabled, updatedBy, updatedAt: new Date() })
+      .where(eq(emailNotificationSettings.emailType, emailType))
+      .returning();
+    return updated;
+  }
+
+  async seedDefaultEmailNotificationSettings(): Promise<void> {
+    const defaults: { emailType: string; displayName: string; description: string; category: string; isEnabled: boolean; isCritical: boolean }[] = [
+      { emailType: "shipment_approval",          displayName: "Gönderi Onayı",              description: "Gönderi admin tarafından onaylandığında müşteriye gönderilir", category: "shipment",  isEnabled: true,  isCritical: false },
+      { emailType: "bulk_shipment_approval",     displayName: "Toplu Gönderi Onayı",        description: "Toplu gönderiler onaylandığında müşteriye gönderilir",         category: "shipment",  isEnabled: true,  isCritical: false },
+      { emailType: "bulk_shipment_notification", displayName: "Toplu Gönderi Bildirimi",    description: "Toplu gönderi yüklendiğinde müşteriye gönderilir",             category: "shipment",  isEnabled: true,  isCritical: false },
+      { emailType: "pickup_approval",            displayName: "Pickup Onayı",               description: "Pickup onaylandığında müşteriye gönderilir",                   category: "shipment",  isEnabled: true,  isCritical: false },
+      { emailType: "tracking_number",            displayName: "Takip Numarası",             description: "Takip numarası atandığında müşteriye gönderilir",              category: "tracking",  isEnabled: true,  isCritical: false },
+      { emailType: "delivery",                   displayName: "Teslimat Bildirimi",         description: "Gönderi teslim edildiğinde müşteriye gönderilir",              category: "tracking",  isEnabled: true,  isCritical: false },
+      { emailType: "tracking_exception",         displayName: "Takip İstisnası",            description: "Takip istisnası oluştuğunda müşteriye gönderilir",             category: "tracking",  isEnabled: true,  isCritical: false },
+      { emailType: "delivery_issue",             displayName: "Teslimat Sorunu",            description: "Teslimat sorunu tespit edildiğinde müşteriye gönderilir",       category: "tracking",  isEnabled: true,  isCritical: false },
+      { emailType: "daily_digest",               displayName: "Günlük Takip Özeti",         description: "Günlük takip güncelleme özeti müşteriye gönderilir",           category: "tracking",  isEnabled: true,  isCritical: false },
+      { emailType: "refund_status",              displayName: "İade Durumu",                description: "İade talebi durumu değiştiğinde müşteriye gönderilir",          category: "refund",    isEnabled: true,  isCritical: false },
+      { emailType: "return_status",              displayName: "Ürün İade Durumu",           description: "Depo iade durumu değiştiğinde müşteriye gönderilir",            category: "refund",    isEnabled: true,  isCritical: false },
+      { emailType: "support_ticket",             displayName: "Destek Talebi",              description: "Destek talebi aktivitelerinde müşteriye gönderilir",            category: "support",   isEnabled: true,  isCritical: false },
+      { emailType: "customs_charges",            displayName: "Gümrük Masrafları",          description: "Gümrük masrafı tespit edildiğinde müşteriye gönderilir",         category: "customs",   isEnabled: true,  isCritical: false },
+      { emailType: "user_approval",              displayName: "Hesap Onayı",                description: "Müşteri hesabı onaylandığında gönderilir (kritik - kapatılamaz)", category: "account", isEnabled: true,  isCritical: true  },
+    ];
+
+    for (const setting of defaults) {
+      const existing = await this.getEmailNotificationSetting(setting.emailType);
+      if (!existing) {
+        await db.insert(emailNotificationSettings).values(setting);
+      }
+    }
+  }
+
+  // ========== Admin Email Recipients ==========
+
+  private static readonly DEFAULT_ADMIN_EMAILS: Record<string, string[]> = {
+    new_user_registration: ["info@moogship.com", "oguzhan@moogco.com", "gokhan@moogship.com", "gulsah@moogship.com", "sercan@moogship.com"],
+    new_shipment:          ["info@moogship.com", "oguzhan@moogco.com", "gokhan@moogship.com", "gulsah@moogship.com", "sercan@moogship.com"],
+    delivery_issue:        ["info@moogship.com", "gokhan@moogco.com", "oguzhan@moogco.com", "sercan@moogship.com"],
+    tracking_exception:    ["info@moogship.com", "gulsah@moogship.com", "gokhan@moogco.com", "oguzhan@moogco.com", "sercan@moogship.com"],
+    admin_tracking_report: ["info@moogship.com", "gulsah@moogship.com", "gokhan@moogco.com", "oguzhan@moogco.com", "sercan@moogship.com"],
+    pickup_scheduled:      ["oguzhan@moogco.com", "info@moogship.com", "sercan@moogship.com", "gokhan@moogco.com"],
+    customs_charges:       ["info@moogship.com"],
+    support_ticket:        ["info@moogship.com", "gokhan@moogco.com", "oguzhan@moogco.com"],
+    refund_request:        ["info@moogship.com", "sercan@moogship.com", "gokhan@moogco.com", "oguzhan@moogco.com"],
+    bulk_shipment_admin:   ["info@moogship.com", "gokhan@moogco.com", "oguzhan@moogco.com"],
+  };
+
+  async getAdminEmailRecipients(category: string): Promise<string[]> {
+    try {
+      const recipients = await db.select({ email: adminEmailRecipients.email })
+        .from(adminEmailRecipients)
+        .where(and(
+          eq(adminEmailRecipients.category, category),
+          eq(adminEmailRecipients.isActive, true)
+        ));
+      if (recipients.length === 0) {
+        return DatabaseOnlyStorage.DEFAULT_ADMIN_EMAILS[category] ?? [];
+      }
+      return recipients.map(r => r.email);
+    } catch {
+      return DatabaseOnlyStorage.DEFAULT_ADMIN_EMAILS[category] ?? [];
+    }
+  }
+
+  async getAllAdminEmailRecipients(): Promise<AdminEmailRecipient[]> {
+    return db.select().from(adminEmailRecipients)
+      .orderBy(adminEmailRecipients.category, adminEmailRecipients.email);
+  }
+
+  async addAdminEmailRecipient(data: InsertAdminEmailRecipient): Promise<AdminEmailRecipient> {
+    const [recipient] = await db.insert(adminEmailRecipients).values(data).returning();
+    return recipient;
+  }
+
+  async updateAdminEmailRecipient(id: number, data: Partial<AdminEmailRecipient>): Promise<AdminEmailRecipient | undefined> {
+    const [updated] = await db.update(adminEmailRecipients)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(adminEmailRecipients.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAdminEmailRecipient(id: number): Promise<void> {
+    await db.delete(adminEmailRecipients).where(eq(adminEmailRecipients.id, id));
+  }
+
+  async seedDefaultAdminEmailRecipients(): Promise<void> {
+    const defaults: { email: string; name: string; category: string }[] = [
+      // new_user_registration
+      { email: "info@moogship.com",   name: "Info",    category: "new_user_registration" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "new_user_registration" },
+      { email: "gokhan@moogship.com", name: "Gokhan",  category: "new_user_registration" },
+      { email: "gulsah@moogship.com", name: "Gulsah",  category: "new_user_registration" },
+      { email: "sercan@moogship.com", name: "Sercan",  category: "new_user_registration" },
+      // new_shipment
+      { email: "info@moogship.com",   name: "Info",    category: "new_shipment" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "new_shipment" },
+      { email: "gokhan@moogship.com", name: "Gokhan",  category: "new_shipment" },
+      { email: "gulsah@moogship.com", name: "Gulsah",  category: "new_shipment" },
+      { email: "sercan@moogship.com", name: "Sercan",  category: "new_shipment" },
+      // delivery_issue
+      { email: "info@moogship.com",   name: "Info",    category: "delivery_issue" },
+      { email: "gokhan@moogco.com",   name: "Gokhan",  category: "delivery_issue" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "delivery_issue" },
+      { email: "sercan@moogship.com", name: "Sercan",  category: "delivery_issue" },
+      // tracking_exception
+      { email: "info@moogship.com",   name: "Info",    category: "tracking_exception" },
+      { email: "gulsah@moogship.com", name: "Gulsah",  category: "tracking_exception" },
+      { email: "gokhan@moogco.com",   name: "Gokhan",  category: "tracking_exception" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "tracking_exception" },
+      { email: "sercan@moogship.com", name: "Sercan",  category: "tracking_exception" },
+      // admin_tracking_report
+      { email: "info@moogship.com",   name: "Info",    category: "admin_tracking_report" },
+      { email: "gulsah@moogship.com", name: "Gulsah",  category: "admin_tracking_report" },
+      { email: "gokhan@moogco.com",   name: "Gokhan",  category: "admin_tracking_report" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "admin_tracking_report" },
+      { email: "sercan@moogship.com", name: "Sercan",  category: "admin_tracking_report" },
+      // pickup_scheduled
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "pickup_scheduled" },
+      { email: "info@moogship.com",   name: "Info",    category: "pickup_scheduled" },
+      { email: "sercan@moogship.com", name: "Sercan",  category: "pickup_scheduled" },
+      { email: "gokhan@moogco.com",   name: "Gokhan",  category: "pickup_scheduled" },
+      // customs_charges
+      { email: "info@moogship.com",   name: "Info",    category: "customs_charges" },
+      // support_ticket
+      { email: "info@moogship.com",   name: "Info",    category: "support_ticket" },
+      { email: "gokhan@moogco.com",   name: "Gokhan",  category: "support_ticket" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "support_ticket" },
+      // refund_request
+      { email: "info@moogship.com",   name: "Info",    category: "refund_request" },
+      { email: "sercan@moogship.com", name: "Sercan",  category: "refund_request" },
+      { email: "gokhan@moogco.com",   name: "Gokhan",  category: "refund_request" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "refund_request" },
+      // bulk_shipment_admin
+      { email: "info@moogship.com",   name: "Info",    category: "bulk_shipment_admin" },
+      { email: "gokhan@moogco.com",   name: "Gokhan",  category: "bulk_shipment_admin" },
+      { email: "oguzhan@moogco.com",  name: "Oguzhan", category: "bulk_shipment_admin" },
+    ];
+
+    for (const recipient of defaults) {
+      try {
+        const existing = await db.select().from(adminEmailRecipients)
+          .where(and(
+            eq(adminEmailRecipients.email, recipient.email),
+            eq(adminEmailRecipients.category, recipient.category)
+          ));
+        if (existing.length === 0) {
+          await db.insert(adminEmailRecipients).values({ ...recipient, isActive: true });
+        }
+      } catch {
+        // Skip duplicates
+      }
     }
   }
 }

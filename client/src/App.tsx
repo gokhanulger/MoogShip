@@ -61,6 +61,7 @@ const MarketingPriceCalculator = lazy(() => import("@/pages/marketing-price-calc
 const ManageEmailVerification = lazy(() => import("@/pages/manage-email-verification"));
 const NotificationPreferences = lazy(() => import("@/pages/notification-preferences"));
 const AdminUserNotificationPreferences = lazy(() => import("@/pages/admin-user-notification-preferences"));
+const AdminEmailSettings = lazy(() => import("@/pages/admin-email-settings"));
 const HakkimizdaPage = lazy(() => import("@/pages/about"));
 const EkibimizPage = lazy(() => import("@/pages/team"));
 const KariyerPage = lazy(() => import("@/pages/career"));
@@ -348,6 +349,7 @@ function Router() {
       <ProtectedRoute path="/admin-cms" component={AdminCmsPage} adminOnly />
       <ProtectedRoute path="/manage-email-verification" component={ManageEmailVerification} adminOnly />
       <ProtectedRoute path="/admin-user-notification-preferences" component={AdminUserNotificationPreferences} adminOnly />
+      <ProtectedRoute path="/admin-email-settings" component={AdminEmailSettings} adminOnly />
       <ProtectedRoute path="/reports" component={Reports} adminOnly />
       <ProtectedRoute path="/admin-price-fetcher" component={AdminPriceFetcher} adminOnly />
       <ProtectedRoute path="/price-calculator" component={PriceCalculator} />

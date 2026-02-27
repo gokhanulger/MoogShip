@@ -1,6 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import type { Return, User } from '@shared/schema';
-import { shouldSendNotification } from '../notification-emails';
+import { shouldSendNotification, isGlobalEmailEnabled } from '../notification-emails';
 
 if (!process.env.SENDGRID_API_KEY) {
   console.error("SENDGRID_API_KEY environment variable is required");
@@ -87,7 +87,11 @@ export class ReturnNotificationService {
     `;
 
     if (returnData.customerEmail) {
-      // Check seller notification preferences
+      // Global toggle + seller notification preferences
+      if (!await isGlobalEmailEnabled("return_status")) {
+        console.log(`[GLOBAL TOGGLE] return_status disabled - skipping`);
+        return;
+      }
       const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
       if (!shouldSend) {
         console.log(`Return notification skipped for seller ${returnData.sellerId} - preference disabled`);
@@ -149,7 +153,11 @@ export class ReturnNotificationService {
     `;
 
     if (returnData.customerEmail) {
-      // Check seller notification preferences
+      // Global toggle + seller notification preferences
+      if (!await isGlobalEmailEnabled("return_status")) {
+        console.log(`[GLOBAL TOGGLE] return_status disabled - skipping`);
+        return;
+      }
       const shouldSend = await shouldSendNotification(returnData.sellerId, 'refund_return', false);
       if (!shouldSend) {
         console.log(`Return status update notification skipped for seller ${returnData.sellerId} - preference disabled`);

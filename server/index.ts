@@ -472,6 +472,16 @@ app.use((req, res, next) => {
           console.error('[ExternalPricing] Failed to seed service settings:', err)
         );
 
+        // Seed email notification settings and admin email recipients (idempotent)
+        Promise.all([
+          storage.seedDefaultEmailNotificationSettings(),
+          storage.seedDefaultAdminEmailRecipients(),
+        ]).then(() => {
+          console.log('[EMAIL] Email notification settings seeded');
+        }).catch(err => {
+          console.error('[EMAIL] Failed to seed email settings:', err);
+        });
+
         // Start the automatic tracking scheduler after server is running
         startTrackingScheduler();
         

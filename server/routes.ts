@@ -4840,6 +4840,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Admin Email Settings Endpoints ==========
+
+  // Get all global email notification settings
+  app.get("/api/admin/email-notification-settings", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getEmailNotificationSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching email notification settings:", error);
+      res.status(500).json({ message: "Error fetching email notification settings", error: String(error) });
+    }
+  });
+
+  // Toggle a specific email type on/off
+  app.patch("/api/admin/email-notification-settings/:emailType", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const { emailType } = req.params;
+      const { isEnabled } = req.body;
+
+      if (typeof isEnabled !== "boolean") {
+        return res.status(400).json({ message: "isEnabled must be a boolean" });
+      }
+
+      const setting = await storage.getEmailNotificationSetting(emailType);
+      if (!setting) {
+        return res.status(404).json({ message: "Email type not found" });
+      }
+
+      if (setting.isCritical && !isEnabled) {
+        return res.status(400).json({ message: "Bu email tipi kritik olduğu için kapatılamaz" });
+      }
+
+      const updated = await storage.updateEmailNotificationSetting(emailType, isEnabled, req.user!.id);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating email notification setting:", error);
+      res.status(500).json({ message: "Error updating email notification setting", error: String(error) });
+    }
+  });
+
+  // Get all admin email recipients
+  app.get("/api/admin/email-recipients", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const recipients = await storage.getAllAdminEmailRecipients();
+      res.json(recipients);
+    } catch (error) {
+      console.error("Error fetching admin email recipients:", error);
+      res.status(500).json({ message: "Error fetching admin email recipients", error: String(error) });
+    }
+  });
+
+  // Add a new admin email recipient
+  app.post("/api/admin/email-recipients", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const { email, name, category } = req.body;
+
+      if (!email || !category) {
+        return res.status(400).json({ message: "email and category are required" });
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Geçersiz email adresi" });
+      }
+
+      const recipient = await storage.addAdminEmailRecipient({ email, name, category, isActive: true });
+      res.status(201).json(recipient);
+    } catch (error: any) {
+      if (error.code === "23505") {
+        return res.status(409).json({ message: "Bu email zaten bu kategori için kayıtlı" });
+      }
+      console.error("Error adding admin email recipient:", error);
+      res.status(500).json({ message: "Error adding admin email recipient", error: String(error) });
+    }
+  });
+
+  // Update an admin email recipient
+  app.patch("/api/admin/email-recipients/:id", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isActive, name } = req.body;
+
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      const updated = await storage.updateAdminEmailRecipient(id, { isActive, name });
+      if (!updated) return res.status(404).json({ message: "Recipient not found" });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating admin email recipient:", error);
+      res.status(500).json({ message: "Error updating admin email recipient", error: String(error) });
+    }
+  });
+
+  // Delete an admin email recipient
+  app.delete("/api/admin/email-recipients/:id", authenticateToken, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      await storage.deleteAdminEmailRecipient(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting admin email recipient:", error);
+      res.status(500).json({ message: "Error deleting admin email recipient", error: String(error) });
+    }
+  });
+
   // Get a specific user by ID (users can only view themselves, admins can view anyone)
   app.get(
     "/api/users/:id",
